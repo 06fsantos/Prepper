@@ -20,15 +20,15 @@ and graph rules follow in 06.
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `npm run validate` runs the vault through Quartz's own pipeline, prints every violation found, and exits non-zero if any is an error
-- [ ] The same rules surface live under `quartz build --serve` without stopping the server
-- [ ] Violations carry exactly one of two severities; there is no `info` level and no promotion path between the two
-- [ ] A deliberately multi-violation fixture reports all of its violations in one run, not just the first
-- [ ] Error: a note missing a frontmatter field its type requires
-- [ ] Error: a missing or malformed ULID `id`
-- [ ] Error: the same ULID appearing twice anywhere — note `id` or quiz infostring, one namespace
-- [ ] Error: two filenames whose stems collide case-insensitively, anywhere in the vault including `attachments/`
-- [ ] `draft: true` softens none of these
-- [ ] CI fails the build on any error
+- [x] `npm run validate` runs the vault through Quartz's own pipeline, prints every violation found, and exits non-zero if any is an error
+- [x] The same rules surface live under `quartz build --serve` without stopping the server
+- [x] Violations carry exactly one of two severities; there is no `info` level and no promotion path between the two
+- [x] A deliberately multi-violation fixture reports all of its violations in one run, not just the first
+- [x] Error: a note missing a frontmatter field its type requires
+- [x] Error: a missing or malformed ULID `id`
+- [x] Error: the same ULID appearing twice anywhere — note `id` or quiz infostring, one namespace
+- [x] Error: two filenames whose stems collide case-insensitively, anywhere in the vault including `attachments/`
+- [x] `draft: true` softens none of these
+- [x] CI fails the build on any error

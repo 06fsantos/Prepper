@@ -55,3 +55,13 @@ anything.
   *[mechanism 3](../../../.scratch/prepper-build/research/02-emitter-output-and-the-link-graph.md)*:
   the orphan is there so that "still an orphan after a page linked to it" is a fact a test
   can state.
+- **`schema-and-identity-violations/`** — a vault that is wrong in thirteen ways at once:
+  a Lesson with no `topic`, one with no `id`, one whose `id` was typed by hand, a Problem
+  missing three of the four fields its type requires, a Record with no `date`, a Term that
+  declares no `title`, a `draft: true` note that is wrong anyway, two notes sharing one
+  ULID, a quiz block whose infostring ULID belongs to a Term, and an attachment whose stem
+  collides case-insensitively with a Term's filename. Its cluster is *collect-all*: one
+  run has to report every one of them, so notes here are deliberately wrong in more than
+  one way and more than one note is wrong. Everything it does **not** violate — its
+  `topic` values all name Terms that exist — is so that the vocabulary and graph rules can
+  be added without this fixture becoming about them too.

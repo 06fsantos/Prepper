@@ -17,16 +17,17 @@ it genuinely cannot, it belongs upstream as a pull request.
 
 ## What may be edited outside `prepper/`
 
-Five files, all configuration, all expected to conflict occasionally on a merge and all
+Six files, all configuration, all expected to conflict occasionally on a merge and all
 cheap to resolve:
 
-| File                 | Ours to change                | Why it is not a divergence                                                                                                                                |
-| -------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `quartz.config.yaml` | yes, wholly                   | Our config file. Upstream ships `quartz.config.default.yaml`; we never touch that, so a merge shows us what changed and we choose.                        |
-| `package.json`       | scripts and dependencies only | Where a plugin's dependencies and our npm scripts have to live. Keep additions grouped and minimal.                                                       |
-| `.prettierignore`    | additions only                | Excludes hand-authored prose -- the vault, the vendored skills, the docs -- so `npm run check` never asks to reflow a sentence someone wrote on purpose.  |
-| `tsconfig.json`      | `include` paths only          | Upstream's `include` names only `quartz/`, so without this nothing of ours is type-checked and `npm run check` would pass over every error in `prepper/`. |
-| `content/`           | wholly                        | The vault. Upstream's `content/` was one `.gitkeep`.                                                                                                      |
+| File                             | Ours to change                                                  | Why it is not a divergence                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `quartz.config.yaml`             | yes, wholly                                                     | Our config file. Upstream ships `quartz.config.default.yaml`; we never touch that, so a merge shows us what changed and we choose.                                                                                                                                                                                                                                                                                                                   |
+| `package.json`                   | scripts and dependencies only                                   | Where a plugin's dependencies and our npm scripts have to live. Keep additions grouped and minimal.                                                                                                                                                                                                                                                                                                                                                  |
+| `.prettierignore`                | additions only                                                  | Excludes hand-authored prose -- the vault, the vendored skills, the docs -- so `npm run check` never asks to reflow a sentence someone wrote on purpose.                                                                                                                                                                                                                                                                                             |
+| `tsconfig.json`                  | `include` paths, plus `allowImportingTsExtensions` and `noEmit` | Upstream's `include` names only `quartz/`, so without this nothing of ours is type-checked and `npm run check` would pass over every error in `prepper/`. The compiler option is what lets one of our plugin files import another: Quartz imports a local plugin as TypeScript at runtime, and Node's ESM resolver needs the `.ts` written out; `noEmit` is the flag TypeScript requires alongside it, and it is what `npm run check` passes anyway. |
+| `.github/workflows/prepper.yaml` | ours, wholly                                                    | A new file, not an edit: upstream's `ci.yaml` gates on its own repository and never runs here. Cannot conflict.                                                                                                                                                                                                                                                                                                                                      |
+| `content/`                       | wholly                                                          | The vault. Upstream's `content/` was one `.gitkeep`.                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 Everything else at the repo root that is not ours — `quartz/`, `quartz.ts`,
 `Dockerfile`, `docs/` other than `docs/adr/`, `docs/agents/`, and
@@ -37,12 +38,17 @@ Everything else at the repo root that is not ours — `quartz/`, `quartz.ts`,
 ```
 prepper/
   testing/
-    build-fixture.ts        seam 1: build(fixtureVault) -> emitted site
+    build-fixture.ts        seam 1: build(fixtureVault) -> emitted site, and
+                            validate(fixtureVault) -> violation list
     build-fixture.test.ts   the seam's own test
     fixtures/               one small vault per behaviour cluster
     mechanisms.test.ts      the Quartz mechanisms the design rests on, run
     spike-build.ts          seam 1 with a plugin that is not in the config yet
     spikes/                 the throwaway plugins those spikes need
+  validation/               the validation spine: one rule module, two consumers
+    index.ts                the Quartz emitter, registered from quartz.config.yaml
+    validate.ts             `npm run validate`, the CI gate
+    rules.ts, rules/        every rule there is
 ```
 
 Plugins, components, and browser code land here as they are built, each in its own
