@@ -43,7 +43,7 @@ export const repoRoot = path.resolve(here, "..", "..")
 export const fixturesDir = path.join(here, "fixtures")
 
 /** Where fixture builds land. Inside the gitignored Quartz cache, so nothing is littered. */
-const buildOutputRoot = path.join(repoRoot, ".quartz-cache", "fixture-builds")
+export const buildOutputRoot = path.join(repoRoot, ".quartz-cache", "fixture-builds")
 
 /** One entry of `contentIndex.json`, as Quartz emits it. */
 export interface ContentIndexEntry {
@@ -315,19 +315,48 @@ async function runBuild(vaultDir: string): Promise<EmittedSite> {
   runsPerVault.set(vaultDir, run)
   const suffix = run === 1 ? "" : `-run${run}`
   const outputDir = path.join(buildOutputRoot, `${path.basename(vaultDir)}-${digest}${suffix}`)
+
+  return runQuartzBuild({ vaultDir, outputDir })
+}
+
+/**
+ * Run one real `quartz build` and collect what it produced.
+ *
+ * Shelling out to the CLI is the point: it is the dev-facing entry point, and going
+ * through it is what stops a test and a real build from ever disagreeing.
+ *
+ * `cwd` decides which `quartz.config.yaml` the build reads, because Quartz resolves it
+ * from the working directory. It defaults to the repo, which is the only thing a test
+ * about Prepper's behaviour should ever want; `spike-build.ts` is the one caller that
+ * passes anything else, and it says there why.
+ */
+export async function runQuartzBuild({
+  vaultDir,
+  outputDir,
+  cwd = repoRoot,
+}: {
+  vaultDir: string
+  outputDir: string
+  cwd?: string
+}): Promise<EmittedSite> {
   fs.rmSync(outputDir, { recursive: true, force: true })
   fs.mkdirSync(outputDir, { recursive: true })
 
-  // Shelling out to the CLI is the point: it is the dev-facing entry point, and going
-  // through it is what stops a test and a real build from ever disagreeing.
   let stdout = ""
   let stderr = ""
   let exitCode = 0
   try {
     const result = await execFileAsync(
       process.execPath,
-      ["./quartz/bootstrap-cli.mjs", "build", "-d", vaultDir, "-o", outputDir],
-      { cwd: repoRoot, maxBuffer: 32 * 1024 * 1024 },
+      [
+        path.join(repoRoot, "quartz", "bootstrap-cli.mjs"),
+        "build",
+        "-d",
+        vaultDir,
+        "-o",
+        outputDir,
+      ],
+      { cwd, maxBuffer: 32 * 1024 * 1024 },
     )
     stdout = result.stdout
     stderr = result.stderr

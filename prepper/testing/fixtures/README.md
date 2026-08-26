@@ -28,7 +28,7 @@ anything.
 - A fixture for a **failing** vault is legitimate and expected: validation rules are
   asserted by building a vault that breaks them and reading the violation list.
 
-## The one that exists
+## The ones that exist
 
 - **`minimal-vault/`** — a Lesson and the Term it is about, linked twice: once aliased
   (`[[binary-search|Binary search]]`) and once bare, under an H2 so that Quartz's heading
@@ -37,3 +37,21 @@ anything.
   HTML plus `contentIndex.json` come out. Every one of those details is load-bearing for a
   test, so change it only alongside them — and do not grow it; a new behaviour gets a new
   fixture.
+
+- **`quiz-fence-wikilink/`** — a Lesson whose quiz fence holds an mcq task list with a
+  wikilink inside one option's explanation, and the two Terms it points at. Its cluster is
+  *[mechanism 1](../../../.scratch/prepper-build/research/02-quiz-fence-reparsing.md)*: a
+  fence body is re-parsed as ordinary Markdown, so a link written in it is a link. The
+  wikilink appears nowhere else in the note on purpose — the edge cannot arrive by another
+  route.
+- **`embed-of-a-pageless-note/`** — a Lesson embedding two notes: one with a page, one
+  without. Its cluster is
+  *[mechanism 2](../../../.scratch/prepper-build/research/02-embed-of-a-pageless-note.md)*,
+  the Workshop boundary. The `draft: true` note stands in for a Workshop note until the
+  real Library/Workshop filter exists, and each note carries a nonsense marker word so a
+  leak is greppable across the whole emitted site.
+- **`emitter-output-and-the-graph/`** — a Lesson, the Term it is about, and a Term nothing
+  links to. Its cluster is
+  *[mechanism 3](../../../.scratch/prepper-build/research/02-emitter-output-and-the-link-graph.md)*:
+  the orphan is there so that "still an orphan after a page linked to it" is a fact a test
+  can state.

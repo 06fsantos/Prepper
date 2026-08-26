@@ -64,10 +64,10 @@ The singleton note stating why the dev is preparing, used to ground what gets au
 ### Cross-cutting
 
 **Library**:
-The set of notes a reader browses and searches: Lessons, References, Problems, Terms, and Cheat sheets. The build gives a page and a link-graph node to Library content and nothing else. Everything else in the vault is Workshop, and the boundary does not leak: an Embed of a Workshop note resolves against that note's page, which does not exist, so it renders nothing.
+The set of notes a reader browses and searches: Lessons, References, Problems, Terms, and Cheat sheets. The build gives a page and a link-graph node to Library content and nothing else. Everything else in the vault is Workshop, and the boundary does not leak: Workshop notes are filtered out of the corpus the build renders from, so an Embed of one has nothing to resolve against and renders as an empty placeholder.
 
 **Workshop**:
-The dev's side of the vault: every note the build never renders — Research, Records, and the Mission. Present in Obsidian, browsable and searchable while authoring, and never a page in the app. Having no page is what makes the class airtight: an Embed cannot pull Workshop content onto a Library page, because there is no rendered page for it to pull. The class is defined by renderability, not by subject matter: a Research note is about the subject and still Workshop, because raw investigation is not learning material.
+The dev's side of the vault: every note the build never renders — Research, Records, and the Mission. Present in Obsidian, browsable and searchable while authoring, and never a page in the app. Being **filtered out of the build's corpus** is what makes the class airtight, and it is stronger than having no page: embeds are resolved at build time against that corpus, so a note still in it would be spliced into any Library note embedding it whether or not it got a page of its own. Excluding Workshop notes with a filter, never with an emitter that declines to write them, is therefore the implementation obligation the boundary rests on ([ADR 0002](docs/adr/0002-quartz-as-the-build-pipeline.md)). The class is defined by renderability, not by subject matter: a Research note is about the subject and still Workshop, because raw investigation is not learning material.
 _Avoid_: private notes, drafts, staging
 
 **Learner state**:

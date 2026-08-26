@@ -1,0 +1,209 @@
+/**
+ * The three Quartz mechanisms Prepper's design rests on, run.
+ *
+ * Each of these was cited from documentation and source before it was ever executed
+ * ([ticket 02](../../.scratch/prepper-build/issues/02-spike-the-unrun-mechanisms.md)),
+ * and each carries a decision that would have to change if it stopped being true. Two of
+ * the three fail *quietly*: nothing crashes, the build stays green, and the site is
+ * silently wrong. So they are asserted here rather than eyeballed, and
+ * [`docs/upstream-merges.md`](../../docs/upstream-merges.md) points at this file as the
+ * tripwire to read first when an upstream merge breaks something.
+ *
+ * The findings, written up:
+ * [`.scratch/prepper-build/research/`](../../.scratch/prepper-build/research/).
+ */
+import test, { describe, before } from "node:test"
+import assert from "node:assert"
+
+import { buildFixture, type EmittedSite } from "./build-fixture"
+import { buildWithSpikePlugins } from "./spike-build"
+
+describe("mechanism 1: a quiz fence body is re-parsed into real Markdown", () => {
+  // The decision: one local remark plugin at `order: 25` re-parses fence bodies with
+  // `self.parse()` and lets Quartz's own downstream transforms resolve what comes out --
+  // Quartz's parser, Quartz's transforms, no second wikilink implementation of ours. If
+  // the re-parse did not yield real wikilink nodes, that design falls back into ADR 0002.
+  let site: EmittedSite
+
+  before(
+    async () => {
+      site = await buildWithSpikePlugins("quiz-fence-wikilink", [
+        { source: "prepper/testing/spikes/quiz-fence-reparse", order: 25 },
+      ])
+    },
+    { timeout: 120_000 },
+  )
+
+  test("the vault builds, with the spike plugin actually loaded", () => {
+    assert.equal(site.exitCode, 0, site.log)
+    // A plugin Quartz cannot load is a warning and a skip, not a failure -- the fences
+    // would then render as ordinary code blocks and every assertion below would be
+    // confusing rather than clear about why.
+    assert.ok(!site.log.includes("Skipping"), site.log)
+  })
+
+  test("a wikilink written inside a fence body renders as a resolved link", () => {
+    const page = site.page("lessons/hash-map-lookup-cost")
+    const quiz = page.require("div.quiz")
+    assert.deepEqual(
+      page.links({ scope: quiz }).map(({ href, text }) => ({ href, text })),
+      [{ href: "../terms/collision-handling", text: "collision-handling" }],
+    )
+  })
+
+  test("that link is an edge in the link graph, like any other body link", () => {
+    // The lesson's prose never mentions collisions; the only path to this edge is
+    // through the fence body.
+    assert.deepEqual(site.notes["lessons/hash-map-lookup-cost"].links, [
+      "terms/collision-handling",
+      "terms/hash-map",
+    ])
+  })
+
+  test("the fence body is Markdown, not an opaque string", () => {
+    // The options are a GFM task list and each explanation is a blockquote. Both are
+    // parsed by Quartz's own configuration, which is the whole claim.
+    const page = site.page("lessons/hash-map-lookup-cost")
+    const quiz = page.require("div.quiz")
+    assert.equal(page.selectAll("li.task-list-item", quiz).length, 3)
+    assert.equal(page.selectAll("li.task-list-item.is-checked", quiz).length, 1)
+    assert.equal(page.text("blockquote", quiz), "The key hashes straight to its bucket.")
+  })
+
+  test("the infostring survives to the emitted element", () => {
+    // `data.hProperties` -> hast element attributes, through rehype-raw's reparse.
+    // Ticket 09's html-plugin half reads the type back off this attribute.
+    const quiz = site.page("lessons/hash-map-lookup-cost").require("div.quiz")
+    // hast normalises `data-*` attribute names to camelCase in `properties`; the
+    // emitted HTML carries them hyphenated.
+    assert.equal(quiz.properties.dataQuizId, "01M0Z900000000000000000022")
+    assert.equal(quiz.properties.dataQuizType, "mcq")
+    assert.match(
+      site.page("lessons/hash-map-lookup-cost").html,
+      /data-quiz-id="01M0Z900000000000000000022" data-quiz-type="mcq"/,
+    )
+  })
+})
+
+describe("mechanism 2: an embed of a note with no page leaks nothing", () => {
+  // The decision: the Workshop boundary is airtight rather than merely policed, because
+  // a Workshop note has no page for an embed to pull. The ADR 0002 amendment used this
+  // to withdraw an accepted risk.
+  //
+  // The outcome holds; the mechanism the amendment named does not. Quartz v5 resolves
+  // non-media embeds *at build time*, splicing the target's rendered content out of the
+  // parsed corpus, not in the browser -- so what makes the boundary airtight is the
+  // target being **filtered out of the corpus**, not merely being denied a page. See the
+  // amendment to ADR 0002. The fixture's Workshop stand-in is therefore a `draft: true`
+  // note, which Quartz's remove-draft *filter* drops -- the shape Prepper's own
+  // Library/Workshop split has to take, and the reason these tests are the tripwire.
+  let site: EmittedSite
+
+  before(
+    async () => {
+      site = await buildFixture("embed-of-a-pageless-note")
+    },
+    { timeout: 120_000 },
+  )
+
+  test("the vault builds, and the pageless note gets no page", () => {
+    assert.equal(site.exitCode, 0, site.log)
+    assert.ok(!site.hasPage("research/why-buckets-were-benchmarked-this-way"))
+    assert.ok(site.hasPage("terms/hash-map"))
+  })
+
+  test("the control: embedding a note that has a page splices its content in, at build time", () => {
+    // Without this, an empty box proves nothing -- it could just mean embeds never
+    // render. It also dates the resolution: the target's prose is in the emitted HTML,
+    // so nothing in the browser was needed to put it there.
+    const page = site.page("lessons/hash-map-lookup-cost")
+    assert.match(page.text(), /sonarcanary/)
+    assert.match(page.html, /sonarcanary/)
+  })
+
+  test("the pageless note is out of the corpus, which is what the guarantee rests on", () => {
+    // Not merely pageless: absent from what the build renders from. A note still in the
+    // corpus would be spliced into the embed by the test above, page or no page.
+    assert.ok(!("research/why-buckets-were-benchmarked-this-way" in site.contentIndex))
+  })
+
+  test("embedding a note with no page renders an empty placeholder", () => {
+    const page = site.page("lessons/hash-map-lookup-cost")
+    const placeholder = page
+      .selectAll("blockquote.transclude")
+      .find((el) => el.properties.dataUrl === "why-buckets-were-benchmarked-this-way")
+    assert.ok(placeholder, "no transclude placeholder for the pageless note")
+    // It carries the target and a link to it, and no content of the target's.
+    assert.equal(page.text(undefined, placeholder).includes("Load factor"), false)
+  })
+
+  test("nothing of the pageless note's body reaches the site at all", () => {
+    for (const file of site.files.filter((f) => f.endsWith(".html") || f.endsWith(".json"))) {
+      assert.ok(
+        !site.file(file).includes("pineapplecanary"),
+        `${file} carries content from a note with no page`,
+      )
+    }
+  })
+})
+
+describe("mechanism 3: emitter output is outside the link graph", () => {
+  // The decision: the Vault report is emitter output and never a virtual `content/`
+  // file. Were its links crawled, the report would link to every orphan it lists, each
+  // would gain an inbound link, and the hygiene section would erase itself on the second
+  // build -- silently. The spike emitter links to every note, which is the shape that
+  // would do it.
+  let site: EmittedSite
+
+  before(
+    async () => {
+      site = await buildWithSpikePlugins("emitter-output-and-the-graph", [
+        { source: "prepper/testing/spikes/emitter-page-links" },
+      ])
+    },
+    { timeout: 120_000 },
+  )
+
+  test("the emitter emitted a page, and it does link to the orphan", () => {
+    assert.equal(site.exitCode, 0, site.log)
+    const report = site.file("spike-report.html")
+    assert.match(report, /href="\.\/terms\/orphaned-term"/)
+    assert.match(report, /href="\.\/terms\/amortisation"/)
+  })
+
+  test("the emitted page is absent from contentIndex.json", () => {
+    assert.deepEqual(Object.keys(site.contentIndex).sort(), [
+      "lessons/index",
+      "lessons/queue-amortisation",
+      "tags/index",
+      "terms/amortisation",
+      "terms/index",
+      "terms/orphaned-term",
+    ])
+  })
+
+  test("its links are edges in no note's link graph", () => {
+    for (const [slug, entry] of Object.entries(site.contentIndex)) {
+      assert.deepEqual(
+        entry.links.filter((link) => link.includes("spike-report")),
+        [],
+        `${slug} carries an edge from emitter output`,
+      )
+    }
+  })
+
+  test("the orphan is still an orphan afterwards", () => {
+    // Which is the fact the hygiene section reports, and the one that would erase
+    // itself on the second build if emitter output were crawled.
+    const inbound = Object.entries(site.contentIndex)
+      .filter(([, entry]) => entry.links.includes("terms/orphaned-term"))
+      .map(([slug]) => slug)
+    assert.deepEqual(inbound, [])
+  })
+
+  test("its text is in no note's search content", () => {
+    for (const [slug, entry] of Object.entries(site.contentIndex)) {
+      assert.ok(!entry.content.includes("Spike report"), `${slug} carries emitter output text`)
+    }
+  })
+})
