@@ -7,3 +7,8 @@ topic:
 
 [[binary-search|Binary search]] needs the range sorted, and pays for that with `O(log n)`
 lookups instead of `O(n)`.
+
+## Why it needs sorting
+
+Halving only tells you which half to keep if the range is ordered. See
+[[binary-search]].

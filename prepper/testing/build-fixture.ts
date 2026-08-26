@@ -132,15 +132,31 @@ export class Page {
   }
 
   /**
-   * Every link in the note's own prose, in document order. Pass a scope to ask about
-   * links the layout rendered instead -- a "This unlocks" rail, say.
+   * Every link in the note's own prose, in document order.
+   *
+   * Quartz turns each heading into its own permalink anchor, and those anchors are
+   * indistinguishable from a wikilink by class -- they differ only in sitting inside a
+   * heading. They are chrome, not links the author wrote, so they are left out; pass
+   * `{ headingAnchors: true }` to ask about them.
+   *
+   * Pass a `scope` to ask about links the layout rendered around the note instead -- a
+   * "This unlocks" rail, say.
    */
-  links(scope: Element | Root = this.body): EmittedLink[] {
-    return hastSelectAll("a", scope).map((a) => ({
-      href: typeof a.properties.href === "string" ? a.properties.href : undefined,
-      text: collapse(toText(a, { whitespace: "normal" })),
-      classes: classesOf(a),
-    }))
+  links({
+    scope = this.body,
+    headingAnchors = false,
+  }: { scope?: Element | Root; headingAnchors?: boolean } = {}): EmittedLink[] {
+    const anchors = headingAnchors
+      ? new Set<Element>()
+      : new Set(hastSelectAll("h1 a, h2 a, h3 a, h4 a, h5 a, h6 a", scope))
+
+    return hastSelectAll("a", scope)
+      .filter((a) => !anchors.has(a))
+      .map((a) => ({
+        href: typeof a.properties.href === "string" ? a.properties.href : undefined,
+        text: collapse(toText(a, { whitespace: "normal" })),
+        classes: classesOf(a),
+      }))
   }
 }
 

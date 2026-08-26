@@ -34,8 +34,19 @@ describe("seam 1: build(fixtureVault) -> emitted site", () => {
       const page = site.page("lessons/binary-search-basics")
       assert.deepEqual(
         page.links().map(({ href, text }) => ({ href, text })),
-        [{ href: "../terms/binary-search", text: "Binary search" }],
+        [
+          { href: "../terms/binary-search", text: "Binary search" },
+          { href: "../terms/binary-search", text: "binary-search" },
+        ],
       )
+    })
+
+    test("Quartz's heading permalink anchors are not counted as the author's links", () => {
+      const page = site.page("lessons/binary-search-basics")
+      // The fixture's H2 gets a permalink anchor; only the two wikilinks are the
+      // author's, and one of them is inside that H2's section.
+      assert.equal(page.links().length, 2)
+      assert.ok(page.links({ headingAnchors: true }).length > 2)
     })
 
     test("markup is queryable by CSS selector", () => {
@@ -60,6 +71,8 @@ describe("seam 1: build(fixtureVault) -> emitted site", () => {
     test("carries the note's title and the notes it links to", () => {
       const entry = site.notes["lessons/binary-search-basics"]
       assert.equal(entry.title, "Binary search, from first principles")
+      // Two wikilinks in the prose, one entry here: the index records which notes a
+      // note points at, not how many times.
       assert.deepEqual(entry.links, ["terms/binary-search"])
     })
 
