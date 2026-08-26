@@ -1,0 +1,72 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Quiz block — rough render</title>
+<style>
+  :root { color-scheme: light dark; --bg:#fbfaf8; --fg:#1d1c1a; --mut:#6f6a63; --line:#e2ded7; --card:#fff; --ok:#1f7a4d; --no:#a33; --ac:#3b5bdb; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#161513; --fg:#eae7e1; --mut:#95908a; --line:#2e2c29; --card:#1e1d1a; --ok:#4ec38a; --no:#e08585; --ac:#8aa4ff; } }
+  body{ background:var(--bg); color:var(--fg); font:16px/1.6 ui-serif,Georgia,serif; margin:0; padding:2.5rem 1.5rem; }
+  main{ max-width:44rem; margin:0 auto; }
+  h1{ font-size:1.1rem; letter-spacing:.08em; text-transform:uppercase; color:var(--mut); font-weight:600; }
+  h2{ font-size:.85rem; letter-spacing:.06em; text-transform:uppercase; color:var(--mut); margin-top:3rem; font-family:ui-sans-serif,system-ui,sans-serif;}
+  p.lead{ color:var(--fg); }
+  .quiz{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:1.25rem 1.4rem; margin:1.5rem 0; }
+  .tag{ font:600 .68rem/1 ui-sans-serif,system-ui,sans-serif; letter-spacing:.1em; text-transform:uppercase; color:var(--mut); }
+  .prompt{ font-weight:600; margin:.6rem 0 1rem; }
+  .opt{ display:block; width:100%; text-align:left; font:inherit; background:transparent; color:inherit;
+        border:1px solid var(--line); border-radius:7px; padding:.55rem .8rem; margin:.4rem 0; cursor:pointer; font-family:ui-monospace,monospace; font-size:.9rem;}
+  .opt:hover{ border-color:var(--ac); }
+  .opt.right{ border-color:var(--ok); }
+  .opt.wrong{ border-color:var(--no); }
+  .why{ font-size:.85rem; color:var(--mut); margin:.3rem 0 .8rem .8rem; font-family:ui-sans-serif,system-ui,sans-serif; }
+  .why.show-ok{ color:var(--ok); } .why.show-no{ color:var(--no); }
+  .foot{ display:flex; justify-content:space-between; border-top:1px solid var(--line); margin-top:1rem; padding-top:.7rem;
+         font:.75rem/1 ui-sans-serif,system-ui,sans-serif; color:var(--mut); }
+  .cloze b{ background:color-mix(in oklab, var(--ac) 18%, transparent); border-bottom:1px solid var(--ac); font-weight:600; padding:0 .25rem; border-radius:3px; }
+  pre{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem; overflow-x:auto;
+       font:.82rem/1.5 ui-monospace,monospace; }
+  .note{ font-size:.85rem; color:var(--mut); font-family:ui-sans-serif,system-ui,sans-serif; }
+</style>
+<main>
+<h1>Quiz block — rough render (ticket 03)</h1>
+<p class="lead">Deliberately rough. The point is the <em>shape</em> of the interaction, not the styling.</p>
+
+<h2>Multiple choice · answered wrong</h2>
+<div class="quiz">
+  <span class="tag">Retrieval practice</span>
+  <p class="prompt">A hash map lookup, average case, costs what?</p>
+  <button class="opt right">Constant time, no scan</button>
+  <p class="why show-ok">✓ The key hashes straight to its bucket.</p>
+  <button class="opt wrong">Constant time, one scan</button>
+  <p class="why show-no">✗ Nothing is scanned unless buckets collide. → <a href="#">Collision handling</a></p>
+  <button class="opt">Linear time, full scan</button>
+  <div class="foot"><span>next review · in 3 days</span><span>01JQ9F3K2M7VXN4S</span></div>
+</div>
+<p class="note">Every option is 4 words. The schema should make that easy to eyeball while authoring — it is why the options render as a monospace column.</p>
+
+<h2>Cloze · revealed</h2>
+<div class="quiz">
+  <span class="tag">Cloze</span>
+  <p class="prompt cloze">Binary search needs a <b>sorted</b> input and runs in <b>O(log n)</b> time.</p>
+  <div class="foot"><span>next review · in 1 day</span><span>01JQ9F3K2M7VXN4T</span></div>
+</div>
+
+<h2>Free recall · before reveal</h2>
+<div class="quiz">
+  <span class="tag">Free recall</span>
+  <p class="prompt">Why does a dynamic array's push amortise to O(1)?</p>
+  <button class="opt">Reveal answer</button>
+  <div class="foot"><span>self-graded: again / hard / good / easy</span><span>01JQ9F3K2M7VXN4U</span></div>
+</div>
+
+<h2>The same block, in Obsidian</h2>
+<p class="note">No plugin. A fenced block renders as a code block — this is the degradation floor, and it has to stay readable.</p>
+<pre>```quiz 01JQ9F3K2M7VXN4V
+A hash map lookup, average case, costs what?
+
+- [x] Constant time, no scan
+- [ ] Constant time, one scan
+- [ ] Linear time, full scan
+
+&gt; The key hashes straight to its bucket. Collisions are the exception, not the path.
+```</pre>
+</main>

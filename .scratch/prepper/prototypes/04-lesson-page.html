@@ -1,0 +1,311 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lesson reading experience — settled form (ticket 04)</title>
+<style>
+  :root{ color-scheme: light dark;
+    --bg:#fbfaf8; --fg:#1d1c1a; --mut:#6f6a63; --line:#e2ded7; --card:#fff;
+    --ok:#1f7a4d; --no:#a33; --ac:#3b5bdb; --warn:#8a6d1f;
+    --serif: ui-serif,Georgia,"Iowan Old Style",serif;
+    --sans: ui-sans-serif,system-ui,sans-serif;
+    --mono: ui-monospace,SFMono-Regular,Menlo,monospace;
+    --side: 17rem; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#161513; --fg:#eae7e1; --mut:#95908a; --line:#2e2c29; --card:#1e1d1a; --ok:#4ec38a; --no:#e08585; --ac:#8aa4ff; --warn:#d3b04a; } }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--fg); font:17px/1.65 var(--serif); margin:0; }
+
+  .proto{ position:sticky; top:0; z-index:20; background:var(--card); border-bottom:1px solid var(--line);
+    font:.72rem/1 var(--sans); color:var(--mut); padding:.55rem 1rem; display:flex; gap:.9rem; align-items:center; flex-wrap:wrap; }
+  .proto b{ letter-spacing:.1em; text-transform:uppercase; font-size:.66rem; color:var(--fg); }
+  .proto button{ font:inherit; background:transparent; color:var(--mut); border:1px solid var(--line);
+    border-radius:99px; padding:.3rem .68rem; cursor:pointer; }
+  .proto button[aria-pressed=true]{ color:var(--bg); background:var(--fg); border-color:var(--fg); }
+
+  /* ---- top bar: Library, due badge, search. no breadcrumb. ---- */
+  .bar{ border-bottom:1px solid var(--line); background:var(--bg); position:sticky; top:2.1rem; z-index:10; }
+  .bar .in{ padding:.7rem 1.5rem; display:flex; align-items:center; gap:1rem; font:.8rem/1 var(--sans); color:var(--mut); }
+  .bar a{ color:inherit; text-decoration:none; }
+  .bar a:hover{ color:var(--ac); }
+  .bar .brand{ font:600 1rem/1 var(--serif); color:var(--fg); flex:1; }
+  .due{ background:color-mix(in oklab, var(--ac) 15%, transparent); color:var(--ac); border-radius:99px;
+    padding:.32rem .62rem; font-weight:600; }
+  .menu-btn{ display:none; font:inherit; background:transparent; border:1px solid var(--line); border-radius:6px;
+    color:var(--mut); padding:.3rem .55rem; cursor:pointer; }
+
+  /* ---- layout: persistent sidebar, prose column never squeezed ---- */
+  .wrap{ display:flex; align-items:flex-start; }
+  aside{ width:var(--side); flex:0 0 var(--side); position:sticky; top:5rem; height:calc(100vh - 5rem);
+    overflow-y:auto; border-right:1px solid var(--line); padding:1.4rem 1rem 3rem; font:.85rem/1.5 var(--sans); }
+  aside .duerow{ display:block; color:var(--ac); font-weight:600; text-decoration:none; margin:0 0 1.4rem; }
+  aside .kick{ font:600 .66rem/1 var(--sans); letter-spacing:.11em; text-transform:uppercase; color:var(--mut); margin:0 0 .6rem; }
+  details{ margin:0 0 .15rem; }
+  summary{ cursor:pointer; padding:.28rem .3rem; border-radius:5px; color:var(--fg); list-style:none; display:flex; gap:.4rem; }
+  summary::-webkit-details-marker{ display:none; }
+  summary::before{ content:"›"; color:var(--mut); transition:transform .12s; display:inline-block; }
+  details[open]>summary::before{ transform:rotate(90deg); }
+  summary:hover{ background:color-mix(in oklab, var(--ac) 8%, transparent); }
+  summary .n{ margin-left:auto; color:var(--mut); font-size:.75rem; }
+  .tree ul{ list-style:none; margin:.1rem 0 .5rem; padding:0 0 0 1.05rem; border-left:1px solid var(--line); }
+  .tree li{ margin:0; }
+  .tree a{ display:flex; gap:.45rem; align-items:baseline; text-decoration:none; color:var(--fg); padding:.22rem .3rem; border-radius:5px; }
+  .tree a:hover{ background:color-mix(in oklab, var(--ac) 8%, transparent); color:var(--ac); }
+  .tree a.here{ background:color-mix(in oklab, var(--ac) 13%, transparent); color:var(--ac); font-weight:600; }
+  .t{ font:600 .58rem/1.6 var(--sans); letter-spacing:.08em; text-transform:uppercase; color:var(--mut);
+      border:1px solid var(--line); border-radius:4px; padding:0 .25rem; flex:0 0 auto; }
+  .t.cheat{ color:var(--warn); border-color:color-mix(in oklab, var(--warn) 45%, var(--line)); }
+  .read{ margin-left:auto; color:var(--ok); font-size:.75rem; }
+
+  main{ flex:1; min-width:0; padding:2.6rem 2rem 6rem; }
+  .doc{ max-width:38rem; }
+
+  @media (max-width:900px){
+    aside{ position:fixed; z-index:15; top:0; left:0; height:100vh; background:var(--card);
+      transform:translateX(-100%); transition:transform .16s; padding-top:3rem; }
+    body[data-menu=open] aside{ transform:none; }
+    .menu-btn{ display:block; }
+    main{ padding:2rem 1.25rem 5rem; }
+  }
+
+  h1{ font:600 2rem/1.2 var(--serif); margin:0 0 .4rem; letter-spacing:-.01em; }
+  h2{ font:600 1.15rem/1.3 var(--serif); margin:2.4rem 0 .6rem; }
+  h3.kick{ font:600 .68rem/1 var(--sans); letter-spacing:.11em; text-transform:uppercase; color:var(--mut); margin:0 0 .7rem; }
+  p{ margin:0 0 1.1rem; }
+  a.wl{ color:var(--fg); text-decoration:none; border-bottom:1px solid color-mix(in oklab, var(--ac) 55%, transparent); }
+  a.wl:hover{ color:var(--ac); }
+  a.unwritten{ color:var(--mut); border-bottom:1px dashed var(--mut); cursor:not-allowed; }
+  a.unwritten::after{ content:"?"; font-size:.7em; vertical-align:super; color:var(--warn); }
+  blockquote{ margin:0 0 1.1rem; padding-left:1rem; border-left:2px solid var(--line); color:var(--mut);
+    font:.9rem/1.6 var(--sans); }
+  pre{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem; overflow-x:auto;
+    font:.82rem/1.55 var(--mono); }
+
+  .titlerow{ display:flex; align-items:flex-start; gap:1rem; }
+  .readbtn{ font:600 .74rem/1 var(--sans); background:transparent; color:var(--mut); border:1px solid var(--line);
+    border-radius:99px; padding:.5rem .8rem; cursor:pointer; white-space:nowrap; margin-top:.4rem; }
+  .readbtn[aria-pressed=true]{ color:var(--ok); border-color:color-mix(in oklab, var(--ok) 50%, var(--line)); }
+  .chips{ display:flex; gap:.4rem; flex-wrap:wrap; margin:0 0 1.6rem; }
+  .chip{ font:.72rem/1 var(--sans); color:var(--mut); border:1px solid var(--line); border-radius:99px;
+    padding:.32rem .62rem; text-decoration:none; }
+  .chip:hover{ border-color:var(--ac); color:var(--ac); }
+
+  .prereq{ border-left:2px solid var(--line); padding:.1rem 0 .1rem 1rem; margin:0 0 2rem;
+    font:.85rem/1.6 var(--sans); color:var(--mut); }
+  .prereq a{ color:var(--fg); text-decoration:none; border-bottom:1px solid var(--line); }
+  .prereq .done{ color:var(--ok); }
+  .prereq .todo{ color:var(--mut); }
+
+  .quiz{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:1.15rem 1.3rem; margin:1.8rem 0; }
+  .quiz .tag{ font:600 .66rem/1 var(--sans); letter-spacing:.11em; text-transform:uppercase; color:var(--mut); }
+  .quiz .prompt{ font-weight:600; margin:.6rem 0 1rem; }
+  .opt{ display:block; width:100%; text-align:left; font:.9rem/1.4 var(--mono); background:transparent; color:inherit;
+    border:1px solid var(--line); border-radius:7px; padding:.55rem .8rem; margin:.4rem 0; cursor:pointer; }
+  .opt:hover{ border-color:var(--ac); }
+  .opt.right{ border-color:var(--ok); } .opt.wrong{ border-color:var(--no); }
+  .why{ font:.82rem/1.5 var(--sans); color:var(--mut); margin:.25rem 0 .8rem .8rem; display:none; }
+  .why.show{ display:block; } .why.ok{ color:var(--ok); } .why.no{ color:var(--no); }
+  .qfoot{ display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line);
+    margin-top:.9rem; padding-top:.65rem; font:.72rem/1 var(--sans); color:var(--mut); }
+  .cloze b{ background:color-mix(in oklab, var(--ac) 18%, transparent); border-bottom:1px solid var(--ac);
+    font-weight:600; padding:0 .25rem; border-radius:3px; }
+
+  .rails{ display:grid; gap:2rem; grid-template-columns:1fr; margin-top:3.5rem; padding-top:2rem; border-top:1px solid var(--line); }
+  @media (min-width:760px){ .rails{ grid-template-columns:1fr 1fr; } }
+  .rail ul{ list-style:none; padding:0; margin:0; font:.86rem/1.7 var(--sans); }
+  .rail a{ color:var(--fg); text-decoration:none; border-bottom:1px solid transparent; }
+  .rail a:hover{ border-color:var(--ac); color:var(--ac); }
+  .rail .meta{ color:var(--mut); font-size:.78rem; }
+
+  .grid2{ display:grid; gap:.8rem; grid-template-columns:1fr; }
+  @media(min-width:700px){ .grid2{ grid-template-columns:1fr 1fr; } }
+  .card{ border:1px solid var(--line); border-radius:10px; background:var(--card); padding:1.1rem 1.25rem; text-decoration:none; display:block; }
+  .card:hover{ border-color:var(--ac); }
+  .card h4{ margin:0 0 .3rem; font:600 1.05rem/1.3 var(--serif); color:var(--fg); }
+  .card p{ margin:0; font:.82rem/1.5 var(--sans); color:var(--mut); }
+  .card .barlet{ height:2px; background:var(--line); margin-top:.75rem; }
+  .card .barlet i{ display:block; height:100%; background:var(--ok); }
+  .screen{ display:none; } .screen.on{ display:block; }
+  .note{ font:.8rem/1.6 var(--sans); color:var(--mut); border-left:2px solid var(--warn); padding-left:.85rem;
+    margin:3rem 0 0; max-width:38rem; }
+</style>
+
+<div class="proto">
+  <b>Ticket 04 · settled form</b>
+  <button data-screen="index" aria-pressed="true">index (home)</button>
+  <button data-screen="lesson" aria-pressed="false">lesson</button>
+  <span>— no reading order: no breadcrumb, no next/prev, no progress bar, nothing locked.</span>
+</div>
+
+<div class="bar"><div class="in">
+  <button class="menu-btn" onclick="document.body.dataset.menu = document.body.dataset.menu==='open'?'':'open'">☰</button>
+  <span class="brand">Prepper</span>
+  <a href="#" class="due">12 due</a>
+  <a href="#">search</a>
+</div></div>
+
+<div class="wrap">
+  <aside>
+    <a class="duerow" href="#">▶ 12 reviews due</a>
+    <p class="kick">Topics</p>
+    <div class="tree">
+      <details open>
+        <summary>Hash Maps <span class="n">11</span></summary>
+        <ul>
+          <li><a href="#"><span class="t cheat">cheat</span> Hash maps in 5 minutes</a></li>
+          <li><a href="#" class="here"><span class="t">lsn</span> Hash map complexity</a></li>
+          <li><a href="#"><span class="t">lsn</span> Hashing <span class="read">✓</span></a></li>
+          <li><a href="#"><span class="t">lsn</span> Collision handling</a></li>
+          <li><a href="#"><span class="t">prb</span> Two Sum</a></li>
+          <li><a href="#"><span class="t">prb</span> LRU cache</a></li>
+          <li><a href="#"><span class="t">ref</span> Hash function families</a></li>
+          <li><a href="#"><span class="t">trm</span> Hash Maps</a></li>
+        </ul>
+      </details>
+      <details>
+        <summary>Big-O <span class="n">6</span></summary>
+        <ul>
+          <li><a href="#"><span class="t">lsn</span> Big-O notation <span class="read">✓</span></a></li>
+          <li><a href="#"><span class="t">lsn</span> Amortised analysis <span class="read">✓</span></a></li>
+          <li><a href="#"><span class="t">trm</span> Big-O</a></li>
+        </ul>
+      </details>
+      <details><summary>Arrays <span class="n">8</span></summary><ul><li><a href="#"><span class="t">lsn</span> Arrays <span class="read">✓</span></a></li></ul></details>
+      <details><summary>Trees <span class="n">16</span></summary><ul><li><a href="#"><span class="t">lsn</span> Binary search trees</a></li></ul></details>
+      <details><summary>System Design <span class="n">4</span></summary><ul><li><a href="#"><span class="t cheat">cheat</span> System design one-pager</a></li></ul></details>
+    </div>
+  </aside>
+
+  <main>
+    <!-- =============== INDEX (home) =============== -->
+    <section class="screen on" id="s-index">
+      <div class="doc">
+        <h1>Library</h1>
+        <p style="color:var(--mut);font:.9rem/1.6 var(--sans);margin-bottom:2rem">
+          31 lessons · 24 problems · 6 cheat sheets across 9 topics.</p>
+        <div class="grid2">
+          <a class="card" href="#"><h4>Hash Maps</h4><p>4 lessons · 2 problems · 1 cheat sheet — 1 read</p><div class="barlet"><i style="width:25%"></i></div></a>
+          <a class="card" href="#"><h4>Big-O</h4><p>2 lessons · 2 problems — 2 read</p><div class="barlet"><i style="width:100%"></i></div></a>
+          <a class="card" href="#"><h4>Arrays</h4><p>3 lessons · 4 problems — 1 read</p><div class="barlet"><i style="width:33%"></i></div></a>
+          <a class="card" href="#"><h4>Trees</h4><p>7 lessons · 9 problems — 0 read</p><div class="barlet"><i style="width:0"></i></div></a>
+          <a class="card" href="#"><h4>System Design</h4><p>3 lessons · 1 cheat sheet — 1 read</p><div class="barlet"><i style="width:33%"></i></div></a>
+          <a class="card" href="#"><h4>Concurrency</h4><p>2 lessons — 0 read</p><div class="barlet"><i style="width:0"></i></div></a>
+        </div>
+        <p class="note">The library is the front door, the sidebar is how you jump around, and
+        the queue is a badge you can see from every screen. Pick what to study today; nothing
+        prescribes an order.</p>
+      </div>
+    </section>
+
+    <!-- =============== LESSON =============== -->
+    <section class="screen" id="s-lesson">
+      <div class="doc">
+        <div class="titlerow">
+          <h1>Hash map complexity</h1>
+          <button class="readbtn" aria-pressed="false"
+            onclick="this.setAttribute('aria-pressed', this.getAttribute('aria-pressed')==='false');
+                     this.textContent = this.getAttribute('aria-pressed')==='true' ? '✓ Read' : 'Mark as read'">Mark as read</button>
+        </div>
+        <div class="chips">
+          <a class="chip" href="#">Hash Maps</a>
+          <a class="chip" href="#">Big-O</a>
+          <span class="chip">lesson · 6 min</span>
+        </div>
+
+        <div class="prereq">
+          <h3 class="kick">Read first</h3>
+          <span class="done">✓</span> <a href="#">Arrays</a> &nbsp;·&nbsp;
+          <span class="done">✓</span> <a href="#">Big-O notation</a> &nbsp;·&nbsp;
+          <span class="todo">○</span> <a href="#">Hashing</a> <span style="opacity:.65">— unread</span>
+        </div>
+
+        <p>A hash map trades space for time. The key is run through a hash function to produce
+        an index into a backing array, so the average lookup touches exactly one slot — no
+        scan, regardless of how many keys the map holds. This is the whole reason
+        <a class="wl" href="#">Hash Maps</a> displace <a class="wl" href="#">Arrays</a> for
+        membership tests.</p>
+
+        <blockquote>Average case, not worst case. The worst case is what
+        <a class="wl" href="#">Collision handling</a> exists to bound.</blockquote>
+
+        <p>The catch is that "one slot" assumes the hash spreads keys evenly. When two keys
+        land in the same bucket the map falls back to scanning that bucket — and in the
+        degenerate case where every key collides, lookup degrades to linear.</p>
+
+        <pre>m = {}
+m["ford"] = 1     # hash("ford") -> bucket 7
+m["ford"]         # hash again -> bucket 7, one probe</pre>
+
+        <div class="quiz">
+          <span class="tag">Retrieval practice</span>
+          <p class="prompt">A hash map lookup, average case, costs what?</p>
+          <button class="opt" data-ok="1">Constant time, no scan</button>
+          <p class="why ok">✓ The key hashes straight to its bucket.</p>
+          <button class="opt">Constant time, one scan</button>
+          <p class="why no">✗ Nothing is scanned unless buckets collide. → <a class="wl" href="#">Collision handling</a></p>
+          <button class="opt">Linear time, full scan</button>
+          <p class="why no">✗ That is an unsorted array, not a hash map.</p>
+          <div class="qfoot"><span>answering schedules the first review · scrolling past does not</span>
+            <span style="font-family:var(--mono)">01JQ9F3K2M7VXN4S</span></div>
+        </div>
+
+        <h2>Resizing</h2>
+        <p>Once the load factor crosses its threshold the map allocates a larger backing array
+        and rehashes every key. That single insert is O(n) — but it happens rarely enough that
+        inserts <a class="wl" href="#">amortise</a> to O(1), the same argument that makes a
+        dynamic array's push cheap.</p>
+
+        <p>Deletion in an open-addressed map cannot simply blank the slot, or it severs the
+        probe chain behind it; the slot is marked with a
+        <a class="unwritten" href="#">tombstone</a> instead.</p>
+
+        <div class="quiz">
+          <span class="tag">Cloze</span>
+          <p class="prompt cloze">Resizing rehashes <b>every</b> key, which is why a single insert can cost <b>O(n)</b>.</p>
+          <div class="qfoot"><span>reveal · then self-grade</span><span style="font-family:var(--mono)">01JQ9F3K2M7VXN4T</span></div>
+        </div>
+
+        <div class="rails">
+          <div class="rail">
+            <h3 class="kick">This unlocks</h3>
+            <ul>
+              <li><a href="#">Collision handling</a> <span class="meta">lesson</span></li>
+              <li><a href="#">Load factor and resizing</a> <span class="meta">lesson</span></li>
+            </ul>
+            <h3 class="kick" style="margin-top:1.7rem">Practise this</h3>
+            <ul>
+              <li><a href="#">Two Sum</a> <span class="meta">easy</span></li>
+              <li><a href="#">LRU cache</a> <span class="meta">medium</span></li>
+              <li><a href="#">First non-repeating character</a> <span class="meta">easy</span></li>
+            </ul>
+          </div>
+          <div class="rail">
+            <h3 class="kick">Linked from</h3>
+            <ul>
+              <li><a href="#">Caching strategies</a></li>
+              <li><a href="#">Sets vs maps</a></li>
+              <li><a href="#">Why interviewers love hash maps</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <p class="note">Rails state adjacency; none of them is a "next". Prerequisites are
+        marked read/unread and gate nothing. The quiz sits in the flow — scroll past it freely,
+        and nothing is scheduled until you answer.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  document.querySelectorAll('.proto button[data-screen]').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.proto button[data-screen]').forEach(x=>x.setAttribute('aria-pressed', x===b));
+    document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on', s.id==='s-'+b.dataset.screen));
+    scrollTo(0,0);
+  });
+  document.querySelectorAll('.quiz .opt').forEach(o=>o.onclick=()=>{
+    const q=o.closest('.quiz');
+    q.querySelectorAll('.opt').forEach(x=>{ if(x.dataset.ok) x.classList.add('right'); });
+    if(!o.dataset.ok) o.classList.add('wrong');
+    o.nextElementSibling?.classList.add('show');
+    q.querySelector('.opt[data-ok] + .why')?.classList.add('show');
+  });
+</script>
