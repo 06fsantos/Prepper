@@ -25,7 +25,9 @@ export default function EmitterPageLinksSpike() {
     async *emit(ctx, content) {
       const links = content
         .map(([, file]) => file.data.slug)
-        .filter((slug) => slug && !slug.endsWith("index"))
+        // Quartz's own generated folder and tag indexes are not notes. Anchored, so a
+        // note legitimately called `inverted-index` is not mistaken for one.
+        .filter((slug) => slug && !/(^|\/)index$/.test(slug))
         .sort()
         .map((slug) => `<li><a href="./${slug}">${slug}</a></li>`)
         .join("\n")

@@ -38,8 +38,9 @@ describe("mechanism 1: a quiz fence body is re-parsed into real Markdown", () =>
     assert.equal(site.exitCode, 0, site.log)
     // A plugin Quartz cannot load is a warning and a skip, not a failure -- the fences
     // would then render as ordinary code blocks and every assertion below would be
-    // confusing rather than clear about why.
-    assert.ok(!site.log.includes("Skipping"), site.log)
+    // confusing rather than clear about why. Matched on the loader's own wording, since
+    // the build says "Skipping" about other things too.
+    assert.ok(!/Could not (load|determine category for) plugin/.test(site.log), site.log)
   })
 
   test("a wikilink written inside a fence body renders as a resolved link", () => {

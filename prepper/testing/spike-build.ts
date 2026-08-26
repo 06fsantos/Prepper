@@ -53,6 +53,14 @@ export interface SpikePlugin {
  * Everything the build reads out of its working directory. Symlinked rather than
  * copied, so a spike runs against the same Quartz, the same `node_modules`, and the
  * same plugin versions as a real build -- the config is the only difference.
+ *
+ * The symlinks are load-bearing, not a convenience. Quartz transpiles itself to
+ * `./quartz/.quartz-cache/transpiled-build.mjs` resolved against the working directory,
+ * then imports that bundle by a path relative to its own source: with `quartz` symlinked
+ * the two are the same file, and a spike build shares the repo's bundle. Copying `quartz`
+ * here instead would write a bundle nobody imports and silently run a stale one. Sharing
+ * it also means two `quartz build` processes race on that file, which is why the suite
+ * runs at `--test-concurrency=1`.
  */
 const linkedIntoSpikeRoot = [
   "quartz",
@@ -104,7 +112,11 @@ function spikeRoot(name: string, plugins: SpikePlugin[]): string {
   fs.rmSync(root, { recursive: true, force: true })
   fs.mkdirSync(root, { recursive: true })
   for (const entry of linkedIntoSpikeRoot) {
-    fs.symlinkSync(path.join(repoRoot, entry), path.join(root, entry))
+    const target = path.join(repoRoot, entry)
+    // Most of these are upstream's files. A merge that renames one would otherwise leave
+    // a dangling symlink here and fail deep inside Quartz with an unrelated message.
+    assert.ok(fs.existsSync(target), `a spike build needs "${entry}", and the repo has none`)
+    fs.symlinkSync(target, path.join(root, entry))
   }
 
   const config = YAML.parse(fs.readFileSync(path.join(repoRoot, "quartz.config.yaml"), "utf8"))
