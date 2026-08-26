@@ -1,0 +1,42 @@
+# Prepper's own CI. Upstream's `ci.yaml` next to this file is Quartz's and never runs
+# here -- it gates on `github.repository == 'jackyzha0/quartz'` -- so this is a new file
+# rather than an edit to theirs, and it cannot conflict on an upstream merge.
+#
+# `npm run validate` is the project's **only hard gate**: the build and the dev server
+# report violations and carry on, and this is where an error in the vault stops a release.
+name: Prepper
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          # 22.18 or newer: Quartz imports our plugins as TypeScript at runtime, which
+          # relies on Node's own type stripping.
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check types and style
+        run: npm run check
+
+      - name: Test
+        run: npm test
+
+      - name: Validate the vault
+        run: npm run validate
+
+      - name: Build the site
+        run: npm run build

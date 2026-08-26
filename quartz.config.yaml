@@ -104,8 +104,19 @@ plugins:
     options:
       theme: tokyo-night
       mode: both
+  # Prepper: off. This is a *filter*: `shouldPublish` drops a `draft: true` note from
+  # `content[]` before any emitter sees it, and validation is an emitter over the whole
+  # corpus. Leaving it on would make `draft: true` soften every rule -- a half-written
+  # note with no `id` would validate clean by being invisible -- and the spec is explicit
+  # that publication and validity are separate concerns.
+  #
+  # The consequence, stated plainly: a `draft: true` note now gets a page like any other.
+  # `draft` marks intent and keeps a note's body links out of the Vault report's authoring
+  # queue; it does not hide the note. Hiding one, if that is ever wanted, is a rendering
+  # decision -- unlisted, which leaves the note in the corpus the rules see -- and it
+  # belongs to the reading-surface work, never to a filter.
   - source: "@quartz-community/remove-draft"
-    enabled: true
+    enabled: false
   - source: "@quartz-community/explicit-publish"
     enabled: false
   - source: "@quartz-community/alias-redirects"
@@ -257,6 +268,12 @@ plugins:
       position: afterBody
       priority: 50
       display: all
+  # Prepper: ours. The whole-corpus emitter seam is where validation runs, so every
+  # build -- `npm run build`, `npm run serve`, and the `npm run validate` CLI, which
+  # invokes this same pipeline -- reports the same violations. It emits no files and
+  # never throws: under `--serve` the dev server has to survive a broken vault.
+  - source: "./prepper/validation"
+    enabled: true
 layout:
   groups:
     toolbar:

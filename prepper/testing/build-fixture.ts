@@ -36,6 +36,8 @@ import { select as hastSelect, selectAll as hastSelectAll } from "hast-util-sele
 import { toText } from "hast-util-to-text"
 import type { Element, Root } from "hast"
 
+import type { ValidationReport, Violation } from "../validation/violation.ts"
+
 const execFileAsync = promisify(execFile)
 
 const here = path.dirname(fileURLToPath(import.meta.url))
@@ -359,4 +361,96 @@ function listFiles(root: string): string[] {
   }
   walk(root)
   return out.sort()
+}
+
+/**
+ * Seam 1, through the other consumer: `npm run validate` over a fixture vault.
+ *
+ *     const run = await validateFixture("schema-and-identity-violations")
+ *     assert.equal(run.exitCode, 1)
+ *     assert.ok(run.violations.some((v) => v.rule === "record-identity"))
+ *
+ * The same vault-in / report-out contract as `buildFixture`, and for the same reason:
+ * the CLI *is* a `quartz build` -- it runs the pipeline and reads back what the
+ * validation emitter collected during it -- so exercising it here exercises the
+ * dev-facing entry point CI gates on, not a re-implementation of it.
+ *
+ * The two consumers of the rule module are asserted through this file and no other. The
+ * emitter's channel is `site.log` on a `buildFixture` result; the CLI's is this.
+ */
+export interface ValidationRun {
+  /** The vault that was validated. */
+  readonly vaultDir: string
+  /** The CLI's exit code: 0 no errors, 1 at least one error, 2 could not validate. */
+  readonly exitCode: number
+  /** Everything the CLI printed: its stdout, then its stderr. */
+  readonly output: string
+  /** How many notes it checked. */
+  readonly notes: number
+  /** Every violation it found, as data rather than as text. */
+  readonly violations: Violation[]
+}
+
+const validated = new Map<string, Promise<ValidationRun>>()
+
+/** Validate a fixture vault. Repeated calls for the same fixture share one run. */
+export function validateFixture(fixture: string): Promise<ValidationRun> {
+  const vaultDir = resolveVault(fixture)
+  const cached = validated.get(vaultDir)
+  if (cached) return cached
+
+  const pending = runValidate(vaultDir)
+  validated.set(vaultDir, pending)
+  return pending
+}
+
+async function runValidate(vaultDir: string): Promise<ValidationRun> {
+  assert.ok(
+    fs.existsSync(vaultDir),
+    `no fixture vault at "${vaultDir}". Fixtures live in ${fixturesDir}.`,
+  )
+
+  const digest = createHash("sha256").update(vaultDir).digest("hex").slice(0, 8)
+  const reportPath = path.join(
+    buildOutputRoot,
+    `${path.basename(vaultDir)}-${digest}-violations.json`,
+  )
+  fs.rmSync(reportPath, { force: true })
+
+  // `node_modules/.bin/tsx <the CLI>` is what `npm run validate` runs, minus npm's own
+  // wrapper. Asking the CLI for its violation list as a file rather than scraping its
+  // output is the same request the CLI makes of the emitter.
+  let stdout = ""
+  let stderr = ""
+  let exitCode = 0
+  try {
+    const result = await execFileAsync(
+      path.join(repoRoot, "node_modules", ".bin", "tsx"),
+      ["prepper/validation/validate.ts", "-d", vaultDir],
+      {
+        cwd: repoRoot,
+        env: { ...process.env, PREPPER_VALIDATION_REPORT: reportPath },
+        maxBuffer: 32 * 1024 * 1024,
+      },
+    )
+    stdout = result.stdout
+    stderr = result.stderr
+  } catch (err) {
+    const e = err as { stdout?: string; stderr?: string; code?: unknown; message: string }
+    stdout = e.stdout ?? ""
+    stderr = e.stderr || e.message
+    exitCode = typeof e.code === "number" ? e.code : 1
+  }
+
+  const report = fs.existsSync(reportPath)
+    ? (JSON.parse(fs.readFileSync(reportPath, "utf8")) as ValidationReport)
+    : { notes: 0, violations: [] }
+
+  return {
+    vaultDir,
+    exitCode,
+    output: stdout + stderr,
+    notes: report.notes,
+    violations: report.violations,
+  }
 }

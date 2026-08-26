@@ -28,7 +28,7 @@ anything.
 - A fixture for a **failing** vault is legitimate and expected: validation rules are
   asserted by building a vault that breaks them and reading the violation list.
 
-## The one that exists
+## The ones that exist
 
 - **`minimal-vault/`** — a Lesson and the Term it is about, linked twice: once aliased
   (`[[binary-search|Binary search]]`) and once bare, under an H2 so that Quartz's heading
@@ -37,3 +37,14 @@ anything.
   HTML plus `contentIndex.json` come out. Every one of those details is load-bearing for a
   test, so change it only alongside them — and do not grow it; a new behaviour gets a new
   fixture.
+
+- **`schema-and-identity-violations/`** — a vault that is wrong in thirteen ways at once:
+  a Lesson with no `topic`, one with no `id`, one whose `id` was typed by hand, a Problem
+  missing three of the four fields its type requires, a Record with no `date`, a Term that
+  declares no `title`, a `draft: true` note that is wrong anyway, two notes sharing one
+  ULID, a quiz block whose infostring ULID belongs to a Term, and an attachment whose stem
+  collides case-insensitively with a Term's filename. Its cluster is *collect-all*: one
+  run has to report every one of them, so notes here are deliberately wrong in more than
+  one way and more than one note is wrong. Everything it does **not** violate — its
+  `topic` values all name Terms that exist — is so that the vocabulary and graph rules can
+  be added without this fixture becoming about them too.
