@@ -47,9 +47,11 @@ anything.
 - **`embed-of-a-pageless-note/`** — a Lesson embedding two notes: one with a page, one
   without. Its cluster is
   *[mechanism 2](../../../.scratch/prepper-build/research/02-embed-of-a-pageless-note.md)*,
-  the Workshop boundary. The `draft: true` note stands in for a Workshop note until the
-  real Library/Workshop filter exists, and each note carries a nonsense marker word so a
-  leak is greppable across the whole emitted site.
+  the Workshop boundary. The `workshop: true` note stands in for a Workshop note until the
+  real Library/Workshop filter exists — it is dropped by a spike *filter*, which is the
+  shape that split has to take, and deliberately not by `draft`, whose filter ticket 03
+  disabled so that `draft: true` softens no validation rule. Each note carries a nonsense
+  marker word so a leak is greppable across the whole emitted site.
 - **`emitter-output-and-the-graph/`** — a Lesson, the Term it is about, and a Term nothing
   links to. Its cluster is
   *[mechanism 3](../../../.scratch/prepper-build/research/02-emitter-output-and-the-link-graph.md)*:

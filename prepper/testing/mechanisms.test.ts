@@ -15,7 +15,7 @@
 import test, { describe, before } from "node:test"
 import assert from "node:assert"
 
-import { buildFixture, type EmittedSite } from "./build-fixture"
+import { type EmittedSite } from "./build-fixture"
 import { buildWithSpikePlugins } from "./spike-build"
 
 describe("mechanism 1: a quiz fence body is re-parsed into real Markdown", () => {
@@ -95,14 +95,21 @@ describe("mechanism 2: an embed of a note with no page leaks nothing", () => {
   // non-media embeds *at build time*, splicing the target's rendered content out of the
   // parsed corpus, not in the browser -- so what makes the boundary airtight is the
   // target being **filtered out of the corpus**, not merely being denied a page. See the
-  // amendment to ADR 0002. The fixture's Workshop stand-in is therefore a `draft: true`
-  // note, which Quartz's remove-draft *filter* drops -- the shape Prepper's own
-  // Library/Workshop split has to take, and the reason these tests are the tripwire.
+  // amendment to ADR 0002.
+  //
+  // The Workshop stand-in is therefore a note dropped by an actual *filter*, which is the
+  // shape Prepper's own Library/Workshop split has to take. It filters on `workshop: true`
+  // rather than on `draft`: ticket 03 disabled `@quartz-community/remove-draft` on
+  // purpose, because a filter drops drafts before any emitter sees them and `draft: true`
+  // must soften no validation rule. Asserting this guarantee through a filter the project
+  // has committed to not running would prove nothing about the vault it ships.
   let site: EmittedSite
 
   before(
     async () => {
-      site = await buildFixture("embed-of-a-pageless-note")
+      site = await buildWithSpikePlugins("embed-of-a-pageless-note", [
+        { source: "prepper/testing/spikes/workshop-filter" },
+      ])
     },
     { timeout: 120_000 },
   )

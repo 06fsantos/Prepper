@@ -64,6 +64,12 @@ export interface SpikePlugin {
  */
 const linkedIntoSpikeRoot = [
   "quartz",
+  // Ours, and the reason this is a directory rather than a list of files: the real
+  // config registers our plugins by relative path (`./prepper/validation`), resolved
+  // against the working directory. Linking the whole directory means a ticket that
+  // registers a new plugin never has to come back and edit this list -- and every
+  // remaining ticket registers one.
+  "prepper",
   "node_modules",
   "package.json",
   "quartz.ts",
