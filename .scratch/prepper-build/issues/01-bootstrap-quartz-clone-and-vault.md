@@ -14,12 +14,41 @@ shape, so the tests stay legible across upstream merges.
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The repo is a git repo with Quartz configured as an upstream remote, and a documented merge procedure
-- [ ] `content/` exists with the settled layout: `lessons/`, `references/`, `problems/`, `terms/`, `cheat-sheets/`, `research/`, `records/`, `attachments/`, and `MISSION.md`
-- [ ] `RESOURCES.md` and `NOTES.md` exist at the repo root, outside the vault
-- [ ] `npm run build` emits a site from `content/` with no manual steps
-- [ ] Opening `content/` in Obsidian works: notes render, `[[wikilinks]]` resolve, no numeric filename prefixes outside `records/`
-- [ ] A test can build a fixture vault from a directory of Markdown and assert on emitted HTML and `contentIndex.json`
-- [ ] No code of ours lives as an edit to a Quartz file
+- [x] The repo is a git repo with Quartz configured as an upstream remote, and a documented merge procedure
+- [x] `content/` exists with the settled layout: `lessons/`, `references/`, `problems/`, `terms/`, `cheat-sheets/`, `research/`, `records/`, `attachments/`, and `MISSION.md`
+- [x] `RESOURCES.md` and `NOTES.md` exist at the repo root, outside the vault
+- [x] `npm run build` emits a site from `content/` with no manual steps
+- [x] Opening `content/` in Obsidian works: notes render, `[[wikilinks]]` resolve, no numeric filename prefixes outside `records/`
+- [x] A test can build a fixture vault from a directory of Markdown and assert on emitted HTML and `contentIndex.json`
+- [x] No code of ours lives as an edit to a Quartz file
+
+## Answer
+
+Done across three commits: the repo's own material, the Quartz `v5` merge, and our work on
+top.
+
+**The repo.** `upstream` → `https://github.com/jackyzha0/quartz.git`, branch `v5`, merged
+with `--allow-unrelated-histories` after Prepper's own files were committed first, so the
+merge reads as purely additive and `git log --first-parent` stays a history of our work.
+Only `.gitignore` conflicted. The procedure is
+[`docs/upstream-merges.md`](../../../docs/upstream-merges.md).
+
+**Where our code goes.** [`prepper/`](../../../prepper/README.md), reaching Quartz through
+`quartz.config.yaml`. Four files outside `prepper/` are ours and no others:
+`quartz.config.yaml`, `package.json` (scripts and dependencies), `.prettierignore`
+(additions), and `content/`. Nothing under `quartz/` was touched.
+
+**Seam 1** is [`prepper/testing/build-fixture.ts`](../../../prepper/testing/build-fixture.ts):
+`buildFixture(name) → EmittedSite`, which shells out to `quartz build -d <vault> -o <tmp>`
+so a test can never resolve a link differently from a real build, and hands back emitted
+HTML (queried by CSS selector), `contentIndex.json`, the emitted file list, the build log,
+and the exit code. Fixtures are small purpose-built vaults under
+`prepper/testing/fixtures/`, one per behaviour cluster; the convention is written down in
+that directory's README.
+
+**One decision made along the way that later tickets inherit:** the build was made a pure
+function of `content/` by pointing `created-modified-date` at frontmatter only. Git and
+filesystem dates would otherwise have made a fixture build depend on more than its vault,
+and the spec's purity claim is what seam 1 rests on.

@@ -30,7 +30,10 @@ anything.
 
 ## The one that exists
 
-- **`minimal-vault/`** — a Lesson and the Term it is about, one wikilink between them.
-  Its cluster is *the harness itself*: it is what `build-fixture.test.ts` uses to prove
-  that a directory of Markdown goes in and queryable HTML plus `contentIndex.json` come
-  out. Do not grow it; a new behaviour gets a new fixture.
+- **`minimal-vault/`** — a Lesson and the Term it is about, linked twice: once aliased
+  (`[[binary-search|Binary search]]`) and once bare, under an H2 so that Quartz's heading
+  permalink anchor is in the output too. Its cluster is *the harness itself*: it is what
+  `build-fixture.test.ts` uses to prove that a directory of Markdown goes in and queryable
+  HTML plus `contentIndex.json` come out. Every one of those details is load-bearing for a
+  test, so change it only alongside them — and do not grow it; a new behaviour gets a new
+  fixture.

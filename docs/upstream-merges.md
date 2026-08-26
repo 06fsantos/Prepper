@@ -7,7 +7,7 @@ that divergence is a maintenance cost this project chose not to take on.
 
 That choice only pays off if the merge stays cheap, which it does exactly as long as our
 code stays out of Quartz's files. See [`prepper/README.md`](../prepper/README.md) for
-where our code goes and which four files outside `prepper/` we do edit.
+where our code goes and which five files outside `prepper/` we do edit.
 
 ## Orientation
 
@@ -32,7 +32,7 @@ git merge upstream/v5
 
 Then, in order:
 
-1. **Resolve conflicts.** They should only ever appear in the four files
+1. **Resolve conflicts.** They should only ever appear in the five files
    `prepper/README.md` names. If a conflict lands anywhere under `quartz/`, something of
    ours leaked into upstream's tree — fix that, not the conflict.
    - `quartz.config.yaml` is **ours**, and upstream never edits it. It cannot conflict.
@@ -44,6 +44,8 @@ Then, in order:
      re-add our entries (`build`, `serve`, `ulid`, our `test` concurrency flag, and our
      devDependencies).
    - `.prettierignore` conflicts as a plain append. Keep both sides.
+   - `tsconfig.json` conflicts in `include`. Keep upstream's entries and re-add
+     `prepper/**` and `scripts/**`, or `npm run check` goes quietly blind to our code.
 2. **Reinstall and re-resolve plugins.** `npm install`. The `@quartz-community/*` packages
    are on un-versioned `0.1.x` and are read at HEAD, so a merge can move them under us.
 3. **Run the checks**, in this order, because each one localises a different failure:

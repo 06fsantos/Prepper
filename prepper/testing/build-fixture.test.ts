@@ -1,14 +1,19 @@
 import test, { describe, before } from "node:test"
 import assert from "node:assert"
 
-import { buildFixture, type EmittedSite } from "./build-fixture"
+import * as fs from "node:fs"
+
+import { buildFixture, rebuildFixture, type EmittedSite } from "./build-fixture"
 
 describe("seam 1: build(fixtureVault) -> emitted site", () => {
   let site: EmittedSite
 
-  before(async () => {
-    site = await buildFixture("minimal-vault")
-  }, 120_000)
+  before(
+    async () => {
+      site = await buildFixture("minimal-vault")
+    },
+    { timeout: 120_000 },
+  )
 
   test("a directory of Markdown builds", () => {
     assert.equal(site.exitCode, 0, site.log)
@@ -82,18 +87,23 @@ describe("seam 1: build(fixtureVault) -> emitted site", () => {
     })
   })
 
-  test("the build writes nothing back into the vault", async () => {
-    // The build is a pure function of the vault: nothing it emits ever becomes content.
-    const before = await import("node:fs").then((fs) => fs.readdirSync(site.vaultDir).sort())
-    await buildFixture("minimal-vault")
-    const after = await import("node:fs").then((fs) => fs.readdirSync(site.vaultDir).sort())
-    assert.deepEqual(after, before)
-  })
+  describe("the build is a pure function of the vault", () => {
+    // These two need a *second* build, so they use `rebuildFixture` rather than
+    // `buildFixture`, which is memoised and would hand back the first one.
+    test("a rerun emits byte-for-byte the same site", async () => {
+      const again = await rebuildFixture("minimal-vault")
+      assert.equal(again.exitCode, 0, again.log)
+      assert.deepEqual(again.files, site.files)
+      for (const file of site.files.filter((f) => f.endsWith(".html") || f.endsWith(".json"))) {
+        assert.equal(again.file(file), site.file(file), `${file} differs between builds`)
+      }
+    })
 
-  test("the same vault builds the same site twice over", async () => {
-    // No clock, no git, no filesystem timestamps: rerunning must not change the output.
-    const first = site.contentIndex
-    const rebuilt = await buildFixture(site.vaultDir)
-    assert.deepEqual(rebuilt.contentIndex, first)
+    test("nothing the build writes goes back into the vault", async () => {
+      const listing = () => fs.readdirSync(site.vaultDir, { recursive: true }).sort()
+      const before = listing()
+      await rebuildFixture("minimal-vault")
+      assert.deepEqual(listing(), before)
+    })
   })
 })

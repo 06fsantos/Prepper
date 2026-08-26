@@ -4,9 +4,12 @@
  * Nearly every behaviour in Prepper is a fact about Markdown that goes into the vault
  * and a fact about the site that comes out, so nearly every test goes through here.
  *
- *     const site = await buildFixture("wikilinks")
+ *     const site = await buildFixture("wikilink-shapes")
  *     const page = site.page("lessons/hash-map-lookup-cost")
- *     assert.deepEqual(page.links().map((l) => l.href), ["../problems/two-sum"])
+ *     assert.deepEqual(
+ *       page.links().map((l) => l.href),
+ *       ["../problems/two-sum"],
+ *     )
  *
  * Three things this deliberately does *not* do:
  *
@@ -21,6 +24,7 @@
  *   will break on the next merge for no reason.
  */
 import assert from "node:assert"
+import { createHash } from "node:crypto"
 import { execFile } from "node:child_process"
 import * as fs from "node:fs"
 import * as path from "node:path"
@@ -134,10 +138,11 @@ export class Page {
   /**
    * Every link in the note's own prose, in document order.
    *
-   * Quartz turns each heading into its own permalink anchor, and those anchors are
-   * indistinguishable from a wikilink by class -- they differ only in sitting inside a
-   * heading. They are chrome, not links the author wrote, so they are left out; pass
-   * `{ headingAnchors: true }` to ask about them.
+   * Quartz turns each heading into its own permalink anchor, marked `role="anchor"` and
+   * carrying the same classes as a wikilink. Those are chrome, not links the author
+   * wrote, so they are left out; pass `{ headingAnchors: true }` to ask about them. The
+   * filter is on the attribute rather than on "sits inside a heading", so a wikilink the
+   * author put *in* a heading still counts as theirs.
    *
    * Pass a `scope` to ask about links the layout rendered around the note instead -- a
    * "This unlocks" rail, say.
@@ -146,12 +151,8 @@ export class Page {
     scope = this.body,
     headingAnchors = false,
   }: { scope?: Element | Root; headingAnchors?: boolean } = {}): EmittedLink[] {
-    const anchors = headingAnchors
-      ? new Set<Element>()
-      : new Set(hastSelectAll("h1 a, h2 a, h3 a, h4 a, h5 a, h6 a", scope))
-
     return hastSelectAll("a", scope)
-      .filter((a) => !anchors.has(a))
+      .filter((a) => headingAnchors || a.properties.role !== "anchor")
       .map((a) => ({
         href: typeof a.properties.href === "string" ? a.properties.href : undefined,
         text: collapse(toText(a, { whitespace: "normal" })),
@@ -173,7 +174,7 @@ export class EmittedSite {
     readonly outputDir: string,
     /** Site-relative paths of every emitted file, sorted. */
     readonly files: readonly string[],
-    /** Everything the build printed, stdout and stderr as the dev would see them. */
+    /** Everything the build printed: its stdout, then its stderr. */
     readonly log: string,
     /** The build's exit code. Zero unless Quartz itself failed. */
     readonly exitCode: number,
@@ -254,13 +255,14 @@ function collapse(text: string): string {
 
 /** CSS classes on a hast element, as a plain array. */
 export function classesOf(element: Element): string[] {
-  const raw = element.properties.className
+  const raw: unknown = element.properties.className
   if (Array.isArray(raw)) return raw.map(String)
   if (typeof raw === "string") return raw.split(/\s+/).filter(Boolean)
   return []
 }
 
 const built = new Map<string, Promise<EmittedSite>>()
+const runsPerVault = new Map<string, number>()
 
 /**
  * Build a fixture vault and return what came out.
@@ -271,10 +273,11 @@ const built = new Map<string, Promise<EmittedSite>>()
  * own subject: the fixture whose only job is "two filenames colliding case-insensitively"
  * is a two-file directory.
  *
- * Repeated calls for the same fixture within a test file share one build.
+ * Repeated calls for the same fixture within a test file share one build. Use
+ * `rebuildFixture` for the rare test that needs a second, genuinely separate one.
  */
 export function buildFixture(fixture: string): Promise<EmittedSite> {
-  const vaultDir = path.isAbsolute(fixture) ? fixture : path.join(fixturesDir, fixture)
+  const vaultDir = resolveVault(fixture)
   const cached = built.get(vaultDir)
   if (cached) return cached
 
@@ -283,13 +286,35 @@ export function buildFixture(fixture: string): Promise<EmittedSite> {
   return pending
 }
 
+/**
+ * Build a fixture again, ignoring the cache, and return the new site alongside the old.
+ *
+ * Only useful for asserting on the act of building rather than on its output -- that a
+ * rerun emits the same site, or that it left the vault alone. Everything else should use
+ * `buildFixture`, which is memoised.
+ */
+export function rebuildFixture(fixture: string): Promise<EmittedSite> {
+  return runBuild(resolveVault(fixture))
+}
+
+function resolveVault(fixture: string): string {
+  return path.isAbsolute(fixture) ? fixture : path.join(fixturesDir, fixture)
+}
+
 async function runBuild(vaultDir: string): Promise<EmittedSite> {
   assert.ok(
     fs.existsSync(vaultDir),
     `no fixture vault at "${vaultDir}". Fixtures live in ${fixturesDir}.`,
   )
 
-  const outputDir = path.join(buildOutputRoot, path.basename(vaultDir))
+  // Named for the vault, disambiguated by its full path so that two fixtures sharing a
+  // basename cannot overwrite each other, and by a run number so that a rebuild cannot
+  // delete the output an earlier site is still reading lazily.
+  const digest = createHash("sha256").update(vaultDir).digest("hex").slice(0, 8)
+  const run = (runsPerVault.get(vaultDir) ?? 0) + 1
+  runsPerVault.set(vaultDir, run)
+  const suffix = run === 1 ? "" : `-run${run}`
+  const outputDir = path.join(buildOutputRoot, `${path.basename(vaultDir)}-${digest}${suffix}`)
   fs.rmSync(outputDir, { recursive: true, force: true })
   fs.mkdirSync(outputDir, { recursive: true })
 
@@ -307,16 +332,23 @@ async function runBuild(vaultDir: string): Promise<EmittedSite> {
     stdout = result.stdout
     stderr = result.stderr
   } catch (err) {
-    const e = err as { stdout?: string; stderr?: string; code?: number; message: string }
+    // A non-zero exit carries `code` as a number; a failure to spawn at all carries it as
+    // an errno string, which is not an exit code and must not be reported as one.
+    const e = err as { stdout?: string; stderr?: string; code?: unknown; message: string }
     stdout = e.stdout ?? ""
-    stderr = e.stderr ?? e.message
-    exitCode = e.code ?? 1
+    stderr = e.stderr || e.message
+    exitCode = typeof e.code === "number" ? e.code : 1
   }
 
   return new EmittedSite(vaultDir, outputDir, listFiles(outputDir), stdout + stderr, exitCode)
 }
 
 function listFiles(root: string): string[] {
+  // Quartz clears the output directory as its first step, so a build that failed before
+  // emitting leaves nothing here. Returning empty keeps the failure legible: the test
+  // then reads `site.log`, which is what it was captured for.
+  if (!fs.existsSync(root)) return []
+
   const out: string[] = []
   const walk = (dir: string) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

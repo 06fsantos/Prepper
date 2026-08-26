@@ -10,6 +10,7 @@
  *   node scripts/ulid.mjs 5      # five
  */
 import { randomFillSync } from "node:crypto"
+import { pathToFileURL } from "node:url"
 
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
@@ -31,7 +32,15 @@ export function ulid(time = Date.now()) {
   return timePart + randomPart
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const count = Number(process.argv[2] ?? 1)
+// `pathToFileURL`, not string concatenation: a repo path with a space or a non-ASCII
+// character percent-encodes in `import.meta.url` but not in `argv[1]`, and the naive
+// comparison would then quietly print nothing and exit 0 -- handing a skill an empty ULID.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const raw = process.argv[2] ?? "1"
+  const count = Number(raw)
+  if (!Number.isInteger(count) || count < 1) {
+    console.error(`ulid: expected a positive whole number of ULIDs, got "${raw}"`)
+    process.exit(1)
+  }
   for (let i = 0; i < count; i++) console.log(ulid())
 }

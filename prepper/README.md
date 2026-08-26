@@ -17,17 +17,18 @@ it genuinely cannot, it belongs upstream as a pull request.
 
 ## What may be edited outside `prepper/`
 
-Four files, all configuration, all expected to conflict occasionally on a merge and all
+Five files, all configuration, all expected to conflict occasionally on a merge and all
 cheap to resolve:
 
-| File                 | Ours to change                | Why it is not a divergence                                                                                                                               |
-| -------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `quartz.config.yaml` | yes, wholly                   | Our config file. Upstream ships `quartz.config.default.yaml`; we never touch that, so a merge shows us what changed and we choose.                       |
-| `package.json`       | scripts and dependencies only | Where a plugin's dependencies and our npm scripts have to live. Keep additions grouped and minimal.                                                      |
-| `.prettierignore`    | additions only                | Excludes hand-authored prose -- the vault, the vendored skills, the docs -- so `npm run check` never asks to reflow a sentence someone wrote on purpose. |
-| `content/`           | wholly                        | The vault. Upstream's `content/` was one `.gitkeep`.                                                                                                     |
+| File                 | Ours to change                | Why it is not a divergence                                                                                                                                |
+| -------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `quartz.config.yaml` | yes, wholly                   | Our config file. Upstream ships `quartz.config.default.yaml`; we never touch that, so a merge shows us what changed and we choose.                        |
+| `package.json`       | scripts and dependencies only | Where a plugin's dependencies and our npm scripts have to live. Keep additions grouped and minimal.                                                       |
+| `.prettierignore`    | additions only                | Excludes hand-authored prose -- the vault, the vendored skills, the docs -- so `npm run check` never asks to reflow a sentence someone wrote on purpose.  |
+| `tsconfig.json`      | `include` paths only          | Upstream's `include` names only `quartz/`, so without this nothing of ours is type-checked and `npm run check` would pass over every error in `prepper/`. |
+| `content/`           | wholly                        | The vault. Upstream's `content/` was one `.gitkeep`.                                                                                                      |
 
-Everything else at the repo root that is not ours — `quartz/`, `quartz.ts`, `tsconfig.json`,
+Everything else at the repo root that is not ours — `quartz/`, `quartz.ts`,
 `Dockerfile`, `docs/` other than `docs/adr/`, `docs/agents/`, and
 `docs/upstream-merges.md` — is upstream's, and stays untouched.
 

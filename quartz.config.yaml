@@ -41,15 +41,13 @@ configuration:
         highlight: rgba(143, 159, 169, 0.15)
         textHighlight: "#b3aa0288"
 plugins:
+  # Prepper: off. A note carries no date -- the spec settled that the ULID encodes
+  # creation and nothing reads it -- so this plugin has no frontmatter to read and
+  # falls back to `new Date()`, stamping every page with the build clock. That would
+  # make the build a function of more than `content/`, which is exactly what seam 1
+  # rests on it not being.
   - source: "@quartz-community/created-modified-date"
-    enabled: true
-    options:
-      defaultDateType: modified
-      # Prepper: frontmatter only. `git` reads the repo and `filesystem` reads
-      # mtimes, and either would make the build a function of more than
-      # `content/` -- which the fixture-vault test seam depends on it not being.
-      priority:
-        - frontmatter
+    enabled: false
     order: 10
   - source: "@quartz-community/syntax-highlighting"
     enabled: true
@@ -115,8 +113,11 @@ plugins:
   - source: "@quartz-community/content-index"
     enabled: true
     options:
-      enableSiteMap: true
-      enableRSS: true
+      # Prepper: no feed and no sitemap. There is nothing to subscribe to -- this is one
+      # dev's library, not a blog -- and both stamp the build clock into their output,
+      # which is the last thing making the build a function of more than `content/`.
+      enableSiteMap: false
+      enableRSS: false
   - source: "@quartz-community/favicon"
     enabled: true
   - source: "@quartz-community/og-image"

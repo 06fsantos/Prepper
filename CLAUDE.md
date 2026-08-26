@@ -8,9 +8,9 @@ inside it ([ADR 0002](docs/adr/0002-quartz-as-the-build-pipeline.md)).
 
 Quartz upstream is a **git remote, merged periodically, never edited in place**. All of
 our code lives under [`prepper/`](prepper/README.md) and reaches Quartz through
-`quartz.config.yaml`. Four files outside `prepper/` are ours to edit —
-`quartz.config.yaml`, `package.json` (scripts and dependencies), `.prettierignore`, and
-`content/` — and nothing else is. See [`prepper/README.md`](prepper/README.md).
+`quartz.config.yaml`. Five files outside `prepper/` are ours to edit —
+`quartz.config.yaml`, `package.json` (scripts and dependencies), `.prettierignore`,
+`tsconfig.json` (`include` paths), and `content/` — and nothing else is. See [`prepper/README.md`](prepper/README.md).
 
 The merge procedure is [`docs/upstream-merges.md`](docs/upstream-merges.md).
 
