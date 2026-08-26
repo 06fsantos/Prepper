@@ -40,6 +40,9 @@ prepper/
     build-fixture.ts        seam 1: build(fixtureVault) -> emitted site
     build-fixture.test.ts   the seam's own test
     fixtures/               one small vault per behaviour cluster
+    mechanisms.test.ts      the Quartz mechanisms the design rests on, run
+    spike-build.ts          seam 1 with a plugin that is not in the config yet
+    spikes/                 the throwaway plugins those spikes need
 ```
 
 Plugins, components, and browser code land here as they are built, each in its own
@@ -59,3 +62,10 @@ states a fact about Markdown that goes in and a fact about the output that comes
 A test that asserts which plugin ran, in what order, or what an intermediate mdast node
 looked like, is testing our arrangement of Quartz rather than Prepper's behaviour — and it
 will break on the next merge for no reason.
+
+The exception is [`testing/mechanisms.test.ts`](testing/mechanisms.test.ts), which asserts
+on Quartz's behaviour rather than on ours, on purpose: it pins the three mechanisms
+Prepper's design rests on
+([ticket 02](../.scratch/prepper-build/issues/02-spike-the-unrun-mechanisms.md)), two of
+which fail silently. Breaking on a merge is what it is _for_, and
+[`docs/upstream-merges.md`](../docs/upstream-merges.md) points at it as the tripwire.

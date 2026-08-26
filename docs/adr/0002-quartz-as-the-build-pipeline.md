@@ -16,3 +16,16 @@ The third consequence above books an accepted risk: "an `![[research-note]]` emb
 Quartz resolves non-media embeds **client-side** — it emits a placeholder carrying the target slug, and a script in the browser fetches that target's *rendered page* and splices it in. Publication therefore requires the target to have a page, and a Workshop note has none by construction. The embed cannot leak; it fetches nothing and renders as an empty box. The build now converts that box into the marked, unclickable affordance a Library→Workshop link already gets, and makes the occurrence a validation error.
 
 Lifting the embed ban remains correct, and it remains correct that no rule replaced it: the rule that now exists guards the **Workshop boundary**, not embeds as a syntax. Block references are untouched and stay out by convention.
+
+## Amendment — the embed mechanism is server-side, and the withdrawal survives on a different footing
+
+The amendment above says Quartz "resolves non-media embeds **client-side**" and that "a script in the browser fetches that target's *rendered page*". [Ticket 02](../../.scratch/prepper-build/issues/02-spike-the-unrun-mechanisms.md) ran it. **That is not what Quartz v5 does.** Non-media embeds are resolved **at build time**: `renderPage` walks each `blockquote.transclude`, looks its target up in the corpus the build is rendering from, and splices the target's rendered subtree straight into the embedding page's HTML. Nothing is fetched in the browser, and no test of ours would have noticed, because the *outcome* is the same either way.
+
+**The withdrawal of the risk stands, on a precondition that must now be honoured deliberately.** What protects the Workshop boundary is not that a Workshop note has no page — it is that a Workshop note is **not in the corpus the build renders from**. In Quartz the two coincide, because the only way a note loses its page is a **filter** (`shouldPublish`), which removes it before rendering; an embed of a filtered note renders as an empty placeholder carrying the target slug, and the target's prose appears nowhere in the emitted site. Run as [`prepper/testing/mechanisms.test.ts`](../../prepper/testing/mechanisms.test.ts), with a control: embedding a note that *is* in the corpus puts its prose in the emitted HTML at build time.
+
+So the rule this hands to the implementation, and the one an upstream merge can break:
+
+- **Workshop notes must be excluded by a Quartz filter, not by an emitter declining to write a page.** A design that kept Workshop notes in the corpus and merely suppressed their pages would leak their content into every Library note that embeds them — silently, on the page, in `contentIndex.json`, and in search.
+- The boundary is airtight the way the earlier amendment claimed, but "airtight by construction" now means *by construction of our filter*, not by a property of the browser. It is a decision we keep making, so the mechanism test is the tripwire that says we still are.
+
+Everything the earlier amendment concluded — the ban stays lifted, the rule guards the Workshop boundary rather than embeds as a syntax, the degraded box is a validation error — is unchanged.

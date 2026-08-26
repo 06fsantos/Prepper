@@ -70,11 +70,15 @@ The failure is almost always one of two things, and they are worth telling apart
   cost the ADR agreed to pay.
 - **A mechanism we depend on stopped being true.** The three in
   [ticket 02](../.scratch/prepper-build/issues/02-spike-the-unrun-mechanisms.md) are the
-  ones to watch, because two of them fail _quietly_: client-side embed resolution is what
-  makes the Workshop boundary airtight, and the report's exclusion from the link graph is
-  what stops the hygiene section erasing itself on the second build. Their spike tests are
-  the tripwire. A failure there is an **ADR amendment**, not a workaround invented on the
-  spot.
+  ones to watch, because two of them fail _quietly_: a Workshop note's exclusion from the
+  build's corpus is what makes the Workshop boundary airtight, and the report's exclusion
+  from the link graph is what stops the hygiene section erasing itself on the second
+  build. All three are asserted in
+  [`prepper/testing/mechanisms.test.ts`](../prepper/testing/mechanisms.test.ts), which is
+  the tripwire and the first file to read when a merge breaks something; the findings are
+  written up in
+  [`.scratch/prepper-build/research/`](../.scratch/prepper-build/research/). A failure
+  there is an **ADR amendment**, not a workaround invented on the spot.
 
 ## What is deliberately not done
 
