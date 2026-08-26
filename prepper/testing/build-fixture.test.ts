@@ -1,0 +1,86 @@
+import test, { describe, before } from "node:test"
+import assert from "node:assert"
+
+import { buildFixture, type EmittedSite } from "./build-fixture"
+
+describe("seam 1: build(fixtureVault) -> emitted site", () => {
+  let site: EmittedSite
+
+  before(async () => {
+    site = await buildFixture("minimal-vault")
+  }, 120_000)
+
+  test("a directory of Markdown builds", () => {
+    assert.equal(site.exitCode, 0, site.log)
+  })
+
+  test("every note in the vault gets a page, at type/filename", () => {
+    assert.deepEqual(site.noteSlugs(), ["lessons/binary-search-basics", "terms/binary-search"])
+    for (const slug of site.noteSlugs()) assert.ok(site.hasPage(slug))
+  })
+
+  describe("emitted HTML", () => {
+    test("the note's title is rendered", () => {
+      const page = site.page("lessons/binary-search-basics")
+      assert.equal(page.text("h1"), "Binary search, from first principles")
+    })
+
+    test("the note's prose is rendered", () => {
+      const page = site.page("lessons/binary-search-basics")
+      assert.match(page.text(), /needs the range sorted/)
+    })
+
+    test("a wikilink resolves to the note it names, under the alias it was given", () => {
+      const page = site.page("lessons/binary-search-basics")
+      assert.deepEqual(
+        page.links().map(({ href, text }) => ({ href, text })),
+        [{ href: "../terms/binary-search", text: "Binary search" }],
+      )
+    })
+
+    test("markup is queryable by CSS selector", () => {
+      const page = site.page("lessons/binary-search-basics")
+      assert.equal(page.select("code")?.tagName, "code")
+      assert.equal(page.text("code"), "O(log n)")
+    })
+
+    test("asking for a page that was not emitted fails loudly", () => {
+      assert.throws(() => site.page("lessons/no-such-lesson"), /no emitted file/)
+    })
+  })
+
+  describe("contentIndex.json", () => {
+    test("carries one entry per note in the vault, keyed by slug", () => {
+      assert.deepEqual(Object.keys(site.notes).sort(), [
+        "lessons/binary-search-basics",
+        "terms/binary-search",
+      ])
+    })
+
+    test("carries the note's title and the notes it links to", () => {
+      const entry = site.notes["lessons/binary-search-basics"]
+      assert.equal(entry.title, "Binary search, from first principles")
+      assert.deepEqual(entry.links, ["terms/binary-search"])
+    })
+
+    test("carries the note's prose, which is what search reads", () => {
+      const entry = site.notes["lessons/binary-search-basics"]
+      assert.match(entry.content, /needs the range sorted/)
+    })
+  })
+
+  test("the build writes nothing back into the vault", async () => {
+    // The build is a pure function of the vault: nothing it emits ever becomes content.
+    const before = await import("node:fs").then((fs) => fs.readdirSync(site.vaultDir).sort())
+    await buildFixture("minimal-vault")
+    const after = await import("node:fs").then((fs) => fs.readdirSync(site.vaultDir).sort())
+    assert.deepEqual(after, before)
+  })
+
+  test("the same vault builds the same site twice over", async () => {
+    // No clock, no git, no filesystem timestamps: rerunning must not change the output.
+    const first = site.contentIndex
+    const rebuilt = await buildFixture(site.vaultDir)
+    assert.deepEqual(rebuilt.contentIndex, first)
+  })
+})
