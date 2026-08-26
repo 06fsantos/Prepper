@@ -11,3 +11,6 @@ prepper/testing/fixtures
 .scratch
 CONTEXT.md
 docs/adr
+
+# Agent worktrees are checkouts of this repo, not sources in it.
+.claude/worktrees
