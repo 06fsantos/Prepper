@@ -13,3 +13,11 @@ practices:
 ## Prompt
 
 Build a cache that evicts the least recently used entry in constant time.
+
+## Solution
+
+One pass, keeping what has been seen so far.
+
+## Complexity
+
+Linear time, linear space.

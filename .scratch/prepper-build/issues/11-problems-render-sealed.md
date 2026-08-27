@@ -35,15 +35,15 @@ is self-describing in search and in the topic index even though the prompt lives
 
 **Blocked by:** 05, 03
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The build folds a Problem body on its H2 boundaries, matched by heading text
-- [ ] `## Solution` and `## Complexity` emit sealed with no JS involved in the sealing
-- [ ] Each seals and unseals independently of the other
-- [ ] `## Follow-ups` renders open; `## Constraints` renders open
-- [ ] `## Hints` emits as an ordered ladder, one hint per top-level list item, ready for 12's control
-- [ ] `source` renders as chips labelled by host, and the first URL is presented as the attempt link
-- [ ] A mixed-kind list is never ordered by difficulty across kinds
-- [ ] Error: an unknown `kind` or an unknown `difficulty`
-- [ ] Error: a required H2 missing for the declared `kind`
-- [ ] Error: a `source` list with no well-formed URL on a pointer problem
+- [x] The build folds a Problem body on its H2 boundaries, matched by heading text
+- [x] `## Solution` and `## Complexity` emit sealed with no JS involved in the sealing
+- [x] Each seals and unseals independently of the other
+- [x] `## Follow-ups` renders open; `## Constraints` renders open
+- [x] `## Hints` emits as an ordered ladder, one hint per top-level list item, ready for 12's control
+- [x] `source` renders as chips labelled by host, and the first URL is presented as the attempt link
+- [x] A mixed-kind list is never ordered by difficulty across kinds
+- [x] Error: an unknown `kind` or an unknown `difficulty`
+- [x] Error: a required H2 missing for the declared `kind`
+- [x] Error: a `source` list with no well-formed URL on a pointer problem

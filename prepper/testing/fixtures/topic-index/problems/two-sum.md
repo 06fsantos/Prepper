@@ -12,3 +12,11 @@ practices:
 ## Prompt
 
 Given an array and a target, return the indices of the two entries that sum to it.
+
+## Solution
+
+One pass, keeping what has been seen so far.
+
+## Complexity
+
+Linear time, linear space.

@@ -13,3 +13,11 @@ practices:
 
 This is the deliberate exception. `open-addressing` is a Lesson nobody has written, and
 saying so is allowed: intent is allowed.
+
+## Solution
+
+One pass, keeping what has been seen so far.
+
+## Complexity
+
+Linear time, linear space.

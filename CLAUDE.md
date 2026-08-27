@@ -74,6 +74,18 @@ subtree be walked by every transform downstream. A fence the build cannot make a
 left as the code block it was written as — which is what Obsidian shows anyway — and raises
 a validation **error**.
 
+## Problems
+
+A Problem's body is **named H2 headings** — `## Prompt`, `## Constraints`, `## Hints`,
+`## Solution`, `## Complexity`, `## Follow-ups` — and the build folds the tree on those
+boundaries. Which are required depends on the declared `kind`, which is never inferred.
+`## Solution` and `## Complexity` come out inside a closed `<details>`, and that is
+load-bearing: **the seal is markup, never a script**, because Quartz's search preview
+injects a result's real HTML and a JS-initialised seal would render open there and leak the
+solution. [`prepper/problems/index.ts`](prepper/problems/index.ts) is one remark transformer
+at `order: 35`. A Problem missing a section its kind requires renders the sections it has
+and raises a validation **error**.
+
 ## Research output
 
 `/research` writes its notes into `content/research/`, named after the **question** they

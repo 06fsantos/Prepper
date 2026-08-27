@@ -60,6 +60,9 @@ prepper/
   quiz/                     quiz fences: a fenced quiz block becomes an answerable question
     index.ts                the transformer, registered from quartz.config.yaml at order 25
     quiz.test.ts            the three question types and every defect, through seam 1
+  problems/                 Problems: the body folded on its H2s, and the CSS-only seal
+    index.ts                the transformer, registered from quartz.config.yaml at order 35
+    problems.test.ts        the fold, the seal, the ladder and the chips, through seam 1
   links/                    wikilink resolution's one gap: the unwritten-link affordance
     index.ts                the transformer, registered from quartz.config.yaml at order 65
     links.test.ts           resolution and unwritten links, through seam 1

@@ -77,7 +77,7 @@ vault
 
 1. Write a `Rule` — a kebab-case name and `check(vault): Finding[]` — in a file under
    `rules/`, grouped by what it is about (`schema.ts`, `identity.ts`, `links.ts`,
-   `vocabulary.ts`, `graph.ts`, `boundary.ts`, `quiz.ts`).
+   `vocabulary.ts`, `graph.ts`, `boundary.ts`, `quiz.ts`, `problems.ts`).
 2. Export it from that file's rule array, and list that array in `rules.ts`.
 
 Nothing else moves. Both consumers go through `validateVault`, so a rule added here
@@ -98,7 +98,9 @@ not Markdown.
 That last field is the pattern for anything a rule needs that only the _pipeline_ knows.
 `quizDefects` is the second use of it: `prepper/quiz` is the only thing in the build that
 parses a quiz fence body, so the quiz rules report what it found rather than going looking
-themselves.
+themselves. `problemDefects` is the third: `prepper/problems` is what folded a Problem's
+body on its H2 headings and decided what to seal, so the Problem rules report the page's
+own account of the note rather than reading its frontmatter and headings a second time.
 `unwrittenLinks` is not re-derived here: `prepper/links` records what `crawl-links` had
 already decided and leaves it on the vfile, so `unwritten-link` reports the build's own
 resolution. A rule that parsed a note's wikilinks itself could eventually resolve one

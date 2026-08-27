@@ -21,3 +21,11 @@ Which structure collapses the inner scan?
 - [ ] A second array
   > That is the scan again, with more memory.
 ```
+
+## Solution
+
+One pass, keeping what has been seen so far.
+
+## Complexity
+
+Linear time, linear space.

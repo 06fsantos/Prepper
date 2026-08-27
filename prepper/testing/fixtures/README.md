@@ -65,6 +65,29 @@ anything.
   the violation list and once for what the reader gets instead. Two notes carry two broken
   fences each, because a run has to report both.
 
+- **`problem-sections/`** — four Problems of three kinds under one Term, and a second Term
+  linked from nowhere but inside a sealed section. Its cluster is *the Problem page*. Two
+  sum carries all six named H2s, so the fold has every boundary to find; its `## Hints` has
+  a nested bullet under the second rung, which is what makes "one rung per **top-level**
+  item" statable, and its `## Solution` is the only place `hash-maps` is named, so "a
+  wikilink inside a seal is still a real edge" cannot be true by another route. Its `source`
+  list is two URLs, the second on a `www.` host, because the chip label is the host with
+  that taken off. `design-a-url-shortener` is a system-design problem with **no**
+  `## Complexity`, which is not a defect and is here to say so; `median-of-two-sorted-arrays`
+  carries a `## Variants` the contract has no name for. The four titles sort into an order
+  that is neither of the two a difficulty scale would give, which is what makes "never
+  ordered by difficulty across kinds" a fact about the emitted index. The vault validates
+  clean — `problem-body-violations/` is the other half.
+
+- **`problem-body-violations/`** — four Problems the body contract is not satisfied by: a
+  coding problem with only a `## Prompt`, a `kind` nothing answers to, a `difficulty`
+  nothing answers to, and a pointer problem whose `source` list holds two sentences and no
+  URL. Its cluster is *the defective Problem*: each is an error, and each note still renders
+  the sections it does have, so the fixture is read twice over — once for the violation list
+  and once for what the reader gets anyway. The unknown-kind note is also missing a
+  `## Solution` and is deliberately **not** reported for it: with no kind, nothing knows
+  which sections it required.
+
 - **`embed-of-a-pageless-note/`** — a Lesson embedding two notes: one with a page, one
   without. Its cluster is
   *[mechanism 2](../../../.scratch/prepper-build/research/02-embed-of-a-pageless-note.md)*,

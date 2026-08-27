@@ -1,8 +1,8 @@
 ---
-id: 01M0Z900000000000000000506
-title: Two sum
+id: 01M0Z900000000000000000912
+title: Half a coding problem
 topic:
-  - hash-maps
+  - interviewing
 kind: coding
 difficulty: easy
 practices:
@@ -12,11 +12,3 @@ practices:
 ## Prompt
 
 Given an array and a target, return the indices of the two entries that sum to it.
-
-## Solution
-
-One pass, keeping what has been seen so far.
-
-## Complexity
-
-Linear time, linear space.

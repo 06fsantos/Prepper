@@ -12,3 +12,11 @@ practices:
 ## Prompt
 
 The target exists and the reader never sees it, which is a mistake rather than intent.
+
+## Solution
+
+One pass, keeping what has been seen so far.
+
+## Complexity
+
+Linear time, linear space.

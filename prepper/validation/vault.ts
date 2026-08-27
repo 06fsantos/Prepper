@@ -20,6 +20,7 @@ import type { BuildCtx } from "../../quartz/util/ctx"
 import type { ProcessedContent } from "../../quartz/plugins/vfile"
 
 import { typeOf, type NoteType } from "../note-type.ts"
+import type { ProblemDefect } from "../problems/index.ts"
 import type { QuizDefect } from "../quiz/index.ts"
 import { withheldNotes } from "../workshop/index.ts"
 
@@ -80,6 +81,15 @@ export interface Note {
    */
   quizDefects: QuizDefect[]
   /**
+   * Everything wrong with this note **as a Problem**, and empty on every note that is not
+   * one.
+   *
+   * Recorded by `prepper/problems`, which folded this body on its H2 headings and decided
+   * what to seal -- so the Problem rules report what the page was built from rather than
+   * reading the frontmatter and the headings a second time, exactly as `quizDefects` does.
+   */
+  problemDefects: ProblemDefect[]
+  /**
    * Every **Workshop note this note's body embeds**, deduplicated and sorted.
    *
    * The same crossing at a higher severity. A link at a Workshop note can be deliberate;
@@ -135,6 +145,7 @@ export function vaultFromEmitterContent(ctx: BuildCtx, content: ProcessedContent
       unwrittenLinks: file.data.unwrittenLinks ?? [],
       workshopLinks: file.data.workshopLinks ?? [],
       quizDefects: file.data.quizDefects ?? [],
+      problemDefects: file.data.problemDefects ?? [],
       workshopEmbeds: file.data.workshopEmbeds ?? [],
     })
   }
