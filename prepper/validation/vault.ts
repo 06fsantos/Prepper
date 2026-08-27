@@ -19,20 +19,7 @@ import { minimatch } from "minimatch"
 import type { BuildCtx } from "../../quartz/util/ctx"
 import type { ProcessedContent } from "../../quartz/plugins/vfile"
 
-/** The eight note types. Type is the directory a note lives in, never a frontmatter field. */
-export type NoteType =
-  "lesson" | "reference" | "problem" | "term" | "cheat-sheet" | "research" | "record" | "mission"
-
-/** Which directory means which type. `MISSION.md` at the vault root is the singleton. */
-const typeByDirectory: Record<string, NoteType> = {
-  lessons: "lesson",
-  references: "reference",
-  problems: "problem",
-  terms: "term",
-  "cheat-sheets": "cheat-sheet",
-  research: "research",
-  records: "record",
-}
+import { typeOf, type NoteType } from "../note-type.ts"
 
 /** One note in the vault, as the build read it. */
 export interface Note {
@@ -118,13 +105,6 @@ export function vaultFromEmitterContent(ctx: BuildCtx, content: ProcessedContent
     notes: notes.sort(byPath),
     files: listVaultFiles(ctx),
   }
-}
-
-/** The type a vault-relative path declares by where it sits. */
-export function typeOf(relativePath: string): NoteType | undefined {
-  const segments = relativePath.split("/")
-  if (segments.length === 1) return segments[0] === "MISSION.md" ? "mission" : undefined
-  return typeByDirectory[segments[0]]
 }
 
 /** A filename's stem: everything before its extension. This is a note's link identity. */

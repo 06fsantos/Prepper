@@ -74,6 +74,27 @@ anything.
   none of the three is an unwritten link, and the fixture is where that is stated. It is
   also the vault that proves warnings alone exit zero, so it is wrong in no other way — a
   single error here would make that assertion say nothing.
+- **`typed-edges/`** — a chain of four Lessons wired by `prerequisites`, two Problems that
+  `practise` one of them, three Terms they are `about`, a Reference that links that Lesson
+  in prose *and* names one Term in both `topic` and its body, and a Workshop note that links
+  it too. Its cluster is *the link graph*: four edge kinds, each typed by the field it was
+  written in. Every detail is one of those facts. The Reference's double mention is what
+  makes "typed by field, never by inline syntax" statable — the same target, the same
+  spelling, two edge types. `lessons/open-addressing` is the other half of that: it names
+  the same Term in `topic` **only**, so the pair pins down that a field-written link is
+  never also an untyped body edge. That Lesson also writes both its frontmatter targets
+  Obsidian's way, `topic: "[[hash-maps]]"`, which is what a note edited through Obsidian's
+  property UI looks like on disk, and it links `[[missing-folder/]]` — a target that
+  resolves to an *index* slug, the one shape where the page, the validation report and the
+  graph can end up calling one gap by two different names. The Reference's alias
+  (`[[hash-map-lookup-cost|why lookups are cheap]]`) is what makes "labelled by `title`,
+  never by the alias" statable, and the titles `open addressing` and `Éviction policies`
+  are what make "sorted alphabetically" mean what a reader means by it rather than what
+  code-point order does. One `practices` entry names a Problem nobody has written, because
+  that is the deliberate exception the spec allows. And the Workshop note carries a `topic`
+  and a body link so that "neither a node nor the source of an edge" is a fact about a note
+  that would otherwise have contributed two edges.
+
 - **`schema-and-identity-violations/`** — a vault that is wrong in thirteen ways at once:
   a Lesson with no `topic`, one with no `id`, one whose `id` was typed by hand, a Problem
   missing three of the four fields its type requires, a Record with no `date`, a Term that

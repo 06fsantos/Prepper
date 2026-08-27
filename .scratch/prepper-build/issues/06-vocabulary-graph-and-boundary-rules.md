@@ -33,6 +33,18 @@ and, as a principle, anything on the report channel, ever.
 
 **Status:** ready-for-agent
 
+**Inherited from 05: the page half of the Workshop boundary.** 05 delivered the graph half —
+a Workshop note is neither a node nor the source of an edge — and stopped there, because
+excluding one from the *corpus* is a Quartz **filter**, and a filter drops a note from
+`content[]` before any emitter sees it. Validation is an emitter over the whole corpus and
+`research` and `record` have required fields of their own, so a filter added naively would
+silently stop validating every Workshop note in the vault. That is the same collision 03 hit
+when it disabled `remove-draft`, and it has to be resolved here, where the boundary is
+guarded. Until it is, a Workshop note still gets a page.
+
+- [ ] A Workshop note is dropped from the corpus by a filter, and gets no page
+- [ ] Every validation rule still sees Workshop notes, filter or no filter
+
 - [ ] Error: a `topic` value naming a note that does not exist, or one that is not a `term`
 - [ ] Error: a `prerequisites` target that does not exist, or that is not Library content
 - [ ] Error: a `practices` target that exists but is not Library content — while a nonexistent one passes

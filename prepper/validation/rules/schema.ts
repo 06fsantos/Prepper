@@ -7,7 +7,8 @@
  * the frontmatter, and they live in their own rule files.
  */
 import type { Finding, Rule } from "../rules.ts"
-import type { Note, NoteType, Vault } from "../vault.ts"
+import type { NoteType } from "../../note-type.ts"
+import type { Note, Vault } from "../vault.ts"
 
 /**
  * What each type must declare, beyond the `title` every note carries and the `id` the

@@ -37,6 +37,15 @@ Everything else at the repo root that is not ours — `quartz/`, `quartz.ts`,
 
 ```
 prepper/
+  note-type.ts              the eight note types, and the Library/Workshop split on them
+  edges/                    typed edges rendered in context, untyped ones in one panel
+    index.ts                the component manifest; four config entries, one per placement
+    components/index.ts     the component itself, sliced by `options.section`
+    edges.test.ts           the rails and the backlinks panel, through seam 1
+  graph/                    the link graph: four typed edge kinds, computed once
+    graph.ts                the pure index, read by the emitter and by the components
+    index.ts                the emitter, which writes static/linkGraph.json
+    graph.test.ts           what is a node and what is an edge, through seam 1
   links/                    wikilink resolution's one gap: the unwritten-link affordance
     index.ts                the transformer, registered from quartz.config.yaml at order 65
     links.test.ts           resolution and unwritten links, through seam 1
@@ -56,6 +65,21 @@ prepper/
 
 Plugins, components, and browser code land here as they are built, each in its own
 directory, each registered from `quartz.config.yaml`.
+
+## Two things Quartz's plugin loader constrains
+
+**A component plugin is `.ts`, never `.tsx`.** Quartz loads a local plugin by importing it,
+and the thing performing that import is Node, which strips TypeScript types but does not
+compile JSX. Components therefore build their markup with preact's `h` directly. It is the
+same tree; only the notation is denied us, and only in the files Quartz imports at runtime.
+For the same reason a plugin that imports a `quartz/` module must pick one whose own imports
+name their extensions -- `quartz/util/path.ts` does, `quartz/plugins/emitters/helpers.ts`
+does not, and the second is unreachable from here however much upstream's bundler resolves
+it for upstream's own plugins.
+
+**A component plugin needs a `package.json`.** Quartz finds a plugin's components through
+its `./components` subpath export, and the fallback it tries when there is no `exports` map
+looks only for `.js`. Ours is three lines and exists for that one reason.
 
 ## Testing
 

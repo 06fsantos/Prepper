@@ -36,6 +36,7 @@ import { select as hastSelect, selectAll as hastSelectAll } from "hast-util-sele
 import { toText } from "hast-util-to-text"
 import type { Element, Root } from "hast"
 
+import type { LinkGraph } from "../graph/graph.ts"
 import type { ValidationReport, Violation } from "../validation/violation.ts"
 
 const execFileAsync = promisify(execFile)
@@ -168,6 +169,7 @@ export class EmittedSite {
   #pages = new Map<string, Page>()
   #contentIndex: ContentIndex | undefined
   #notes: ContentIndex | undefined
+  #linkGraph: LinkGraph | undefined
 
   constructor(
     /** The fixture vault that was built. */
@@ -247,6 +249,15 @@ export class EmittedSite {
   /** Every slug that a note in the vault produced, sorted. */
   noteSlugs(): string[] {
     return Object.keys(this.notes).sort()
+  }
+
+  /**
+   * `static/linkGraph.json` as `prepper/graph` emitted it: the whole vault's links, typed
+   * by the field each was written in. Prepper's own artifact, not one of Quartz's.
+   */
+  get linkGraph(): LinkGraph {
+    this.#linkGraph ??= JSON.parse(this.file("static/linkGraph.json")) as LinkGraph
+    return this.#linkGraph
   }
 }
 

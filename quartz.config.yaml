@@ -168,8 +168,13 @@ plugins:
       group: toolbar
       groupOptions:
         grow: true
+  # Prepper: off, replaced by `./prepper/edges` below. Upstream's panel lists every note
+  # that links here, whatever field the link sat in, and labels each by `title` -- which is
+  # right for a garden and wrong here. Prepper types an edge by the field it was written
+  # in, and a typed edge renders in context, where the reader is already looking. A panel
+  # that repeated them would be a second, worse copy of what the page already shows.
   - source: "@quartz-community/backlinks"
-    enabled: true
+    enabled: false
     layout:
       position: right
       priority: 50
@@ -275,6 +280,60 @@ plugins:
       position: afterBody
       priority: 50
       display: all
+  # Prepper: ours, four times over. Quartz places one component per plugin entry, from that
+  # entry's own `layout:` block, so a component that renders in three positions is listed
+  # once per position and told which slice of the link graph it is by `options.section`.
+  # See `prepper/edges/index.ts`.
+  #
+  # Each entry uses the object source form to take its own `name`. That is not decoration:
+  # `name` is the key Quartz installs and looks a plugin up by, and four entries sharing one
+  # would install as one, which upstream's installer then reports as three plugins missing
+  # and exits on.
+  #
+  # Priorities put "Read first" below the title and the meta line (10, 20) and above the
+  # note, and the two afterBody rails in reading order: what this note practises, then what
+  # it unlocks.
+  - source:
+      repo: "./prepper/edges"
+      name: edges-read-first
+    enabled: true
+    options:
+      section: read-first
+    layout:
+      position: beforeBody
+      priority: 25
+  - source:
+      repo: "./prepper/edges"
+      name: edges-practices
+    enabled: true
+    options:
+      section: practices
+    layout:
+      position: afterBody
+      priority: 10
+  - source:
+      repo: "./prepper/edges"
+      name: edges-unlocks
+    enabled: true
+    options:
+      section: unlocks
+    layout:
+      position: afterBody
+      priority: 20
+  - source:
+      repo: "./prepper/edges"
+      name: edges-backlinks
+    enabled: true
+    options:
+      section: backlinks
+    layout:
+      position: right
+      priority: 50
+  # Prepper: ours. The link graph, computed once over the whole corpus and written to
+  # `static/linkGraph.json` for the topic index (07) and the Vault report (14) to read.
+  # It does not replace `contentIndex.json`, which stays exactly as Quartz emits it.
+  - source: "./prepper/graph"
+    enabled: true
   # Prepper: ours. The whole-corpus emitter seam is where validation runs, so every
   # build -- `npm run build`, `npm run serve`, and the `npm run validate` CLI, which
   # invokes this same pipeline -- reports the same violations. It emits no files and

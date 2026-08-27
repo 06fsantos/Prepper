@@ -89,6 +89,25 @@ declare module "vfile" {
      * one is an error rather than an unwritten link.
      */
     unwrittenLinks: string[]
+    /**
+     * Every internal link this note's **body** resolved to, as full slugs, deduplicated
+     * and in the order the anchors appear in the note.
+     *
+     * `file.data.links` cannot answer this question. `crawl-links` appends
+     * `frontmatterLinks` -- anything `note-properties` found `[[…]]` syntax in, anywhere
+     * in the frontmatter -- into that same set before writing it, so a target written
+     * only in `topic` is indistinguishable there from one written in a sentence. The link
+     * graph types an edge by the field it was written in and by nothing else, so it needs
+     * the body half on its own, and this is the only place in the build that still knows
+     * which is which: an anchor in the tree is a link the author wrote in prose.
+     *
+     * Full slugs, not the simplified ones `file.data.links` holds, so that this and
+     * `unwrittenLinks` -- which is the same `data-slug`, read on the same visit -- are
+     * keyed alike. The two diverge exactly where a target resolves to an `index` page,
+     * and a placeholder that one list held and the other did not would leave the page,
+     * the validation report and the graph disagreeing about which gaps exist.
+     */
+    bodyLinks: string[]
   }
 }
 
@@ -138,19 +157,30 @@ const PrepperLinks = (): QuartzTransformerPluginInstance => ({
     return [
       () => (tree: Root, file: VFile) => {
         const unwritten = new Set<string>()
+        const body = new Set<string>()
 
         visit(tree, "element", (node: Element) => {
-          if (node.tagName !== "a" || isTranscludeInner(node) || isTagLink(node)) return
+          if (node.tagName !== "a" || isTagLink(node)) return
           const target = node.properties["data-slug"]
           // `data-slug` is `crawl-links`' record of where an *internal* link resolved
           // to. An external link, a bare `#anchor`, and Quartz's own heading permalinks
           // all lack it, so none of them can be mistaken for an unwritten note.
-          if (typeof target !== "string" || existing.has(target)) return
+          if (typeof target !== "string") return
+
+          // Every internal anchor in the tree is a link the author wrote in the body,
+          // an embed's inner anchor included: `![[…]]` is a reference to a note the same
+          // way a sentence's link is, and the graph counts it as one. Recorded before
+          // the unwritten test, because a link to a note nobody has written yet is still
+          // a link the vault contains -- that is the whole of what a placeholder node is.
+          body.add(target)
+
+          if (isTranscludeInner(node) || existing.has(target)) return
 
           unwritten.add(target)
           markUnwritten(node, target)
         })
 
+        file.data.bodyLinks = [...body]
         file.data.unwrittenLinks = [...unwritten].sort()
       },
     ]

@@ -52,6 +52,16 @@ surfaces violations under `npm run serve` without killing the dev server, and
 CI is the only hard gate. See [`prepper/validation/README.md`](prepper/validation/README.md),
 including how to add a rule.
 
+## The link graph
+
+Every link the vault contains, indexed once at build, with each edge **typed by the field
+it was written in** — `prerequisites`, `topic`, `practices`, or the body. Nodes are
+**Library content only**: a Workshop note is neither a node nor the source of an edge.
+[`prepper/graph/graph.ts`](prepper/graph/graph.ts) computes it, and two things read it —
+an emitter that writes `static/linkGraph.json` for the topic index and the Vault report,
+and the components in [`prepper/edges/`](prepper/edges/index.ts) that render a typed edge
+**in context** and collect untyped ones in one backlinks panel. Nothing is ever gated.
+
 ## Research output
 
 `/research` writes its notes into `content/research/`, named after the **question** they

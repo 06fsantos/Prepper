@@ -26,13 +26,24 @@ The build gives a page and a graph node to **Library content only** (`lesson`, `
 
 **Blocked by:** 04
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] All four edge kinds are computed, and an edge's type comes from the field it was written in
-- [ ] A Lesson shows a "Read first" block naming its prerequisites
-- [ ] A Lesson shows a "This unlocks" rail naming the Lessons that list it as a prerequisite
-- [ ] A Lesson lists the Problems that practise it; a Problem names the Lesson it drills
-- [ ] Untyped body links collect in one backlinks panel, labelled by the source note's `title` and sorted alphabetically
-- [ ] A link written with an alias is still labelled by the source note's `title` in that panel
-- [ ] No Library page renders a lock, a gate, or a disabled link on the basis of prerequisites
-- [ ] Workshop notes produce neither a page nor a graph node
+- [x] All four edge kinds are computed, and an edge's type comes from the field it was written in
+- [x] A Lesson shows a "Read first" block naming its prerequisites
+- [x] A Lesson shows a "This unlocks" rail naming the Lessons that list it as a prerequisite
+- [x] A Lesson lists the Problems that practise it; a Problem names the Lesson it drills
+- [x] Untyped body links collect in one backlinks panel, labelled by the source note's `title` and sorted alphabetically
+- [x] A link written with an alias is still labelled by the source note's `title` in that panel
+- [x] No Library page renders a lock, a gate, or a disabled link on the basis of prerequisites
+- [x] Workshop notes produce neither a graph node nor an edge
+- [ ] Workshop notes produce no page — **deferred to 06**
+
+**The page half of the Workshop boundary is 06's.** Removing a note from the corpus is a
+Quartz **filter** ([02, mechanism 2](02-spike-the-unrun-mechanisms.md)), and a filter drops
+a note from `content[]` *before any emitter sees it* — which is exactly why 03 disabled
+`remove-draft`. Validation is an emitter over the whole corpus, and `research` and `record`
+have required fields of their own, so a filter added here would silently stop validating
+every Workshop note in the vault. Reconciling those two is the ticket where the boundary is
+guarded, not this one. What 05 owns and delivers is the graph half: a Workshop note is
+neither a node nor the source of an edge, so it never renders in a rail or a backlinks
+panel, whatever page it still has.
