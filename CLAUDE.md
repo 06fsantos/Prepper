@@ -66,10 +66,28 @@ and the components in [`prepper/edges/`](prepper/edges/index.ts) that render a t
 
 `/research` writes its notes into `content/research/`, named after the **question** they
 answer rather than the topic they touch, so they never collide with the Term or Lesson of
-the same name. Research notes are Workshop: they stay in the vault, the reader never sees
-them, and they are never pruned after a Reference distils them.
+the same name. A research note carries `id` (`npm run ulid`), `title`, `date`, `sources`,
+and optionally `topic`. Research notes are Workshop: they stay in the vault, the reader
+never sees them, and they are never pruned after a Reference distils them.
+
+**The skill itself is not forked.** `research` is vendored and hash-pinned, and its own
+instruction is to save output where the repo already keeps such notes — so this convention
+is all the steering it needs, and there is nothing to maintain.
 
 ## Agent skills
+
+Vendored skills live in `.agents/skills/`, pinned by content hash in `skills-lock.json`,
+and are **never edited in place** — a re-sync clobbers the edit. `.claude/skills/` holds a
+symlink per skill.
+
+### Authoring
+
+`/author` writes Lessons, Terms, Cheat sheets, and References into `content/` as Markdown.
+It is a **new sibling of vendored `teach`**, first-party repo content at
+[`.agents/skills/author/`](.agents/skills/author/SKILL.md), and it is the only place in the
+pipeline that mints ULIDs. Its checks are its FORMAT docs and `npm run validate`; it has no
+test seam, because a test of its output shape would be a second, weaker copy of the rule
+set. `/import` owns Problems.
 
 ### Issue tracker
 

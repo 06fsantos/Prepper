@@ -45,14 +45,14 @@ the rule set. Its checks are the FORMAT docs and the build.
 
 **Blocked by:** 06
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `author` exists as its own skill directory; vendored `teach` is unmodified and its lock hash unchanged
-- [ ] An authoring run produces a Lesson that passes `npm run validate` with no hand-editing
-- [ ] A topic with no `term` note gets one minted in the same run
-- [ ] The first Lesson on a topic creates its cheat sheet; a later Lesson updates it and the sheet stays short
-- [ ] Every `id` in the output was produced by running a command
-- [ ] `/author reference <research note>` promotes a whole Research note to a Reference, leaving the Research note in place
-- [ ] No output note sets `draft`, embeds a Workshop note, or cites a source as a note
-- [ ] Diagrams land in `content/attachments/`; no `./assets/` directory ships
-- [ ] `CLAUDE.md` states the `/research` output convention, and `/research` is not forked
+- [x] `author` exists as its own skill directory; vendored `teach` is unmodified and its lock hash unchanged
+- [x] An authoring run produces a Lesson that passes `npm run validate` with no hand-editing
+- [x] A topic with no `term` note gets one minted in the same run
+- [x] The first Lesson on a topic creates its cheat sheet; a later Lesson updates it and the sheet stays short
+- [x] Every `id` in the output was produced by running a command
+- [x] `/author reference <research note>` promotes a whole Research note to a Reference, leaving the Research note in place
+- [x] No output note sets `draft`, embeds a Workshop note, or cites a source as a note
+- [x] Diagrams land in `content/attachments/`; no `./assets/` directory ships
+- [x] `CLAUDE.md` states the `/research` output convention, and `/research` is not forked

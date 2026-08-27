@@ -3,8 +3,9 @@ node_modules
 .quartz-cache
 
 # Prepper: hand-authored prose, none of it code. The vault is edited in Obsidian, the
-# skills under .agents/ are vendored and pinned by hash in skills-lock.json, and the
-# rest are documents whose line breaks are the author's. Reformatting any of it is churn.
+# skills under .agents/ are either vendored and pinned by hash in skills-lock.json or
+# first-party prompts (`author`), and the rest are documents whose line breaks are the
+# author's. Reformatting any of it is churn.
 content
 prepper/testing/fixtures
 .agents
