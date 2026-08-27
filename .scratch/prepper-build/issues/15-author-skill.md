@@ -48,7 +48,10 @@ the rule set. Its checks are the FORMAT docs and the build.
 **Status:** resolved
 
 - [x] `author` exists as its own skill directory; vendored `teach` is unmodified and its lock hash unchanged
-- [x] An authoring run produces a Lesson that passes `npm run validate` with no hand-editing
+- [~] An authoring run produces a Lesson that passes `npm run validate` with no hand-editing —
+      the templates were checked field by field against `prepper/validation/rules/`, but no run
+      has been made yet. It is provable only by authoring something, so it is proved the first
+      time `/author` is used for real.
 - [x] A topic with no `term` note gets one minted in the same run
 - [x] The first Lesson on a topic creates its cheat sheet; a later Lesson updates it and the sheet stays short
 - [x] Every `id` in the output was produced by running a command
