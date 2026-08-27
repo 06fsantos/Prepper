@@ -187,7 +187,12 @@ describe("mechanism 3: emitter output is outside the link graph", () => {
   })
 
   test("the emitted page is absent from contentIndex.json", () => {
+    // Every other entry here is a page Quartz or Prepper *generated* through a seam that
+    // does put it in the corpus -- a folder index, a tag index, and `index`, the topic
+    // index the app opens on (`prepper/home`). That is the contrast the assertion is
+    // drawing: generated is not the same as emitted, and only emitter output is outside.
     assert.deepEqual(Object.keys(site.contentIndex).sort(), [
+      "index",
       "lessons/index",
       "lessons/queue-amortisation",
       "tags/index",

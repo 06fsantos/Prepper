@@ -150,8 +150,13 @@ plugins:
     enabled: true
   - source: "@quartz-community/tag-page"
     enabled: true
+  # Prepper: off, replaced by `./prepper/topics` below. The explorer is a *directory*
+  # tree, and the question the sidebar has to answer -- what shall I study today -- is one
+  # the dev asks in topics. `lessons/` and `terms/` are where the build reads a note's type
+  # from; they are not a subject, and a reader navigating them is navigating our filing
+  # system rather than their own.
   - source: "@quartz-community/explorer"
-    enabled: true
+    enabled: false
     layout:
       position: left
       priority: 50
@@ -329,6 +334,40 @@ plugins:
     layout:
       position: right
       priority: 50
+  # Prepper: ours, twice over. The generated topic index -- `topic` inverted on the Term
+  # note -- has two placements, so the plugin is listed once per placement and told which
+  # view it is by `options.view`. Same arrangement as `./prepper/edges` above, and the same
+  # reason each entry takes its own `name`: `name` is the key Quartz installs and looks a
+  # plugin up by, and two entries sharing one would install as one.
+  #
+  # The sidebar takes the explorer's old position, which is what it replaces. The Term
+  # page's index sits at the top of `afterBody`, which puts it below the note's own body --
+  # so a Term with no Lessons reads as an area overview followed by its index, and the
+  # typed-edge rails follow both.
+  - source:
+      repo: "./prepper/topics"
+      name: topics-sidebar
+    enabled: true
+    options:
+      view: sidebar
+    layout:
+      position: left
+      priority: 50
+  - source:
+      repo: "./prepper/topics"
+      name: topics-term-index
+    enabled: true
+    options:
+      view: term-index
+    layout:
+      position: afterBody
+      priority: 5
+  # Prepper: ours. The app's entry point: a generated `index.html` holding the same topic
+  # index the sidebar renders. A **pageType** rather than an emitter, so the page comes out
+  # through Quartz's own layout instead of through a copy of it -- and it yields to a
+  # written `content/index.md` if one ever exists. See `prepper/home/index.ts`.
+  - source: "./prepper/home"
+    enabled: true
   # Prepper: ours. The link graph, computed once over the whole corpus and written to
   # `static/linkGraph.json` for the topic index (07) and the Vault report (14) to read.
   # It does not replace `contentIndex.json`, which stays exactly as Quartz emits it.

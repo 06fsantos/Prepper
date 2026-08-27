@@ -1,0 +1,180 @@
+/**
+ * The topic index — through seam 1.
+ *
+ * The question this navigation answers is *what shall I study today*, and the dev asks it
+ * in topics rather than in directories. So every assertion here is about topics: which
+ * ones there are, what is filed under one, and where the reader meets the answer. Nothing
+ * asserts on a directory listing, because a directory listing is what this replaces.
+ *
+ * **One index, two views** is the fact most of these tests are really about: the tree on
+ * the entry page, the tree in the sidebar and the index on a Term page are the same
+ * computation rendered in three places, so a test that pins one and then compares the
+ * others to it is asserting the thing that matters. `the sidebar tree is the same index`
+ * is that comparison written down.
+ */
+import test, { before, describe } from "node:test"
+import assert from "node:assert"
+
+import type { Element, Root } from "hast"
+
+import { buildFixture, type EmittedSite, type Page } from "../testing/build-fixture.ts"
+
+/** Every topic named in one rendering of the tree, in the order it offers them. */
+function topics(page: Page, scope: Element | Root = page.main): string[] {
+  return page.selectAll(".prepper-topic-name", scope).map((node) => page.text(undefined, node))
+}
+
+/** One topic's subtree in a rendering of the tree, by the topic's title. */
+function topicNode(page: Page, title: string, scope: Element | Root = page.main): Element {
+  const found = page
+    .selectAll(".prepper-topic", scope)
+    .find((node) => page.text(".prepper-topic-name", node) === title)
+  assert.ok(found, `no topic "${title}" in this tree. Topics: ${topics(page, scope).join(", ")}`)
+  return found
+}
+
+/**
+ * What is filed under a topic, as `[group heading, [note titles]]` pairs in rendered order.
+ *
+ * Both views of the index render the same group markup, which is what lets one function
+ * read the tree, the sidebar and a Term page's index and lets a test compare them.
+ */
+function groups(page: Page, scope: Element): [heading: string, notes: string[]][] {
+  return page
+    .selectAll(".prepper-topic-group", scope)
+    .map((group) => [
+      page.text(".prepper-group-heading", group),
+      page.selectAll(".prepper-group-list > li", group).map((li) => page.text(undefined, li)),
+    ])
+}
+
+/** Where one group's entries point, so a test can say a leaf is a link and not a label. */
+function hrefs(page: Page, scope: Element): (string | undefined)[] {
+  return page.links({ scope }).map((link) => link.href)
+}
+
+describe("the topic index", () => {
+  let site: EmittedSite
+  let home: Page
+  let hashMaps: Page
+
+  before(
+    async () => {
+      site = await buildFixture("topic-index")
+      home = site.page("index")
+      hashMaps = site.page("terms/hash-maps")
+    },
+    { timeout: 300_000 },
+  )
+
+  test("the app's entry point is the topic index", () => {
+    // The vault has no `index.md`. Opening the app still lands on something, and what it
+    // lands on is every topic there is -- not a directory listing and not a guess at what
+    // is due.
+    assert.ok(site.hasPage("index"))
+    assert.deepEqual(topics(home), [
+      "Complexity",
+      "Éviction policies",
+      "Hash maps",
+      "System design",
+    ])
+  })
+
+  test("a Term page carries the generated index of every Library note about that topic", () => {
+    const index = hashMaps.require(".prepper-topic-index")
+    assert.deepEqual(groups(hashMaps, index), [
+      ["Cheat sheet", ["Hash maps at a glance"]],
+      ["Lessons", ["How array indexing works", "What a hash map lookup costs"]],
+      ["References", ["Hash map internals"]],
+      ["Problems", ["Two sum"]],
+    ])
+    assert.deepEqual(hrefs(hashMaps, index), [
+      "../cheat-sheets/hash-map-quick-reference",
+      "../lessons/array-indexing",
+      "../lessons/hash-map-lookup-cost",
+      "../references/hash-map-internals",
+      "../problems/two-sum",
+    ])
+  })
+
+  test("the sidebar tree is the same index as the Term page's", () => {
+    // Read on a page that is neither the entry point nor the Term itself, so what is being
+    // compared is genuinely the sidebar: a Problem, three directories away from both.
+    const problem = site.page("problems/two-sum")
+    const sidebar = topicNode(problem, "Hash maps", problem.tree)
+
+    assert.deepEqual(
+      groups(problem, sidebar),
+      groups(hashMaps, hashMaps.require(".prepper-topic-index")),
+    )
+  })
+
+  test("a note with two topics appears under both, not deduped to one", () => {
+    const under = (title: string) =>
+      groups(home, topicNode(home, title)).flatMap(([, notes]) => notes)
+
+    assert.ok(under("Hash maps").includes("What a hash map lookup costs"))
+    assert.ok(under("Complexity").includes("What a hash map lookup costs"))
+  })
+
+  test("a topic's leaves are grouped by note type, with the Cheat sheet first", () => {
+    // Cheat sheet first because it is the quick-catchup document: the first thing seen
+    // under a topic is the one that catches you up on it.
+    assert.deepEqual(
+      groups(home, topicNode(home, "Hash maps")).map(([heading]) => heading),
+      ["Cheat sheet", "Lessons", "References", "Problems"],
+    )
+  })
+
+  test("a flat alphabetical Cheat sheets list is reachable from the sidebar", () => {
+    const problem = site.page("problems/two-sum")
+    const list = problem.require(".prepper-cheat-sheets", problem.tree)
+
+    // Every Cheat sheet in the vault, whatever topic it is under, in title order -- for
+    // going straight to a condensed topic without navigating into it.
+    assert.deepEqual(
+      problem
+        .selectAll(".prepper-cheat-sheet-list > li", list)
+        .map((li) => problem.text(undefined, li)),
+      ["Complexity at a glance", "Hash maps at a glance"],
+    )
+  })
+
+  test("the sidebar goes off-canvas below ~900px, and opens without JavaScript", () => {
+    const problem = site.page("problems/two-sum")
+
+    // The control is a label and a checkbox rather than a button, so the drawer opens on a
+    // phone whether or not the page's scripts ran. That it is a real control in the markup
+    // is the half of "usable on a phone" that HTML can state.
+    const toggle = problem.require("label.prepper-sidebar-open", problem.tree)
+    const control = String(toggle.properties.htmlFor)
+    assert.ok(problem.select(`input#${control}`, problem.tree), "the toggle names no control")
+
+    // The other half is the breakpoint itself, which only the stylesheet knows.
+    const styles = site.files
+      .filter((f) => f.endsWith(".css"))
+      .map((f) => site.file(f))
+      .filter((css) => css.includes("prepper-sidebar-panel"))
+    assert.ok(styles.length > 0, "no emitted stylesheet mentions the sidebar drawer")
+    assert.ok(
+      styles.some((css) => css.includes("900px")),
+      "the sidebar drawer has no ~900px breakpoint",
+    )
+  })
+
+  test("a Term with no Lessons renders its body as an area overview above its index", () => {
+    const term = site.page("terms/system-design")
+
+    assert.match(term.text("article"), /Sizing a system before building it/)
+    assert.deepEqual(groups(term, term.require(".prepper-topic-index")), [])
+
+    // Above, not below: the overview is what the reader came for on a topic nothing has
+    // been written under yet.
+    assert.deepEqual(
+      term
+        .selectAll("article, .prepper-topic-index")
+        .map((node) => (node.tagName === "article" ? "body" : "index")),
+      ["body", "index"],
+    )
+  })
+})

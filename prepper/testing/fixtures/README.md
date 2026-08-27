@@ -95,6 +95,24 @@ anything.
   and a body link so that "neither a node nor the source of an edge" is a fact about a note
   that would otherwise have contributed two edges.
 
+- **`topic-index/`** — four Terms and six notes filed under two of them: a Cheat sheet, two
+  Lessons, a Reference and a Problem under *Hash maps*, and a Cheat sheet plus one of those
+  Lessons under *Complexity*. Its cluster is *the topic index*, so every detail is a fact
+  about navigation rather than about links. `lessons/hash-map-lookup-cost` names both topics
+  and is the note that has to appear under **both**, not deduped to one. The four note types
+  under *Hash maps* are what make "grouped by note type, Cheat sheet first" statable — a
+  Cheat sheet that sorts first against the alphabet's advice, and a Reference before a
+  Problem, which no alphabet would give. `terms/system-design` has nothing filed under it and
+  a body that explains the area, which is the **area overview** a topic with no Lessons and
+  therefore no Cheat sheet has to fall back on; `terms/eviction` is empty too and titled
+  *Éviction policies*, which is what makes the tree's alphabetical ordering mean what a
+  reader means by it rather than what code-point order does. The two Cheat sheets are named
+  `…-quick-reference` rather than after their topics because filenames are unique
+  vault-wide ([ADR 0001](../../../docs/adr/0001-split-note-identity.md)) and a
+  `cheat-sheets/hash-maps.md` would collide with the Term. The vault is otherwise correct —
+  it validates clean — because a fixture about navigation should not also be a fixture about
+  violations.
+
 - **`schema-and-identity-violations/`** — a vault that is wrong in thirteen ways at once:
   a Lesson with no `topic`, one with no `id`, one whose `id` was typed by hand, a Problem
   missing three of the four fields its type requires, a Record with no `date`, a Term that

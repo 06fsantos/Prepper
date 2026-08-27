@@ -8,11 +8,9 @@ import type {
   QuartzComponentConstructor,
   QuartzComponentProps,
 } from "../../../quartz/components/types.ts"
-import type { QuartzPluginData } from "../../../quartz/plugins/vfile.ts"
-
 import {
+  graphOf,
   incoming,
-  linkGraph,
   nodeAt,
   outgoing,
   type Edge,
@@ -94,27 +92,6 @@ function railsFor(section: Section, graph: LinkGraph, slug: string): Rail[] {
       // it here would make the panel a second, worse copy of what the page already shows.
       return [{ heading: "Backlinks", edges: incoming(graph, slug, "relates-to"), end: "source" }]
   }
-}
-
-/**
- * The graph for one corpus, computed once however many times it is asked for.
- *
- * "Computed once at build" is a claim these components would otherwise falsify on their
- * own: four of them render on every page, each handed the same `allFiles`, so a vault of
- * two hundred notes would index itself eight hundred times. Keying on the array's identity
- * is what makes the cache safe rather than merely fast -- a rebuild under `--serve` hands
- * over a new array, so there is no version of this that can go stale, and a `WeakMap` lets
- * the previous build's graph be collected with the list it was computed from.
- */
-const graphs = new WeakMap<readonly QuartzPluginData[], LinkGraph>()
-
-function graphOf(files: readonly QuartzPluginData[]): LinkGraph {
-  const cached = graphs.get(files)
-  if (cached) return cached
-
-  const graph = linkGraph(files)
-  graphs.set(files, graph)
-  return graph
 }
 
 const PrepperEdges: QuartzComponentConstructor<Options> = (opts) => {

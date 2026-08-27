@@ -45,6 +45,13 @@ prepper/
     index.ts                the component manifest; four config entries, one per placement
     components/index.ts     the component itself, sliced by `options.section`
     edges.test.ts           the rails and the backlinks panel, through seam 1
+  topics/                   the generated topic index: `topic`, inverted on the Term note
+    topic-index.ts          the pure inversion, read by both views and by the entry page
+    index.ts                the component manifest; two config entries, one per view
+    components/index.ts     the sidebar tree and the Term page's index, one component
+    topics.test.ts          one index, three renderings, through seam 1
+  home/                     the app's entry point: a generated `index.html`
+    index.ts                a pageType, so the page comes out through Quartz's own layout
   graph/                    the link graph: four typed edge kinds, computed once
     graph.ts                the pure index, read by the emitter and by the components
     index.ts                the emitter, which writes static/linkGraph.json

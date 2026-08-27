@@ -17,13 +17,13 @@ and does not pretend to know what is due.
 
 **Blocked by:** 05
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The app's entry point is the topic index
-- [ ] A Term page carries the generated index of every Library note about that topic
-- [ ] The sidebar tree is keyed by topic and is generated from the same index as the Term page
-- [ ] A note with two topics appears under both, not deduped to one
-- [ ] A topic's leaves are grouped by note type, with the Cheat sheet first
-- [ ] A flat alphabetical Cheat sheets list is reachable from the sidebar
-- [ ] The sidebar goes off-canvas below ~900px and the app remains usable on a phone
-- [ ] A Term with no Lessons renders its body as an area overview above its index
+- [x] The app's entry point is the topic index
+- [x] A Term page carries the generated index of every Library note about that topic
+- [x] The sidebar tree is keyed by topic and is generated from the same index as the Term page
+- [x] A note with two topics appears under both, not deduped to one
+- [x] A topic's leaves are grouped by note type, with the Cheat sheet first
+- [x] A flat alphabetical Cheat sheets list is reachable from the sidebar
+- [x] The sidebar goes off-canvas below ~900px and the app remains usable on a phone
+- [x] A Term with no Lessons renders its body as an area overview above its index

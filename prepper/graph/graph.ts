@@ -224,3 +224,29 @@ function compare(a: string, b: string): number {
 function byTitle(a: string, b: string): number {
   return a.localeCompare(b, "en") || compare(a, b)
 }
+
+/**
+ * The graph for one corpus, computed once however many times it is asked for.
+ *
+ * "Computed once at build" is a claim the components would otherwise falsify on their own:
+ * six of them render on every page -- four rails, the sidebar tree, a Term's index -- each
+ * handed the same `allFiles`, so a vault of two hundred notes would index itself twelve
+ * hundred times. Keying on the array's identity is what makes the cache safe rather than
+ * merely fast: a rebuild under `--serve` hands over a new array, so there is no version of
+ * this that can go stale, and a `WeakMap` lets the previous build's graph be collected
+ * with the list it was computed from.
+ *
+ * It lives here, beside the computation, rather than in either of the two component
+ * plugins that ask for it -- one cache per plugin would be two graphs per build, which is
+ * the exact cost the cache exists to avoid.
+ */
+const graphs = new WeakMap<readonly QuartzPluginData[], LinkGraph>()
+
+export function graphOf(files: readonly QuartzPluginData[]): LinkGraph {
+  const cached = graphs.get(files)
+  if (cached) return cached
+
+  const graph = linkGraph(files)
+  graphs.set(files, graph)
+  return graph
+}
