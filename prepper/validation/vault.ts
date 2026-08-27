@@ -20,6 +20,7 @@ import type { BuildCtx } from "../../quartz/util/ctx"
 import type { ProcessedContent } from "../../quartz/plugins/vfile"
 
 import { typeOf, type NoteType } from "../note-type.ts"
+import { withheldNotes } from "../workshop/index.ts"
 
 /** One note in the vault, as the build read it. */
 export interface Note {
@@ -58,6 +59,22 @@ export interface Note {
    * reaches a note's hast tree, and a missing one is an error, not an unwritten link.
    */
   unwrittenLinks: string[]
+  /**
+   * Every **Workshop note this note's body links to**, deduplicated and sorted.
+   *
+   * Recorded by `prepper/links` alongside `unwrittenLinks`, and kept apart from them for
+   * the reason the boundary rule exists: the target is written, and telling the dev to go
+   * and write it would be the one unhelpful thing to say. Empty on a Workshop note --
+   * between two of them there is no boundary to cross.
+   */
+  workshopLinks: string[]
+  /**
+   * Every **Workshop note this note's body embeds**, deduplicated and sorted.
+   *
+   * The same crossing at a higher severity. A link at a Workshop note can be deliberate;
+   * an embed says *show this here*, of something the reader will never be shown.
+   */
+  workshopEmbeds: string[]
 }
 
 /** One file in the vault, Markdown or not. */
@@ -77,16 +94,23 @@ export interface Vault {
 }
 
 /**
- * Build the snapshot from what an emitter is given.
+ * Build the snapshot from what an emitter is given, **plus the notes withheld from it**.
  *
  * `content[]` at this point also holds Quartz's synthesised folder and tag index pages,
  * which are not notes and answer to no file in the vault. They are filtered out on the
  * one thing that tells them apart: a page Quartz invented has no file path, because no
  * file was read to make it.
+ *
+ * What it no longer holds is the Workshop notes: `prepper/workshop` is a filter, and a
+ * filter drops a note before any emitter sees it. Every rule is written against "every
+ * note the build parsed", and a `research` note with no `sources` must not start passing
+ * by having become invisible -- so the notes that filter withheld are read back in here.
+ * This is the one place the two halves of the Workshop boundary meet, and it is why the
+ * page half could be built without weakening the rules. See `../workshop/index.ts`.
  */
 export function vaultFromEmitterContent(ctx: BuildCtx, content: ProcessedContent[]): Vault {
   const notes: Note[] = []
-  for (const [, file] of content) {
+  for (const [, file] of [...content, ...withheldNotes(ctx)]) {
     const relativePath = file.data.relativePath
     if (!relativePath || !file.data.filePath) continue
 
@@ -98,6 +122,8 @@ export function vaultFromEmitterContent(ctx: BuildCtx, content: ProcessedContent
       declaredFields: declaredFields(String(file.value ?? "")),
       source: String(file.value ?? ""),
       unwrittenLinks: file.data.unwrittenLinks ?? [],
+      workshopLinks: file.data.workshopLinks ?? [],
+      workshopEmbeds: file.data.workshopEmbeds ?? [],
     })
   }
 

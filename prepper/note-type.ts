@@ -75,6 +75,7 @@ void everyTypeIsPlacedOnce
 void noTypeIsPlacedTwice
 
 const library = new Set<string>(libraryTypes)
+const workshop = new Set<string>(workshopTypes)
 
 /** The type a vault-relative path declares by where it sits. */
 export function typeOf(relativePath: string): NoteType | undefined {
@@ -92,4 +93,18 @@ export function typeOf(relativePath: string): NoteType | undefined {
  */
 export function isLibrary(type: NoteType | undefined): boolean {
   return type !== undefined && library.has(type)
+}
+
+/**
+ * Whether a type is Workshop content.
+ *
+ * Deliberately **not** `!isLibrary`. Undefined is neither: a Markdown file somewhere the
+ * layout names no type for is not Workshop material the dev filed away, it is a note in a
+ * place the vocabulary has no word for. Withholding its page on that basis would make an
+ * unrecognised directory silently swallow whatever was put in it -- a home page at the
+ * vault root, most obviously -- so the question of whether it should exist stays a
+ * validation question and its page is left alone.
+ */
+export function isWorkshop(type: NoteType | undefined): boolean {
+  return type !== undefined && workshop.has(type)
 }

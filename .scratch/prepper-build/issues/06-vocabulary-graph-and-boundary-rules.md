@@ -31,7 +31,7 @@ and, as a principle, anything on the report channel, ever.
 
 **Blocked by:** 05, 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Inherited from 05: the page half of the Workshop boundary.** 05 delivered the graph half —
 a Workshop note is neither a node nor the source of an edge — and stopped there, because
@@ -42,15 +42,15 @@ silently stop validating every Workshop note in the vault. That is the same coll
 when it disabled `remove-draft`, and it has to be resolved here, where the boundary is
 guarded. Until it is, a Workshop note still gets a page.
 
-- [ ] A Workshop note is dropped from the corpus by a filter, and gets no page
-- [ ] Every validation rule still sees Workshop notes, filter or no filter
+- [x] A Workshop note is dropped from the corpus by a filter, and gets no page
+- [x] Every validation rule still sees Workshop notes, filter or no filter
 
-- [ ] Error: a `topic` value naming a note that does not exist, or one that is not a `term`
-- [ ] Error: a `prerequisites` target that does not exist, or that is not Library content
-- [ ] Error: a `practices` target that exists but is not Library content — while a nonexistent one passes
-- [ ] Error: a cycle or self-reference in the prerequisites graph, with the full path named in the message
-- [ ] Error: two cheat sheets claiming one topic, or a list-valued `topic` on a cheat sheet
-- [ ] Warning: a body link from Library content to a Workshop note, with its own message distinct from the unwritten-link warning
-- [ ] Error: an embed from Library content to a Workshop note, rendered as the marked unclickable affordance
-- [ ] Warning: a topic that has Lessons but no cheat sheet
-- [ ] A pre-commit hook exists, is not installed by the build, and warns on a changed `id` line relative to `HEAD`
+- [x] Error: a `topic` value naming a note that does not exist, or one that is not a `term`
+- [x] Error: a `prerequisites` target that does not exist, or that is not Library content
+- [x] Error: a `practices` target that exists but is not Library content — while a nonexistent one passes
+- [x] Error: a cycle or self-reference in the prerequisites graph, with the full path named in the message
+- [x] Error: two cheat sheets claiming one topic, or a list-valued `topic` on a cheat sheet
+- [x] Warning: a body link from Library content to a Workshop note, with its own message distinct from the unwritten-link warning
+- [x] Error: an embed from Library content to a Workshop note, rendered as the marked unclickable affordance
+- [x] Warning: a topic that has Lessons but no cheat sheet
+- [x] A pre-commit hook exists, is not installed by the build, and warns on a changed `id` line relative to `HEAD`

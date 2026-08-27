@@ -20,9 +20,12 @@
  */
 import type { Vault } from "./vault.ts"
 import type { Violation } from "./violation.ts"
+import { boundaryRules } from "./rules/boundary.ts"
+import { graphRules } from "./rules/graph.ts"
 import { identityRules } from "./rules/identity.ts"
 import { linkRules } from "./rules/links.ts"
 import { schemaRules } from "./rules/schema.ts"
+import { vocabularyRules } from "./rules/vocabulary.ts"
 
 /** What a rule returns: a violation minus the rule's own name, which the runner fills in. */
 export type Finding = Omit<Violation, "rule">
@@ -41,7 +44,14 @@ export interface Rule {
  * Schema and identity landed first, then links; the vocabulary, graph, and
  * Workshop-boundary rules join this list without reshaping anything around it.
  */
-export const rules: Rule[] = [...schemaRules, ...identityRules, ...linkRules]
+export const rules: Rule[] = [
+  ...schemaRules,
+  ...identityRules,
+  ...linkRules,
+  ...vocabularyRules,
+  ...graphRules,
+  ...boundaryRules,
+]
 
 /**
  * Every violation in the vault, from every rule.

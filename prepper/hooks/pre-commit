@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# Prepper's pre-commit hook: one check, and it warns.
+#
+# A record's `id` is minted once with `npm run ulid` and never changes -- it is the note's
+# identity across every rename the title will go through. Nothing in the build
+# dereferences the value, so its immutability is deliberately *not* a validation rule:
+# there is no broken link to find, and a build rule that read `git` would make the vault's
+# correctness depend on its history rather than on its contents.
+#
+# It is worth a cheap guard anyway, and this is the cheapest place for one -- the moment
+# the change is about to become history, on the diff that already exists. It warns and
+# never blocks: a genuine re-mint happens (a note split in two, an id typed by hand before
+# `npm run ulid` existed), and a hook that refused it would only teach the dev `--no-verify`.
+#
+# Not installed by the build. Nothing under `npm run build`, `npm test` or CI touches
+# `.git/hooks`, because a repository silently growing behaviour on checkout is worse than
+# a guard the dev opted into. To install:
+#
+#     ln -s ../../prepper/hooks/pre-commit .git/hooks/pre-commit
+#
+# To skip it once, commit with `--no-verify`.
+
+changed=$(
+  git diff --cached --unified=0 -- '*.md' |
+    awk '
+      /^\+\+\+ b\// { file = substr($0, 7); next }
+      /^-id:/ { removed[file] = $2; next }
+      /^\+id:/ { if (file in removed && removed[file] != $2) print file " " removed[file] " -> " $2 }
+    '
+)
+
+[ -z "$changed" ] && exit 0
+
+printf 'warning: a record id changed, and an id is minted once and never edited:\n'
+printf '%s\n' "$changed" | sed 's/^/  /'
+printf 'Commit anyway if the re-mint was deliberate.\n'
+exit 0

@@ -334,6 +334,14 @@ plugins:
   # It does not replace `contentIndex.json`, which stays exactly as Quartz emits it.
   - source: "./prepper/graph"
     enabled: true
+  # Prepper: ours. The Workshop boundary, page half: `research`, `record` and `mission`
+  # are withheld from the emitted site, so the reader never meets one. It is a *filter*,
+  # which is the only mechanism that takes a note out of the corpus -- and which is why
+  # it hands the notes it withheld to validation, an emitter that has to go on seeing
+  # them. See `prepper/workshop/index.ts`; it is the same collision that keeps
+  # `remove-draft` disabled above, resolved rather than traded off.
+  - source: "./prepper/workshop"
+    enabled: true
   # Prepper: ours. The whole-corpus emitter seam is where validation runs, so every
   # build -- `npm run build`, `npm run serve`, and the `npm run validate` CLI, which
   # invokes this same pipeline -- reports the same violations. It emits no files and

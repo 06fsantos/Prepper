@@ -141,19 +141,28 @@ describe("the link graph", () => {
     )
   })
 
-  test("a Workshop note is neither a node nor the source of an edge", () => {
+  test("a Workshop note is neither a node, nor the source of an edge, nor a page", () => {
     // The research note carries a `topic` and links a Lesson in its prose, so it would
     // have contributed two edges had the graph been willing to hear from it.
     //
-    // This is the graph half of the Workshop boundary. The page half is a Quartz *filter*
-    // (ticket 06), and until it lands a research note still gets a page -- which is why
-    // this test asks the graph and not the emitted file list.
+    // Both halves of the Workshop boundary in one assertion, because they are one claim:
+    // the reader never meets this note. The graph half is ticket 05's, the page half is
+    // the filter in `prepper/workshop`.
     const workshop = "research/why-hash-maps-were-chosen"
     assert.ok(!graph.nodes.some((node) => node.slug === workshop), `${workshop} is a node`)
     assert.ok(
       !graph.edges.some((edge) => edge.source === workshop || edge.target === workshop),
       `${workshop} has edges`,
     )
+    assert.ok(!site.hasPage(workshop), `${workshop} was given a page`)
+  })
+
+  test("a Workshop note is still in the vault the rules see", () => {
+    // The other side of the filter, and the reason it could be written at all. The
+    // research note is not in `content[]` by the time any emitter runs, so validation
+    // counts it only because the filter handed it back -- and a `research` note with no
+    // `sources` has to go on failing rather than passing by being invisible.
+    assert.match(site.log, /in 11 notes/)
   })
 
   test("a page Quartz generated is not a node", () => {
@@ -192,7 +201,6 @@ describe("the link graph", () => {
       "problems/lru-cache",
       "problems/two-sum",
       "references/hash-map-internals",
-      "research/why-hash-maps-were-chosen",
       "terms/complexity",
       "terms/eviction",
       "terms/hash-maps",
@@ -218,9 +226,10 @@ describe("the link graph", () => {
     )
   })
 
-  test("a vault whose only gap is one unwritten link still passes", () => {
-    // A warning marks intent and never fails a build.
+  test("a vault whose only violations are warnings still passes", () => {
+    // A warning marks intent and never fails a build. Two of them here: the unwritten
+    // link above, and `hash-maps` being taught four times with nothing summarising it.
     assert.equal(site.exitCode, 0, site.log)
-    assert.match(site.log, /0 errors, 1 warning in 11 notes/)
+    assert.match(site.log, /0 errors, 2 warnings in 11 notes/)
   })
 })

@@ -70,12 +70,15 @@
  * warning, until it is itself touched. Nothing is wrong with the site the next full build
  * emits; the dev server is simply a rebuild behind on the one page it did not re-read.
  */
-import { visit } from "unist-util-visit"
-import type { Element, Root } from "hast"
+import { SKIP, visit } from "unist-util-visit"
+import type { Element, Parent, Root } from "hast"
 import type { VFile } from "vfile"
 
 import type { BuildCtx } from "../../quartz/util/ctx"
 import type { QuartzTransformerPluginInstance } from "../../quartz/plugins/types"
+
+import { isLibrary, typeOf } from "../note-type.ts"
+import { workshopSlugs } from "../workshop/index.ts"
 
 declare module "vfile" {
   interface DataMap {
@@ -108,6 +111,28 @@ declare module "vfile" {
      * the validation report and the graph disagreeing about which gaps exist.
      */
     bodyLinks: string[]
+    /**
+     * Every **Workshop note this Library note's body links to**, deduplicated and sorted.
+     *
+     * A *warning*, and one that must never share a line with an unwritten link. The
+     * target exists -- somebody wrote it, it is in the vault, Obsidian will open it --
+     * it is merely invisible in the app. "Does not exist" and "exists and the reader
+     * cannot reach it" are different things to be told, and telling a dev to go and write
+     * a note they already wrote is the specific unhelpfulness that matters here.
+     *
+     * Empty on a Workshop note. A research note linking another research note is not
+     * crossing anything: neither is rendered, so there is no boundary between them.
+     */
+    workshopLinks: string[]
+    /**
+     * Every **Workshop note this Library note's body embeds**, deduplicated and sorted.
+     *
+     * An *error*, where the link above is a warning, and the asymmetry is the point: a
+     * link at a Workshop note can be deliberate -- "my reasoning is written up over
+     * there" -- and an embed never is. An embed says *show this here*, and the one thing
+     * the boundary guarantees is that this never happens.
+     */
+    workshopEmbeds: string[]
   }
 }
 
@@ -153,13 +178,45 @@ const PrepperLinks = (): QuartzTransformerPluginInstance => ({
     // Folders are recoverable from the slugs themselves; tags are recognised at the link
     // instead, below.
     const existing = new Set<string>([...ctx.allSlugs, ...folderIndexSlugs(ctx.allSlugs)])
+    // Every note that exists and the reader cannot reach. Read from the files rather than
+    // from the corpus, because by emit time the corpus no longer holds one.
+    const workshop = workshopSlugs(ctx)
 
     return [
       () => (tree: Root, file: VFile) => {
         const unwritten = new Set<string>()
         const body = new Set<string>()
+        const crossings = new Set<string>()
+        const embedded = new Set<string>()
 
-        visit(tree, "element", (node: Element) => {
+        // Only a *Library* note can cross the boundary. Between two Workshop notes there
+        // is no boundary to cross: neither is rendered, so nothing the reader meets is
+        // affected either way, and warning about it would be scolding the dev for the
+        // shape of their own private notes.
+        const crosses = isLibrary(typeOf(file.data.relativePath ?? ""))
+
+        visit(tree, "element", (node: Element, index, parent: Parent | undefined) => {
+          // An embed of a Workshop note is replaced whole. Quartz splices a transclusion
+          // in at build time by reading the *inner* anchor's `data-slug`, so leaving the
+          // blockquote in place with its anchor defaced would leave an empty quoted box
+          // where the reader was promised content. The affordance is the honest rendering
+          // of "there is something here you cannot see", and it is the same one an
+          // unwritten link gets, because it is the same fact about reachability.
+          if (crosses && parent && index !== undefined && isTransclude(node)) {
+            const target = node.children[0]
+            const slug =
+              target?.type === "element" ? target.properties["data-slug"] : undefined
+            if (typeof slug === "string" && workshop.has(slug)) {
+              body.add(slug)
+              embedded.add(slug)
+              parent.children[index] = affordance(slug, {
+                attribute: "data-workshop-embed",
+                title: `${slug} is in the vault and not in the app: it cannot be embedded here`,
+              })
+              return SKIP
+            }
+          }
+
           if (node.tagName !== "a" || isTagLink(node)) return
           const target = node.properties["data-slug"]
           // `data-slug` is `crawl-links`' record of where an *internal* link resolved
@@ -174,7 +231,26 @@ const PrepperLinks = (): QuartzTransformerPluginInstance => ({
           // a link the vault contains -- that is the whole of what a placeholder node is.
           body.add(target)
 
-          if (isTranscludeInner(node) || existing.has(target)) return
+          if (isTranscludeInner(node)) return
+
+          if (crosses && workshop.has(target)) {
+            // Degraded like an unwritten link, and reported unlike one. The href would
+            // point at a page the build never emitted, so leaving it live would hand the
+            // reader a 404 -- and a link that goes nowhere is not a link, whatever the
+            // reason. The severities are where the two are told apart, and the mark
+            // carries its own attribute so that nothing has to guess from the class.
+            crossings.add(target)
+            replaceWith(
+              node,
+              affordance(target, {
+                attribute: "data-workshop-link",
+                title: `${target} is in the vault and not in the app`,
+              }),
+            )
+            return
+          }
+
+          if (existing.has(target)) return
 
           unwritten.add(target)
           markUnwritten(node, target)
@@ -182,6 +258,8 @@ const PrepperLinks = (): QuartzTransformerPluginInstance => ({
 
         file.data.bodyLinks = [...body]
         file.data.unwrittenLinks = [...unwritten].sort()
+        file.data.workshopLinks = [...crossings].sort()
+        file.data.workshopEmbeds = [...embedded].sort()
       },
     ]
   },
@@ -243,22 +321,61 @@ function isTranscludeInner(node: Element): boolean {
   return Array.isArray(classes) && classes.includes("transclude-inner")
 }
 
-/**
- * Turn one resolved anchor into the affordance, in place.
- *
- * In place, because the node keeps its children: the link text is whatever the author
- * wrote, alias included, so `[[robin-hood-hashing|Robin Hood hashing]]` still reads as
- * the sentence it was fitted to. A `<span>` rather than an `<a>` with no `href` is what
- * makes it unclickable rather than merely inert-looking, and it takes the target out of
- * reach of Quartz's popover and SPA scripts, which key on anchors.
- */
+/** Turn one resolved anchor into the affordance an unwritten link gets. */
 function markUnwritten(node: Element, target: string): void {
-  node.tagName = "span"
-  node.properties = {
-    className: ["unwritten-link"],
-    "data-unwritten-link": target,
-    title: `unwritten link: no note named ${target}`,
+  replaceWith(
+    node,
+    affordance(target, {
+      attribute: "data-unwritten-link",
+      title: `unwritten link: no note named ${target}`,
+    }),
+  )
+}
+
+/**
+ * The affordance itself: a marked, unclickable `<span>` naming what is not reachable.
+ *
+ * One shape, three reasons -- a note nobody has written, a Workshop note linked, a
+ * Workshop note embedded -- because from where the reader sits they are one fact: there
+ * is something here they cannot follow. Which one it is lives in the attribute and the
+ * tooltip, and in the validation channel, where the severities are.
+ *
+ * The class stays `unwritten-link` in all three. It names the *affordance* rather than
+ * the reason, it is what the stylesheet keys on, and splitting it would mean three rules
+ * painting one thing.
+ */
+function affordance(
+  target: string,
+  { attribute, title }: { attribute: string; title: string },
+): Element {
+  return {
+    type: "element",
+    tagName: "span",
+    properties: { className: ["unwritten-link"], [attribute]: target, title },
+    children: [{ type: "text", value: target.split("/").at(-1) ?? target }],
   }
+}
+
+/**
+ * Become that span, in place.
+ *
+ * In place, because the node keeps its children where it has any worth keeping: the link
+ * text is whatever the author wrote, alias included, so
+ * `[[robin-hood-hashing|Robin Hood hashing]]` still reads as the sentence it was fitted
+ * to. A `<span>` rather than an `<a>` with no `href` is what makes it unclickable rather
+ * than merely inert-looking, and it takes the target out of reach of Quartz's popover and
+ * SPA scripts, which key on anchors.
+ */
+function replaceWith(node: Element, span: Element): void {
+  node.tagName = span.tagName
+  node.properties = span.properties
+}
+
+/** Whether this node is the `blockquote` Quartz emits for an `![[…]]` embed. */
+function isTransclude(node: Element): boolean {
+  if (node.tagName !== "blockquote") return false
+  const classes = node.properties.className
+  return Array.isArray(classes) && classes.includes("transclude")
 }
 
 export default PrepperLinks

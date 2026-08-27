@@ -74,7 +74,7 @@ describe("the validation spine", () => {
       for (const note of new Set(broken.violations.map((v) => v.note ?? "vault"))) {
         assert.ok(broken.output.includes(note), `"${note}" is missing from:\n${broken.output}`)
       }
-      assert.match(broken.output, /13 errors, 0 warnings in 11 notes/)
+      assert.match(broken.output, /13 errors, 0 warnings in 12 notes/)
     })
 
     test("a clean vault exits zero and says so", () => {
@@ -87,7 +87,7 @@ describe("the validation spine", () => {
       // Quartz synthesises a folder index page per directory; those are not notes and
       // would each report a missing `id` if the snapshot could not tell them apart.
       assert.equal(clean.notes, 2)
-      assert.equal(broken.notes, 11)
+      assert.equal(broken.notes, 12)
     })
   })
 
@@ -102,7 +102,7 @@ describe("the validation spine", () => {
     )
 
     test("violations surface in the build's own output", () => {
-      assert.match(site.log, /\[prepper\] validation: 13 errors, 0 warnings in 11 notes/)
+      assert.match(site.log, /\[prepper\] validation: 13 errors, 0 warnings in 12 notes/)
       for (const violation of broken.violations) {
         assert.ok(
           site.log.includes(violation.message),
@@ -160,6 +160,12 @@ describe("the validation spine", () => {
       assert.deepEqual(messagesFor(broken, "lessons/no-topic.md", "frontmatter-required-fields"), [
         "no frontmatter `topic`: a lesson requires it",
       ])
+      // A record is Workshop, so `prepper/workshop` filtered it out of the corpus before
+      // this emitter ran -- and it is still reported. That is the half of the boundary
+      // that is easy to lose: a filter drops a note before any emitter sees it, so a
+      // Workshop note could quietly stop being validated by having become invisible.
+      // Ticket 06 reconciled the two rather than trading them off; this is the assertion
+      // that would fail if the reconciliation were undone. See `prepper/workshop`.
       assert.deepEqual(
         messagesFor(broken, "records/0001-loose-record.md", "frontmatter-required-fields"),
         ["no frontmatter `date`: a record requires it"],

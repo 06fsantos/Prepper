@@ -103,6 +103,13 @@ describe("mechanism 2: an embed of a note with no page leaks nothing", () => {
   // purpose, because a filter drops drafts before any emitter sees them and `draft: true`
   // must soften no validation rule. Asserting this guarantee through a filter the project
   // has committed to not running would prove nothing about the vault it ships.
+  //
+  // The pageless note sits in `notes/`, a directory the layout names no type for, and not
+  // in `research/`. Ticket 06 shipped the real boundary, and it replaces an embed of a
+  // *Workshop* note with the marked affordance before Quartz ever transcludes -- which is
+  // the right rendering and would hide the mechanism this spike is the tripwire for. What
+  // is asserted below is Quartz's behaviour when a note is out of the corpus for any
+  // reason, so the note is kept out of reach of our own transform.
   let site: EmittedSite
 
   before(
@@ -116,7 +123,7 @@ describe("mechanism 2: an embed of a note with no page leaks nothing", () => {
 
   test("the vault builds, and the pageless note gets no page", () => {
     assert.equal(site.exitCode, 0, site.log)
-    assert.ok(!site.hasPage("research/why-buckets-were-benchmarked-this-way"))
+    assert.ok(!site.hasPage("notes/why-buckets-were-benchmarked-this-way"))
     assert.ok(site.hasPage("terms/hash-map"))
   })
 
@@ -132,7 +139,7 @@ describe("mechanism 2: an embed of a note with no page leaks nothing", () => {
   test("the pageless note is out of the corpus, which is what the guarantee rests on", () => {
     // Not merely pageless: absent from what the build renders from. A note still in the
     // corpus would be spliced into the embed by the test above, page or no page.
-    assert.ok(!("research/why-buckets-were-benchmarked-this-way" in site.contentIndex))
+    assert.ok(!("notes/why-buckets-were-benchmarked-this-way" in site.contentIndex))
   })
 
   test("embedding a note with no page renders an empty placeholder", () => {

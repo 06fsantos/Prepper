@@ -38,6 +38,9 @@ Everything else at the repo root that is not ours — `quartz/`, `quartz.ts`,
 ```
 prepper/
   note-type.ts              the eight note types, and the Library/Workshop split on them
+  link-targets.ts           what a frontmatter link field names, as written and resolved
+  hooks/                    git hooks, available and never installed by the build
+    pre-commit              warns on a changed `id` line; install it with a symlink
   edges/                    typed edges rendered in context, untyped ones in one panel
     index.ts                the component manifest; four config entries, one per placement
     components/index.ts     the component itself, sliced by `options.section`
@@ -57,6 +60,8 @@ prepper/
     mechanisms.test.ts      the Quartz mechanisms the design rests on, run
     spike-build.ts          seam 1 with a plugin that is not in the config yet
     spikes/                 the throwaway plugins those spikes need
+  workshop/                 the Workshop boundary, page half: a filter, plus the handoff
+    index.ts                withholds Workshop notes, and hands them to validation
   validation/               the validation spine: one rule module, two consumers
     index.ts                the Quartz emitter, registered from quartz.config.yaml
     validate.ts             `npm run validate`, the CI gate

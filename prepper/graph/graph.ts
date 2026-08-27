@@ -41,27 +41,17 @@
  * needs the two kept apart, and that list has already mixed them.
  *
  * A frontmatter target is not a link Quartz ever saw -- `topic`, `prerequisites` and
- * `practices` never reach a note's hast tree, so nothing resolved them. Resolving them
- * here is therefore not a second reading of the same thing, and it is kept to the one rule
- * the spec states: a target names a **filename stem**, matched case-insensitively against
- * the last segment of a slug, because filenames are unique vault-wide
- * ([ADR 0001](../../docs/adr/0001-split-note-identity.md)). Quartz's own `slugifyFilePath`
- * does the normalising, so "case-insensitively" means exactly what it means everywhere
- * else in the build.
- *
- * One spelling has to be undone before that, though: Obsidian stores a Link property as
- * `topic: "[[hash-maps]]"`, so any note whose fields were edited in Obsidian's property UI
- * arrives with the brackets still on. They are notation, not name -- `slugifyFilePath`
- * would carry them into the slug and produce a target no note could ever answer to -- so
- * a frontmatter value is unwrapped to the name inside it first. This is not inline syntax
- * *typing* an edge, which remains impossible: the field still decides what the edge means,
- * and the brackets only decide where the name ends.
+ * `practices` never reach a note's hast tree, so nothing resolved them. Resolving them is
+ * therefore not a second reading of the same thing, and it is not done here either: it is
+ * `prepper/link-targets.ts`, shared with the vocabulary rules that have to say whether a
+ * target exists. One implementation, so that a vault cannot validate clean and still
+ * render a rail pointing at nothing.
  */
-import { slugifyFilePath } from "../../quartz/util/path.ts"
-import type { FilePath, FullSlug } from "../../quartz/util/path.ts"
+import type { FullSlug } from "../../quartz/util/path.ts"
 import type { QuartzPluginData } from "../../quartz/plugins/vfile.ts"
 
 import { isLibrary, typeOf, type NoteType } from "../note-type.ts"
+import { stemOf, targets } from "../link-targets.ts"
 
 /** The four edge kinds, in the order the spec lists them. Also the order they serialise in. */
 export const edgeTypes = ["prerequisite-of", "about", "practices", "relates-to"] as const
@@ -142,7 +132,7 @@ export function linkGraph(files: readonly QuartzPluginData[]): LinkGraph {
   const byStem = new Map<string, FullSlug>()
   const slugs = new Set<string>()
   for (const node of nodes) {
-    byStem.set(node.slug.split("/").at(-1)!, node.slug)
+    byStem.set(stemOf(node.slug), node.slug)
     slugs.add(node.slug)
   }
 
@@ -157,11 +147,7 @@ export function linkGraph(files: readonly QuartzPluginData[]): LinkGraph {
     }
 
     for (const [field, type] of fieldEdges) {
-      for (const written of listValues(file.frontmatter?.[field])) {
-        const stem = slugifyFilePath(nameOf(written) as FilePath)
-          .split("/")
-          .at(-1)!
-        if (stem === "") continue
+      for (const { stem } of targets(file.frontmatter?.[field])) {
         add(byStem.get(stem) ?? stem, type)
       }
     }
@@ -218,37 +204,6 @@ export function nodeAt(graph: LinkGraph, slug: string): GraphNode | undefined {
 function noteTypeOf(file: QuartzPluginData): NoteType | undefined {
   if (!file.relativePath || !file.filePath) return undefined
   return typeOf(file.relativePath)
-}
-
-/**
- * A frontmatter field's targets, as a list.
- *
- * `topic` is a list on every type but `cheat-sheet`, where it is scalar -- one value being
- * what makes "one cheat sheet per topic" checkable. Both spellings mean the same thing to
- * the graph, so both are read.
- */
-function listValues(value: unknown): string[] {
-  if (typeof value === "string") return [value]
-  if (Array.isArray(value)) return value.filter((v): v is string => typeof v === "string")
-  return []
-}
-
-/**
- * The name inside a frontmatter target, with any link notation taken off.
- *
- * `[[hash-maps]]`, `[[hash-maps|hash maps]]` and `[hash maps](hash-maps.md)` all name
- * `hash-maps`. Obsidian writes the first of those on its own whenever a field is edited
- * through its property UI, so this is the ordinary case and not an exotic one. An alias
- * is dropped rather than read: a frontmatter target names a note, and the label somebody
- * fitted to a sentence is not part of the name.
- */
-function nameOf(written: string): string {
-  const value = written.trim()
-  const wikilink = /^!?\[\[([^\]|#]*)/.exec(value)
-  if (wikilink) return wikilink[1].trim()
-  const markdown = /^\[[^\]]*\]\(([^)#]*)/.exec(value)
-  if (markdown) return decodeURIComponent(markdown[1].trim())
-  return value
 }
 
 /**
