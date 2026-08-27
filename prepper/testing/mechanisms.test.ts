@@ -15,7 +15,7 @@
 import test, { describe, before } from "node:test"
 import assert from "node:assert"
 
-import { type EmittedSite } from "./build-fixture"
+import { buildFixture, type EmittedSite } from "./build-fixture"
 import { buildWithSpikePlugins } from "./spike-build"
 
 describe("mechanism 1: a quiz fence body is re-parsed into real Markdown", () => {
@@ -23,18 +23,22 @@ describe("mechanism 1: a quiz fence body is re-parsed into real Markdown", () =>
   // `self.parse()` and lets Quartz's own downstream transforms resolve what comes out --
   // Quartz's parser, Quartz's transforms, no second wikilink implementation of ours. If
   // the re-parse did not yield real wikilink nodes, that design falls back into ADR 0002.
+  //
+  // This was a spike plugin until ticket 09 shipped `prepper/quiz`, which is exactly the
+  // handover `spike-build.ts` describes: the mechanism is now exercised through the
+  // config the dev actually has. What is asserted here is still Quartz's behaviour rather
+  // than ours -- that a re-parsed subtree is walked by OFM, by `crawl-links`, and by GFM
+  // -- and `prepper/quiz/quiz.test.ts` is where the quiz block's own behaviour lives.
   let site: EmittedSite
 
   before(
     async () => {
-      site = await buildWithSpikePlugins("quiz-fence-wikilink", [
-        { source: "prepper/testing/spikes/quiz-fence-reparse", order: 25 },
-      ])
+      site = await buildFixture("quiz-fence-wikilink")
     },
     { timeout: 120_000 },
   )
 
-  test("the vault builds, with the spike plugin actually loaded", () => {
+  test("the vault builds, with the quiz plugin actually loaded", () => {
     assert.equal(site.exitCode, 0, site.log)
     // A plugin Quartz cannot load is a warning and a skip, not a failure -- the fences
     // would then render as ordinary code blocks and every assertion below would be
@@ -62,18 +66,20 @@ describe("mechanism 1: a quiz fence body is re-parsed into real Markdown", () =>
   })
 
   test("the fence body is Markdown, not an opaque string", () => {
-    // The options are a GFM task list and each explanation is a blockquote. Both are
-    // parsed by Quartz's own configuration, which is the whole claim.
+    // The options were written as a GFM task list and each explanation as a blockquote,
+    // and both were parsed by Quartz's own configuration -- which is the whole claim.
+    // `prepper/quiz` unmakes the task list on the way out, so what proves the `[x]` was
+    // read as a task marker is that exactly one option came out marked correct.
     const page = site.page("lessons/hash-map-lookup-cost")
     const quiz = page.require("div.quiz")
-    assert.equal(page.selectAll("li.task-list-item", quiz).length, 3)
-    assert.equal(page.selectAll("li.task-list-item.is-checked", quiz).length, 1)
+    assert.equal(page.selectAll("li.quiz-option", quiz).length, 3)
+    assert.equal(page.selectAll('li.quiz-option[data-quiz-correct="true"]', quiz).length, 1)
     assert.equal(page.text("blockquote", quiz), "The key hashes straight to its bucket.")
   })
 
   test("the infostring survives to the emitted element", () => {
     // `data.hProperties` -> hast element attributes, through rehype-raw's reparse.
-    // Ticket 09's html-plugin half reads the type back off this attribute.
+    // The browser half reads the type back off this attribute.
     const quiz = site.page("lessons/hash-map-lookup-cost").require("div.quiz")
     // hast normalises `data-*` attribute names to camelCase in `properties`; the
     // emitted HTML carries them hyphenated.

@@ -204,8 +204,7 @@ const PrepperLinks = (): QuartzTransformerPluginInstance => ({
           // unwritten link gets, because it is the same fact about reachability.
           if (crosses && parent && index !== undefined && isTransclude(node)) {
             const target = node.children[0]
-            const slug =
-              target?.type === "element" ? target.properties["data-slug"] : undefined
+            const slug = target?.type === "element" ? target.properties["data-slug"] : undefined
             if (typeof slug === "string" && workshop.has(slug)) {
               body.add(slug)
               embedded.add(slug)

@@ -43,7 +43,28 @@ anything.
   *[mechanism 1](../../../.scratch/prepper-build/research/02-quiz-fence-reparsing.md)*: a
   fence body is re-parsed as ordinary Markdown, so a link written in it is a link. The
   wikilink appears nowhere else in the note on purpose — the edge cannot arrive by another
-  route.
+  route. It is deliberately kept apart from `quiz-fence-types/` below: this one is the
+  tripwire `mechanisms.test.ts` reads when an upstream merge breaks something, and it stays
+  as small as the claim it pins.
+- **`quiz-fence-types/`** — one Lesson carrying a quiz fence of every kind, and the two
+  Terms they point at. Its cluster is *the quiz fence*: the mcq holds a wikilink inside one
+  option's explanation and nowhere else in the note, so the edge it becomes cannot have
+  arrived by another route; the cloze has two holes and, in the same sentence, a
+  `{{literal}}` inside a code span, which is what makes "holes are found in text, never in
+  code" statable; the recall has a prompt and a blockquote reveal; and the last is a
+  `~~~~quiz` outer fence wrapped round a body that contains a ```` ```java ```` fence of its
+  own. The vault validates clean, because a fixture about rendering should not also be a
+  fixture about violations — `quiz-fence-violations/` is that.
+
+- **`quiz-fence-violations/`** — a vault whose fences are wrong in every way there is: one
+  with no ULID and one whose ULID was typed by hand, one with a type word nothing answers
+  to, an mcq marking two options `[x]` and another marking none, an mcq with no options at
+  all beside a cloze with no holes and a recall with no reveal, and a quiz fence written
+  inside a Problem. Its cluster is *the defective fence*: each one is an error and each one
+  is left as the code block it was written as, so the fixture is read twice over — once for
+  the violation list and once for what the reader gets instead. Two notes carry two broken
+  fences each, because a run has to report both.
+
 - **`embed-of-a-pageless-note/`** — a Lesson embedding two notes: one with a page, one
   without. Its cluster is
   *[mechanism 2](../../../.scratch/prepper-build/research/02-embed-of-a-pageless-note.md)*,

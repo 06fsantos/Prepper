@@ -20,6 +20,7 @@ import type { BuildCtx } from "../../quartz/util/ctx"
 import type { ProcessedContent } from "../../quartz/plugins/vfile"
 
 import { typeOf, type NoteType } from "../note-type.ts"
+import type { QuizDefect } from "../quiz/index.ts"
 import { withheldNotes } from "../workshop/index.ts"
 
 /** One note in the vault, as the build read it. */
@@ -68,6 +69,16 @@ export interface Note {
    * between two of them there is no boundary to cross.
    */
   workshopLinks: string[]
+  /**
+   * Every **defective quiz fence** in the note, in the order the fences appear.
+   *
+   * Recorded by `prepper/quiz`, which is the only thing in the build that parses a fence
+   * body -- so the quiz rules report what the transform decided rather than reading the
+   * vault a second time, exactly as `unwrittenLinks` does. A fence on this list was left
+   * as a code block rather than rendered as a quiz, so this is also the set of questions
+   * the reader will meet as prose.
+   */
+  quizDefects: QuizDefect[]
   /**
    * Every **Workshop note this note's body embeds**, deduplicated and sorted.
    *
@@ -123,6 +134,7 @@ export function vaultFromEmitterContent(ctx: BuildCtx, content: ProcessedContent
       source: String(file.value ?? ""),
       unwrittenLinks: file.data.unwrittenLinks ?? [],
       workshopLinks: file.data.workshopLinks ?? [],
+      quizDefects: file.data.quizDefects ?? [],
       workshopEmbeds: file.data.workshopEmbeds ?? [],
     })
   }

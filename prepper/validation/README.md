@@ -76,8 +76,8 @@ vault
 ## Adding a rule
 
 1. Write a `Rule` — a kebab-case name and `check(vault): Finding[]` — in a file under
-   `rules/`, grouped by what it is about (`schema.ts`, `identity.ts`, `links.ts`, and the
-   vocabulary, graph, and boundary rules to come).
+   `rules/`, grouped by what it is about (`schema.ts`, `identity.ts`, `links.ts`,
+   `vocabulary.ts`, `graph.ts`, `boundary.ts`, `quiz.ts`).
 2. Export it from that file's rule array, and list that array in `rules.ts`.
 
 Nothing else moves. Both consumers go through `validateVault`, so a rule added here
@@ -96,6 +96,9 @@ body — plus every file on disk, which is the only way to see the half of the v
 not Markdown.
 
 That last field is the pattern for anything a rule needs that only the _pipeline_ knows.
+`quizDefects` is the second use of it: `prepper/quiz` is the only thing in the build that
+parses a quiz fence body, so the quiz rules report what it found rather than going looking
+themselves.
 `unwrittenLinks` is not re-derived here: `prepper/links` records what `crawl-links` had
 already decided and leaves it on the vfile, so `unwritten-link` reports the build's own
 resolution. A rule that parsed a note's wikilinks itself could eventually resolve one

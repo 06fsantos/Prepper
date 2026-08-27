@@ -2,12 +2,15 @@
  * Seam 1, with a plugin that is not in the shipped config yet.
  *
  * Two of the three mechanisms [ticket 02](../../.scratch/prepper-build/issues/02-spike-the-unrun-mechanisms.md)
- * had to run are only observable through a plugin of ours: a quiz fence needs a
- * transformer at `order: 25` to re-parse it, and "emitter output is outside the link
- * graph" needs an emitter that emits a page. Neither plugin exists yet -- tickets 09 and
- * 14 own them -- and inventing a half-version of each in `quartz.config.yaml` would put
- * spike code in every real build, which is exactly what "evidence, not features" rules
- * out.
+ * had to run are only observable through a plugin of ours: the Workshop boundary needs a
+ * filter to withhold a note, and "emitter output is outside the link graph" needs an
+ * emitter that emits a page. Inventing a half-version of either in `quartz.config.yaml`
+ * would put spike code in every real build, which is exactly what "evidence, not features"
+ * rules out.
+ *
+ * The third has already made the trip this file describes. Mechanism 1 -- a quiz fence body
+ * re-parsed at `order: 25` -- ran here as a spike until ticket 09 shipped `prepper/quiz`,
+ * and it is now asserted through `buildFixture` against the config the dev actually has.
  *
  * So a spike build reads a *different* config: the repo's real one with extra plugin
  * entries appended. Quartz resolves `quartz.config.yaml` from the working directory
@@ -16,14 +19,14 @@
  * the repo and holds its own config file. Everything else -- the CLI, the pipeline, the
  * assertions -- is seam 1 unchanged, and `EmittedSite` comes back the same shape.
  *
- *     const site = await buildWithSpikePlugins("quiz-fence-wikilink", [
- *       { source: "prepper/testing/spikes/quiz-fence-reparse", order: 25 },
+ *     const site = await buildWithSpikePlugins("embed-of-a-pageless-note", [
+ *       { source: "prepper/testing/spikes/workshop-filter" },
  *     ])
  *
  * **This is for spikes only.** A test of shipped behaviour goes through `buildFixture`,
  * against the config the dev actually has; a test that reaches for this one is asserting
- * on a build nobody runs. When tickets 09 and 14 land their plugins in
- * `quartz.config.yaml`, their tests move to `buildFixture` and the spikes here become
+ * on a build nobody runs. When ticket 14 lands its emitter in
+ * `quartz.config.yaml`, its test moves to `buildFixture` too and the spikes here become
  * the record of why the design was safe to write.
  */
 import assert from "node:assert"

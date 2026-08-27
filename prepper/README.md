@@ -38,6 +38,7 @@ Everything else at the repo root that is not ours — `quartz/`, `quartz.ts`,
 ```
 prepper/
   note-type.ts              the eight note types, and the Library/Workshop split on them
+  ulid.ts                   what counts as a ULID, for the two places that ask
   link-targets.ts           what a frontmatter link field names, as written and resolved
   hooks/                    git hooks, available and never installed by the build
     pre-commit              warns on a changed `id` line; install it with a symlink
@@ -56,6 +57,9 @@ prepper/
     graph.ts                the pure index, read by the emitter and by the components
     index.ts                the emitter, which writes static/linkGraph.json
     graph.test.ts           what is a node and what is an edge, through seam 1
+  quiz/                     quiz fences: a fenced quiz block becomes an answerable question
+    index.ts                the transformer, registered from quartz.config.yaml at order 25
+    quiz.test.ts            the three question types and every defect, through seam 1
   links/                    wikilink resolution's one gap: the unwritten-link affordance
     index.ts                the transformer, registered from quartz.config.yaml at order 65
     links.test.ts           resolution and unwritten links, through seam 1

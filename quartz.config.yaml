@@ -57,6 +57,15 @@ plugins:
         dark: github-dark
       keepBackground: false
     order: 20
+  # Prepper: ours. Order 25 is the free slot between syntax highlighting (20) and
+  # obsidian-flavoured-markdown (30), and the downstream half is the load-bearing one: a
+  # quiz fence's body is re-parsed into the tree here, and OFM at 30 is what turns the
+  # wikilinks inside it into anchors that `crawl-links` (60) then records as edges. Run it
+  # after 30 and a link written in a quiz explanation would stay text. See
+  # `prepper/quiz/index.ts`.
+  - source: "./prepper/quiz"
+    enabled: true
+    order: 25
   - source: "@quartz-community/obsidian-flavored-markdown"
     enabled: true
     options:

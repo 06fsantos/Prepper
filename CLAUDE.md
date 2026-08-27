@@ -62,6 +62,18 @@ an emitter that writes `static/linkGraph.json` for the topic index and the Vault
 and the components in [`prepper/edges/`](prepper/edges/index.ts) that render a typed edge
 **in context** and collect untyped ones in one backlinks panel. Nothing is ever gated.
 
+## Quiz blocks
+
+A fenced `quiz` block in a Lesson — its infostring a ULID and an optional `cloze` or
+`recall` — becomes an answerable question. Its body is **ordinary Markdown**, re-parsed with
+Quartz's own parser, so a wikilink written in an explanation is a real link and a real graph
+edge.
+[`prepper/quiz/index.ts`](prepper/quiz/index.ts) is one remark transformer at `order: 25`,
+after highlighting and before obsidian-flavoured-markdown, which is what lets the injected
+subtree be walked by every transform downstream. A fence the build cannot make a quiz of is
+left as the code block it was written as — which is what Obsidian shows anyway — and raises
+a validation **error**.
+
 ## Research output
 
 `/research` writes its notes into `content/research/`, named after the **question** they

@@ -13,13 +13,7 @@
  */
 import type { Finding, Rule } from "../rules.ts"
 import type { Note, Vault } from "../vault.ts"
-
-/**
- * A ULID: 26 characters of Crockford base32 (no I, L, O or U), the first of which is
- * bounded by the 48-bit timestamp. Uppercase, as `npm run ulid` mints them -- a lowercase
- * one is a hand-typed one, which is the habit ADR 0001 exists to prevent.
- */
-const ULID = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/
+import { ULID } from "../../ulid.ts"
 
 /** Where a ULID was written, so a collision report can send the dev to both ends of it. */
 interface Occurrence {

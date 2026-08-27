@@ -74,6 +74,30 @@ const noTypeIsPlacedTwice: [PlacedTwice] extends [never] ? true : PlacedTwice = 
 void everyTypeIsPlacedOnce
 void noTypeIsPlacedTwice
 
+/**
+ * How a type reads in a sentence: `a lesson`, `a cheat sheet`, `the mission`.
+ *
+ * Vocabulary, and here for the same reason the split above is: validation says "a lesson
+ * requires it" and the quiz transform says "quiz blocks are for lessons only", and neither
+ * of them should own the article the other has to borrow. The mission takes the definite
+ * one because there is exactly one of it.
+ */
+const articles: Record<NoteType, string> = {
+  lesson: "a lesson",
+  reference: "a reference",
+  problem: "a problem",
+  term: "a term",
+  "cheat-sheet": "a cheat sheet",
+  research: "a research note",
+  record: "a record",
+  mission: "the mission",
+}
+
+/** How a type reads in a sentence. */
+export function articleFor(type: NoteType): string {
+  return articles[type]
+}
+
 const library = new Set<string>(libraryTypes)
 const workshop = new Set<string>(workshopTypes)
 

@@ -57,7 +57,11 @@ function describe(note: Note): string {
  * `undefined` where nothing answers to the name -- which the three rules below each have
  * their own answer to, and that difference is the whole of what separates them.
  */
-function resolved(index: Map<string, Note>, note: Note, field: string): [Target, Note | undefined][] {
+function resolved(
+  index: Map<string, Note>,
+  note: Note,
+  field: string,
+): [Target, Note | undefined][] {
   return targets(note.frontmatter[field]).map((target) => [target, index.get(target.stem)])
 }
 

@@ -7,7 +7,7 @@
  * the frontmatter, and they live in their own rule files.
  */
 import type { Finding, Rule } from "../rules.ts"
-import type { NoteType } from "../../note-type.ts"
+import { articleFor, type NoteType } from "../../note-type.ts"
 import type { Note, Vault } from "../vault.ts"
 
 /**
@@ -24,18 +24,6 @@ const requiredByType: Record<NoteType, readonly string[]> = {
   research: ["date", "sources"],
   record: ["date"],
   mission: [],
-}
-
-/** How a type reads in a message: `a lesson`, `a cheat sheet`, `the mission`. */
-const article: Record<NoteType, string> = {
-  lesson: "a lesson",
-  reference: "a reference",
-  problem: "a problem",
-  term: "a term",
-  "cheat-sheet": "a cheat sheet",
-  research: "a research note",
-  record: "a record",
-  mission: "the mission",
 }
 
 const requiredFrontmatter: Rule = {
@@ -60,7 +48,7 @@ const requiredFrontmatter: Rule = {
           findings.push({
             severity: "error",
             note: note.path,
-            message: `no frontmatter \`${field}\`: ${article[note.type]} requires it`,
+            message: `no frontmatter \`${field}\`: ${articleFor(note.type)} requires it`,
           })
         }
       }

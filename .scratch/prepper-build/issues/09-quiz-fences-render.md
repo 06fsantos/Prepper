@@ -32,10 +32,10 @@ A hash map lookup, average case, costs what?
 
 - [x] Constant time, no scan
   > The key hashes straight to its bucket.
-- [ ] Constant time, one scan
+- [x] Constant time, one scan
   > Nothing is scanned unless buckets collide.
   > See [[Collision handling]]
-- [ ] Linear time, full scan
+- [x] Linear time, full scan
   > That is an unsorted array, not a hash map.
 ```
 
@@ -47,16 +47,16 @@ be able to masquerade as the attempt.
 
 **Blocked by:** 02, 04
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] An mcq fence emits markup carrying `data-quiz-type` and `data-quiz-id`, with each option and its explanation
-- [ ] A cloze fence emits its spans; a recall fence emits its prompt and its reveal
-- [ ] A wikilink written inside a fence body renders as a real link and appears as an edge in the link graph
-- [ ] The plugin is one local-path remark plugin at `order: 25` and no Quartz file is edited to make it run
-- [ ] A `~~~~quiz` outer fence works for a body that contains its own fence
-- [ ] The fence renders as a legible code block when the note is opened in Obsidian
-- [ ] Error: an unparsable fence body
-- [ ] Error: a missing or malformed infostring ULID
-- [ ] Error: an unknown type word in the infostring
-- [ ] Error: an mcq without exactly one `[x]`
-- [ ] Error: any quiz fence inside `problems/`
+- [x] An mcq fence emits markup carrying `data-quiz-type` and `data-quiz-id`, with each option and its explanation
+- [x] A cloze fence emits its spans; a recall fence emits its prompt and its reveal
+- [x] A wikilink written inside a fence body renders as a real link and appears as an edge in the link graph
+- [x] The plugin is one local-path remark plugin at `order: 25` and no Quartz file is edited to make it run
+- [x] A `~~~~quiz` outer fence works for a body that contains its own fence
+- [x] The fence renders as a legible code block when the note is opened in Obsidian
+- [x] Error: an unparsable fence body
+- [x] Error: a missing or malformed infostring ULID
+- [x] Error: an unknown type word in the infostring
+- [x] Error: an mcq without exactly one `[x]`
+- [x] Error: any quiz fence inside `problems/`

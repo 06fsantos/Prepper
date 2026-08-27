@@ -24,6 +24,7 @@ import { boundaryRules } from "./rules/boundary.ts"
 import { graphRules } from "./rules/graph.ts"
 import { identityRules } from "./rules/identity.ts"
 import { linkRules } from "./rules/links.ts"
+import { quizRules } from "./rules/quiz.ts"
 import { schemaRules } from "./rules/schema.ts"
 import { vocabularyRules } from "./rules/vocabulary.ts"
 
@@ -41,13 +42,14 @@ export interface Rule {
 /**
  * Every rule, in reporting-neutral order.
  *
- * Schema and identity landed first, then links; the vocabulary, graph, and
- * Workshop-boundary rules join this list without reshaping anything around it.
+ * Schema and identity landed first, then links; the quiz, vocabulary, graph, and
+ * Workshop-boundary rules joined this list without reshaping anything around it.
  */
 export const rules: Rule[] = [
   ...schemaRules,
   ...identityRules,
   ...linkRules,
+  ...quizRules,
   ...vocabularyRules,
   ...graphRules,
   ...boundaryRules,
