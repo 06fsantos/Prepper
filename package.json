@@ -13,8 +13,8 @@
   },
   "scripts": {
     "quartz": "./quartz/bootstrap-cli.mjs",
-    "build": "npx quartz build",
-    "serve": "npx quartz build --serve",
+    "build": "npx quartz build --concurrency 1",
+    "serve": "npx quartz build --serve --concurrency 1",
     "ulid": "node scripts/ulid.mjs",
     "validate": "tsx prepper/validation/validate.ts",
     "docs": "npx quartz build --serve -d docs",

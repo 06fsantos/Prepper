@@ -37,6 +37,9 @@ Everything else at the repo root that is not ours — `quartz/`, `quartz.ts`,
 
 ```
 prepper/
+  links/                    wikilink resolution's one gap: the unwritten-link affordance
+    index.ts                the transformer, registered from quartz.config.yaml at order 65
+    links.test.ts           resolution and unwritten links, through seam 1
   testing/
     build-fixture.ts        seam 1: build(fixtureVault) -> emitted site, and
                             validate(fixtureVault) -> violation list

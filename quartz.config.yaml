@@ -77,6 +77,13 @@ plugins:
     options:
       markdownLinkResolution: shortest
     order: 60
+  # Prepper: ours. Order 65 puts it straight after `crawl-links` (60), which is what
+  # resolves a wikilink and records the outgoing edge -- so this reads a resolution that
+  # has already happened rather than making it a second time, and an unwritten link is
+  # already a link-graph node by the time it is marked unclickable.
+  - source: "./prepper/links"
+    enabled: true
+    order: 65
   - source: "@quartz-community/description"
     enabled: true
     order: 70

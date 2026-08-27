@@ -17,12 +17,12 @@ errors, and they belong to 06.
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `[[note]]` resolves by filename stem, case-insensitively, with or without the extension
-- [ ] `[[note|display text]]` renders the alias as the link text
-- [ ] `[[note#Heading]]` links to that heading on the target page
-- [ ] `![[image.png]]` renders the attachment, as it does in Obsidian
-- [ ] A wikilink to a nonexistent note renders marked and unclickable, and the build still succeeds
-- [ ] That link produces a warning, not an error
-- [ ] The unwritten target exists in the graph as a placeholder node, and appears in neither the Library index nor search
+- [x] `[[note]]` resolves by filename stem, case-insensitively, with or without the extension
+- [x] `[[note|display text]]` renders the alias as the link text
+- [x] `[[note#Heading]]` links to that heading on the target page
+- [x] `![[image.png]]` renders the attachment, as it does in Obsidian
+- [x] A wikilink to a nonexistent note renders marked and unclickable, and the build still succeeds
+- [x] That link produces a warning, not an error
+- [x] The unwritten target exists in the graph as a placeholder node, and appears in neither the Library index nor search

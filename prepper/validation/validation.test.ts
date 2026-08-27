@@ -16,7 +16,7 @@ import {
   type EmittedSite,
   type ValidationRun,
 } from "../testing/build-fixture.ts"
-import { exitCodeFor, summarise, type Violation } from "./violation.ts"
+import { exitCodeFor, type Violation } from "./violation.ts"
 
 /** `note: rule` for every violation, sorted, which is the whole report at a glance. */
 function report(violations: readonly Violation[]): string[] {
@@ -30,11 +30,16 @@ function messagesFor(run: ValidationRun, note: string | undefined, rule: string)
 describe("the validation spine", () => {
   let broken: ValidationRun
   let clean: ValidationRun
+  let warned: ValidationRun
 
   before(
     async () => {
       broken = await validateFixture("schema-and-identity-violations")
       clean = await validateFixture("minimal-vault")
+      // A vault that is wrong in no way at all, and merely has writing left to do: its
+      // cluster is `prepper/links`, and it is here for the warning half of the severity
+      // contract.
+      warned = await validateFixture("unwritten-link")
     },
     { timeout: 300_000 },
   )
@@ -121,7 +126,7 @@ describe("the validation spine", () => {
 
   describe("severities", () => {
     test("every violation carries one of exactly two severities", () => {
-      for (const violation of broken.violations) {
+      for (const violation of [...broken.violations, ...warned.violations]) {
         assert.ok(
           violation.severity === "error" || violation.severity === "warning",
           `unknown severity "${violation.severity}"`,
@@ -129,21 +134,24 @@ describe("the validation spine", () => {
       }
     })
 
-    test("warnings are reported and do not fail the run", () => {
-      // No rule warns yet -- the first warning lands with unwritten links in ticket 04 --
-      // so the two-severity contract is asserted on the report shape itself. These take a
-      // violation list, not vault input, so there is no second reader of the vault here.
-      const warned: Violation[] = [
-        {
-          rule: "unwritten-link",
-          severity: "warning",
-          note: "lessons/a.md",
-          message: "marks intent",
-        },
-      ]
-      assert.equal(summarise(warned), "0 errors, 1 warning")
-      assert.equal(exitCodeFor(warned), 0)
-      assert.equal(exitCodeFor([...warned, ...broken.violations]), 1)
+    test("a vault whose violations are all warnings exits zero and says so", () => {
+      // The other half of the contract from `broken`, which exits 1: a warning marks
+      // intent, and intent never fails a build. There is no third bucket and no
+      // promotion path, so these two runs are the whole of what a severity can do.
+      assert.equal(warned.exitCode, 0, warned.output)
+      assert.ok(warned.violations.length > 0, "nothing warned, so nothing was proven")
+      assert.deepEqual(new Set(warned.violations.map((v) => v.severity)), new Set(["warning"]))
+      assert.match(warned.output, /0 errors, 2 warnings in 2 notes/)
+    })
+
+    test("a warning never masks an error in the same run", () => {
+      // The case neither single-severity run can state: `broken` is all errors and
+      // `warned` is all warnings, so without this a regression that let any warning
+      // decide the exit code would go green on the only hard gate the project has.
+      // Real violations from both runs, so nothing here is hand-built.
+      assert.equal(exitCodeFor([...warned.violations, ...broken.violations]), 1)
+      assert.equal(exitCodeFor(warned.violations), 0)
+      assert.equal(exitCodeFor(broken.violations), 1)
     })
   })
 

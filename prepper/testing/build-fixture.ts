@@ -357,6 +357,11 @@ export async function runQuartzBuild({
         vaultDir,
         "-o",
         outputDir,
+        // The same single-threaded parse every invocation this repo owns uses, so a
+        // fixture build resolves links exactly as `npm run build` does. See
+        // `prepper/links/index.ts`.
+        "--concurrency",
+        "1",
       ],
       { cwd, maxBuffer: 32 * 1024 * 1024 },
     )

@@ -57,6 +57,23 @@ anything.
   *[mechanism 3](../../../.scratch/prepper-build/research/02-emitter-output-and-the-link-graph.md)*:
   the orphan is there so that "still an orphan after a page linked to it" is a fact a test
   can state.
+- **`wikilink-shapes/`** — a Lesson linking one Term five ways (bare, differently cased,
+  with the extension, pipe-aliased, and anchored at a heading) plus an attachment embed,
+  and the Term and the PNG those point at. Its cluster is *resolution*: the same link has
+  to work in Obsidian and in the app, so every shape here resolves to the same page. The
+  Term's `title` ("Hash maps") deliberately differs from its filename stem, which is what
+  makes "never against `title`" a fact a test can state.
+- **`unwritten-link/`** — a Lesson pointing at two notes nobody has written, one of them
+  twice and one of them pipe-aliased, alongside one link whose target exists and one
+  *embed* of a third unwritten note. Its cluster
+  is *the unwritten link*: a marked, unclickable affordance, a warning rather than an
+  error, and a placeholder node in the link graph that is in neither the Library index nor
+  search. It carries three boundary markers as well as the behaviour itself: an `![[…]]`
+  whose target is missing is left for the transform that owns embeds, and an inline tag
+  and a folder link are pages Quartz *generates* rather than notes anybody could write —
+  none of the three is an unwritten link, and the fixture is where that is stated. It is
+  also the vault that proves warnings alone exit zero, so it is wrong in no other way — a
+  single error here would make that assertion say nothing.
 - **`schema-and-identity-violations/`** — a vault that is wrong in thirteen ways at once:
   a Lesson with no `topic`, one with no `id`, one whose `id` was typed by hand, a Problem
   missing three of the four fields its type requires, a Record with no `date`, a Term that

@@ -112,7 +112,19 @@ export async function main(argv: string[]): Promise<number> {
   try {
     const built = await execFileAsync(
       process.execPath,
-      ["./quartz/bootstrap-cli.mjs", "build", "-d", vault, "-o", path.join(scratch, "site")],
+      [
+        "./quartz/bootstrap-cli.mjs",
+        "build",
+        "-d",
+        vault,
+        "-o",
+        path.join(scratch, "site"),
+        // One parse thread, because `ctx.allSlugs` is only complete on that path and
+        // wikilink resolution reads it -- so the gate cannot change its answer with the
+        // thread count. See `prepper/links/index.ts`.
+        "--concurrency",
+        "1",
+      ],
       {
         cwd: repoRoot,
         env: { ...process.env, [REPORT_PATH_ENV]: reportPath },

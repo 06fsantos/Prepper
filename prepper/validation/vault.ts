@@ -60,6 +60,17 @@ export interface Note {
   declaredFields: Set<string>
   /** The note's Markdown, as Quartz read it -- frontmatter included, body included. */
   source: string
+  /**
+   * Every **unwritten link** in the note's body: the placeholder-node slugs the build
+   * resolved a body wikilink to and found no file for, deduplicated and sorted.
+   *
+   * Recorded by `prepper/links`, which reads what `@quartz-community/crawl-links` had
+   * already decided, so a rule can never resolve a link differently from the build --
+   * the same reason the rest of this snapshot comes from the emitter's own `content[]`.
+   * Body links only: a `topic` or `prerequisites` target is frontmatter and never
+   * reaches a note's hast tree, and a missing one is an error, not an unwritten link.
+   */
+  unwrittenLinks: string[]
 }
 
 /** One file in the vault, Markdown or not. */
@@ -99,6 +110,7 @@ export function vaultFromEmitterContent(ctx: BuildCtx, content: ProcessedContent
       frontmatter: (file.data.frontmatter ?? {}) as Record<string, unknown>,
       declaredFields: declaredFields(String(file.value ?? "")),
       source: String(file.value ?? ""),
+      unwrittenLinks: file.data.unwrittenLinks ?? [],
     })
   }
 

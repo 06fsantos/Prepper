@@ -7,10 +7,12 @@ points.
 
 ## Two severities, and only two
 
-`error` and `warning`. There is no `info` level and **no promotion path** between the two.
-A fact worth failing a build over is a rule; a fact that is not is a report line; there is
-nothing in between. Every future "should this be a warning or just informational?" is
-already answered — and widening `Severity` is a change to that decision, not a refactor.
+`error` and `warning` — schema and identity defects err; `unwritten-link`, the first of
+the warnings, marks intent. There is no `info` level and **no promotion path** between the
+two. A fact worth failing a build over is a rule; a fact that is not is a report line;
+there is nothing in between. Every future "should this be a warning or just
+informational?" is already answered — and widening `Severity` is a change to that
+decision, not a refactor.
 
 `draft: true` **softens nothing**. Publication and validity are separate concerns, which
 is also why `@quartz-community/remove-draft` is disabled in `quartz.config.yaml`: it is a
@@ -74,8 +76,8 @@ vault
 ## Adding a rule
 
 1. Write a `Rule` — a kebab-case name and `check(vault): Finding[]` — in a file under
-   `rules/`, grouped by what it is about (`schema.ts`, `identity.ts`, and the vocabulary,
-   graph, and boundary rules to come).
+   `rules/`, grouped by what it is about (`schema.ts`, `identity.ts`, `links.ts`, and the
+   vocabulary, graph, and boundary rules to come).
 2. Export it from that file's rule array, and list that array in `rules.ts`.
 
 Nothing else moves. Both consumers go through `validateVault`, so a rule added here
@@ -89,8 +91,27 @@ A rule must be:
 
 `Vault` (see `vault.ts`) is all a rule may read: every note the build parsed — its path,
 its filename stem, its type-from-directory, the frontmatter Quartz parsed, the keys the
-note itself declared, and its Markdown — plus every file on disk, which is the only way to
-see the half of the vault that is not Markdown.
+note itself declared, its Markdown, and the unwritten links the build resolved out of its
+body — plus every file on disk, which is the only way to see the half of the vault that is
+not Markdown.
+
+That last field is the pattern for anything a rule needs that only the _pipeline_ knows.
+`unwrittenLinks` is not re-derived here: `prepper/links` records what `crawl-links` had
+already decided and leaves it on the vfile, so `unwritten-link` reports the build's own
+resolution. A rule that parsed a note's wikilinks itself could eventually resolve one
+differently from the page the reader gets, which is the drift this whole design is
+arranged against.
+
+That is also why the gate builds with `--concurrency 1`. `ctx.allSlugs`, which is what
+wikilink resolution asks whether a target exists, is only complete on Quartz's
+single-threaded parse path; under the worker pool it silently loses alias and permalink
+slugs, and the same vault would then validate differently depending on how many notes it
+has. Every invocation this repo owns pins it. See `prepper/links/index.ts`.
+
+One thing the emitter cannot promise under `npm run serve`: a watch rebuild re-parses
+only the files that changed, so writing the note an unwritten link pointed at leaves the
+_linking_ page's warning standing until that page is itself touched. `npm run validate`
+and CI always build from scratch, so the gate is never stale.
 
 ## Why the rule module has no seam of its own
 
