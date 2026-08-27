@@ -86,6 +86,22 @@ solution. [`prepper/problems/index.ts`](prepper/problems/index.ts) is one remark
 at `order: 35`. A Problem missing a section its kind requires renders the sections it has
 and raises a validation **error**.
 
+## The reading surface
+
+Long-form reading that reads like a **document, not like documentation**. The prose column
+holds a **~38rem measure at every viewport width** — the sidebar absorbs the remainder,
+rather than the text being stretched to fill it — and body prose is set in a serif. A note's
+topics render as **chips under its title**, all of them, because a note filed under two
+subjects has two. There is **no** breadcrumb, next/previous, progress bar, review-queue
+badge, or read/unread state: no reading order for chrome to imply, and no per-user state for
+it to display. Asides are ordinary blockquotes — a margin note needs a notation Obsidian
+Markdown does not have.
+
+[`prepper/reading/`](prepper/reading/index.ts) is one component at `beforeBody`, and it
+carries the page styles as well as the chips: Quartz collects a component's CSS from the
+configured component list rather than from what a page rendered, so the measure lands on
+every page. It is the only module that styles the page rather than a component of its own.
+
 ## Research output
 
 `/research` writes its notes into `content/research/`, named after the **question** they

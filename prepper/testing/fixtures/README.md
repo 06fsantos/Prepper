@@ -167,3 +167,11 @@ anything.
   one way and more than one note is wrong. Everything it does **not** violate — its
   `topic` values all name Terms that exist — is so that the vocabulary and graph rules can
   be added without this fixture becoming about them too.
+
+- **`reading-surface/`** — one Lesson filed under two Terms, with an aside in its body. Its
+  cluster is *the reading surface*: the chips under the title (two of them, in the order
+  `topic` wrote them, labelled by each Term's own `title`), the Term that has no `topic` of
+  its own and therefore no chips at all, and the ordinary blockquote that carries an aside
+  because Obsidian Markdown has no notation for a margin note. It is deliberately smaller
+  than `topic-index/`, which is about the same field read the other way round: this one
+  never asks what is filed under a topic, only what a note says it is about.

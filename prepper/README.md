@@ -51,6 +51,10 @@ prepper/
     index.ts                the component manifest; two config entries, one per view
     components/index.ts     the sidebar tree and the Term page's index, one component
     topics.test.ts          one index, three renderings, through seam 1
+  reading/                  the reading surface: the measure, the serif, the chips
+    index.ts                the component manifest; one config entry, at `beforeBody`
+    components/index.ts     the topic chips, and the page styles that ride on them
+    reading.test.ts         the chips, the absent chrome, the measure, through seam 1
   home/                     the app's entry point: a generated `index.html`
     index.ts                a pageType, so the page comes out through Quartz's own layout
   graph/                    the link graph: four typed edge kinds, computed once

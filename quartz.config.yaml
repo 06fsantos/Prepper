@@ -17,7 +17,12 @@ configuration:
     cdnCaching: true
     typography:
       header: Schibsted Grotesk
-      body: Source Sans Pro
+      # Prepper: a serif, because a Lesson should read like a document rather than like
+      # documentation. `prepper/reading` restates this family at the head of a
+      # generic-serif stack -- Quartz's own fallback for `--bodyFont` is hard-coded sans,
+      # so a page whose webfont has not arrived would set its prose in sans -- and the two
+      # names have to be changed together.
+      body: Source Serif 4
       code: IBM Plex Mono
     colors:
       lightMode:
@@ -233,8 +238,15 @@ plugins:
       position: left
       priority: 35
       group: toolbar
+  # Prepper: off. A breadcrumb states a path through a hierarchy, and there is none: a
+  # note's place is its topics, which it has several of and which `prepper/reading` renders
+  # as chips under the title. The directory a note sits in is the build's filing system,
+  # not a route the reader took. The same reasoning keeps next/previous, a progress bar and
+  # a review-queue badge off the page: there is no reading order to imply and no per-user
+  # state to display. Upstream ships no component for any of those three, so this entry is
+  # the only one there is to turn off.
   - source: "@quartz-community/breadcrumbs"
-    enabled: true
+    enabled: false
     layout:
       position: beforeBody
       priority: 5
@@ -380,6 +392,22 @@ plugins:
     layout:
       position: afterBody
       priority: 5
+  # Prepper: ours. The reading surface: the ~38rem measure the prose column holds at every
+  # viewport width, the serif it is set in, the blockquote that carries an aside, and a
+  # note's topics as chips under its title. Priority 12 puts the chips directly under the
+  # article title (10) and above everything else `beforeBody` holds -- the properties view
+  # (15), the meta line (20), the "Read first" rail (25) -- which is where a note's
+  # subjects belong: read with the title, not with the rails.
+  #
+  # It is a component rather than an emitter because that is how a stylesheet reaches every
+  # page: Quartz collects `Component.css` from the configured component list rather than
+  # from what a page rendered, so the measure lands on a Term with no chips too. See
+  # `prepper/reading/index.ts`.
+  - source: "./prepper/reading"
+    enabled: true
+    layout:
+      position: beforeBody
+      priority: 12
   # Prepper: ours. The app's entry point: a generated `index.html` holding the same topic
   # index the sidebar renders. A **pageType** rather than an emitter, so the page comes out
   # through Quartz's own layout instead of through a copy of it -- and it yields to a
