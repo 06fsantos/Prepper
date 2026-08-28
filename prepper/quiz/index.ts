@@ -54,6 +54,15 @@
  * fence itself opens on, which is a position in the note's own tree and survives -- and
  * never a line within it.
  *
+ * ## Where the browser half begins
+ *
+ * This file emits a `<prepper-quiz>` and ships `prepper-quiz.js`, which defines it. The
+ * division of labour between them is one rule: **the markup conceals, the script only reveals.** An
+ * explanation, a reveal and a cloze answer come out of here already carrying `hidden`, so
+ * the answer is never on screen before the reader has answered -- including where the script
+ * never runs, which is Quartz's search preview pane, a page mid-load, and a reader with
+ * scripting off. `conceal` below says the rest.
+ *
  * ## What a defective fence does
  *
  * It stays a code block, and validation raises an error.
@@ -72,6 +81,8 @@
  * the only thing in the build that has parsed the fence, and a rule that re-parsed the
  * vault's fences itself could eventually disagree with the page the reader gets.
  */
+import * as fs from "node:fs"
+
 import { SKIP, visit } from "unist-util-visit"
 import type { BlockContent, Blockquote, Code, List, Root, RootContent, Text } from "mdast"
 import type { Data } from "unist"
@@ -135,12 +146,11 @@ export const manifest = {
 /**
  * What makes a quiz block read as one, rather than as three paragraphs and a list.
  *
- * Structural only, and deliberately: a quiz block has to look like a thing you answer, so
- * the card and the option column ship with the transform that makes them, the same way
- * `prepper/links` ships the mark for an unwritten link. What is *not* here is anything that
- * hides an explanation or a cloze answer until it is earned -- that is revealing, revealing
- * is interaction, and interaction is the browser half. Hiding it now, with nothing yet able
- * to unhide it, would take content away from the reader for the length of one ticket.
+ * The card, the option column, and how an answered block looks once it has been answered.
+ * What is *not* here is the concealment: an explanation, a reveal and a cloze answer are
+ * hidden by the `hidden` **attribute the markup carries**, never by a rule in this
+ * stylesheet and never by a script. See `conceal` below for why that distinction is
+ * load-bearing.
  */
 const quizStyles = `
 .quiz {
@@ -152,13 +162,59 @@ const quizStyles = `
 .quiz > .quiz-prompt > :first-child { margin-top: 0; }
 .quiz-options { list-style: none; padding-left: 0; }
 .quiz-option { border: 1px solid var(--lightgray); border-radius: 5px; padding: 0.4rem 0.8rem; margin: 0.4rem 0; }
+.quiz-option[role="button"] { cursor: pointer; }
+.quiz-option[role="button"]:hover { border-color: var(--gray); }
+.quiz-option[aria-disabled="true"] { cursor: default; }
+.quiz[data-quiz-answered] .quiz-option[data-quiz-correct="true"] { border-color: var(--tertiary); }
+.quiz[data-quiz-answered="wrong"] .quiz-option[data-quiz-chosen="true"] {
+  border-style: dashed;
+  border-color: var(--secondary);
+}
 .quiz-explanation { border-left: 3px solid var(--lightgray); color: var(--darkgray); }
+.quiz-reveal { border-left: 3px solid var(--lightgray); color: var(--darkgray); }
 .cloze { border-bottom: 1px solid var(--secondary); font-weight: 600; }
+.cloze-blank { letter-spacing: 0.15em; }
+.quiz-controls { display: flex; gap: 0.5rem; margin: 0.5rem 0; }
+.quiz-control {
+  font-family: inherit;
+  font-size: 0.9em;
+  color: var(--darkgray);
+  background: none;
+  border: 1px solid var(--lightgray);
+  border-radius: 5px;
+  padding: 0.2rem 0.7rem;
+  cursor: pointer;
+}
+.quiz-control:hover { border-color: var(--gray); }
+.quiz-control[aria-pressed="true"] { border-color: var(--secondary); color: var(--dark); }
+.quiz-control:disabled { cursor: default; }
 `
+
+/**
+ * The browser half, shipped as it was written.
+ *
+ * Read off disk rather than written into this file as a string, so that the code the reader
+ * runs is a `.js` file an editor will lint, format and syntax-highlight. Quartz extracts an
+ * inline resource into its own hashed `static/` file and links it from every page, so
+ * "inline" here is how the script is *handed over*, not how it is served.
+ *
+ * `afterDOMReady` because a custom element's whole trick is that it does not care: defining
+ * `prepper-quiz` upgrades every block already parsed and every block the SPA router brings
+ * in later. There is no ordering to get right and no `nav` listener to register.
+ *
+ * The `prepper-` in that name is a convention rather than a flourish: Quartz minifies this
+ * file into a hashed `static/` one, where a comment saying whose it is would not survive,
+ * and a tag name is a string literal that does. It is how seam 2 tells our scripts from
+ * Quartz's -- see `prepper/testing/browser.ts`.
+ */
+const quizScript = fs.readFileSync(new URL("./prepper-quiz.js", import.meta.url), "utf8")
 
 const PrepperQuiz = (): QuartzTransformerPluginInstance => ({
   name: "PrepperQuiz",
-  externalResources: () => ({ css: [{ content: quizStyles, inline: true }] }),
+  externalResources: () => ({
+    css: [{ content: quizStyles, inline: true }],
+    js: [{ loadTime: "afterDOMReady", contentType: "inline", script: quizScript }],
+  }),
   markdownPlugins() {
     return [
       function () {
@@ -330,7 +386,11 @@ function buildQuiz(fence: Fence, processor: Processor<Root>): Built {
     node: {
       type: "quiz",
       data: {
-        hName: "div",
+        // A custom element, because the browser half is one: `prepper-quiz.js` defines
+        // `prepper-quiz` once and the browser upgrades every block on the page and every
+        // block the SPA router brings in afterwards. A `div` would have needed a script of
+        // ours to find it again after each navigation.
+        hName: "prepper-quiz",
         hProperties: {
           className: ["quiz"],
           "data-quiz-id": fence.id,
@@ -395,7 +455,9 @@ function multipleChoice(fence: Fence, subtree: Root): Parts {
       } as unknown as BlockContent
     }
     for (const child of option.children) {
-      if (child.type === "blockquote") hProperties(child, { className: ["quiz-explanation"] })
+      if (child.type === "blockquote") {
+        hProperties(child, conceal({ className: ["quiz-explanation"] }))
+      }
     }
   }
 
@@ -422,13 +484,7 @@ function cloze(fence: Fence, subtree: Root): Parts {
     if (!split) return
     holes += split.filter((part) => part.hole).length
     const replacement = split.map((part) =>
-      part.hole
-        ? ({
-            type: "cloze",
-            data: { hName: "span", hProperties: { className: ["cloze"] } },
-            children: [{ type: "text", value: part.value }],
-          } as unknown as RootContent)
-        : ({ type: "text", value: part.value } as RootContent),
+      part.hole ? hole(part.value) : ({ type: "text", value: part.value } as RootContent),
     )
     parent.children.splice(index, 1, ...replacement)
     // Past what was just spliced in: a hole's own text must not be searched for holes.
@@ -454,11 +510,56 @@ function recall(fence: Fence, subtree: Root): Parts {
   }
 
   const reveal = subtree.children[at] as Blockquote
-  hProperties(reveal, { className: ["quiz-reveal"] })
+  hProperties(reveal, conceal({ className: ["quiz-reveal"] }))
 
   return {
     children: [prompt(subtree.children.slice(0, at)), reveal, ...subtree.children.slice(at + 1)],
   }
+}
+
+/**
+ * One cloze hole: a blank the reader sees, and the answer behind it.
+ *
+ * A hole cannot simply be hidden -- a sentence with a word deleted is a different sentence,
+ * not a question -- so what ships is a blank, with the answer beside it and concealed. The
+ * blank is a fixed run of characters rather than one sized to the answer: a blank as long as
+ * the word it hides is a clue about the word.
+ */
+function hole(answer: string): RootContent {
+  return {
+    type: "cloze",
+    data: { hName: "span", hProperties: { className: ["cloze"] } },
+    children: [
+      {
+        type: "clozeBlank",
+        data: { hName: "span", hProperties: { className: ["cloze-blank"] } },
+        children: [{ type: "text", value: "…" }],
+      },
+      {
+        type: "clozeAnswer",
+        data: { hName: "span", hProperties: conceal({ className: ["cloze-answer"] }) },
+        children: [{ type: "text", value: answer }],
+      },
+    ],
+  } as unknown as RootContent
+}
+
+/**
+ * Ship this element closed.
+ *
+ * The `hidden` **attribute**, not a class this stylesheet hides and not a script that hides
+ * it on load. That is the same reasoning `prepper/problems` gives for the seal being CSS
+ * rather than JS, one step further: a rule needs the stylesheet to have arrived, and an
+ * attribute needs nothing at all. So an answer stays closed in Quartz's search preview pane,
+ * which injects a result's real HTML into a page whose scripts never ran for it; during a
+ * slow load, before the stylesheet lands; and for a reader with scripting off, who loses the
+ * interaction and is never shown the answer to a question they have not answered.
+ *
+ * It is also what makes the browser half strictly *additive*: `prepper-quiz.js` only ever
+ * unhides, so there is no frame in which the answer is on screen before the reader answers.
+ */
+function conceal(properties: Record<string, unknown>): Record<string, unknown> {
+  return { ...properties, hidden: true }
 }
 
 /**

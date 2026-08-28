@@ -63,12 +63,12 @@ prepper/
     graph.test.ts           what is a node and what is an edge, through seam 1
   quiz/                     quiz fences: a fenced quiz block becomes an answerable question
     index.ts                the transformer, registered from quartz.config.yaml at order 25
+    prepper-quiz.js           <prepper-quiz>: the browser half, hand-written, no build step
     quiz.test.ts            the three question types and every defect, through seam 1
+    answering.test.ts       grade-on-click, over the build's own markup, through seam 2
   problems/                 Problems: the body folded on its H2s, and the CSS-only seal
     index.ts                the transformer, registered from quartz.config.yaml at order 35
-    hints.js                the hint ladder's control, as the browser runs it
     problems.test.ts        the fold, the seal, the ladder and the chips, through seam 1
-    browser.test.ts         unseal and the hint ladder, through seam 2
   links/                    wikilink resolution's one gap: the unwritten-link affordance
     index.ts                the transformer, registered from quartz.config.yaml at order 65
     links.test.ts           resolution and unwritten links, through seam 1
@@ -81,11 +81,6 @@ prepper/
     mechanisms.test.ts      the Quartz mechanisms the design rests on, run
     spike-build.ts          seam 1 with a plugin that is not in the config yet
     spikes/                 the throwaway plugins those spikes need
-  report/                   the Vault report: the build's other channel, at `/report`
-    report.ts               the computation: the authoring queue and the three hygiene facts
-    render.ts               the page, whole and self-contained -- emitter output, never a note
-    index.ts                the emitter, and the one terminal line per build
-    report.test.ts          the queue, the fold and the hygiene facts, through seam 1
   workshop/                 the Workshop boundary, page half: a filter, plus the handoff
     index.ts                withholds Workshop notes, and hands them to validation
   validation/               the validation spine: one rule module, two consumers
@@ -134,6 +129,10 @@ build writes something else, and then the two seams agree with each other about 
 does not exist. It runs Prepper's scripts and not Quartz's, picked out by the `prepper-`
 prefix every custom element of ours is named with; `{ scripts: false }` runs none, which is
 the reader with JavaScript off and is a fixture in its own right rather than a lesser one.
+
+Every way a page has of storing something or sending it anywhere is replaced with a tripwire,
+collected on `screen.recorded`, because Prepper keeps no per-user state and has no server:
+"this records nothing" is a fact about the app that any screen can be asked to confirm.
 
 The exception is [`testing/mechanisms.test.ts`](testing/mechanisms.test.ts), which asserts
 on Quartz's behaviour rather than on ours, on purpose: it pins the three mechanisms

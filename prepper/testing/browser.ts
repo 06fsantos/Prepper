@@ -27,6 +27,14 @@
  * `openPage(..., { scripts: false })` runs none of them, which is not a lesser fixture but
  * a different one: it is a reader with JavaScript disabled, and it is the state the seal
  * has to be correct in.
+ *
+ * ## The tripwires
+ *
+ * Every way a page has of remembering something or telling somebody -- storage, cookies,
+ * `fetch`, `XMLHttpRequest`, `sendBeacon`, `WebSocket`, IndexedDB, the history entries --
+ * is replaced with a recorder that also throws, and `screen.recorded` is what it caught.
+ * Prepper stores no per-user state and has no server, so "this records nothing" is a fact
+ * about the app that every screen can be asked to confirm. See `wireTripwires`.
  */
 import assert from "node:assert"
 import * as fs from "node:fs"
@@ -63,6 +71,15 @@ export class Screen {
     readonly root: Element,
     /** How many of Prepper's scripts ran. Zero with `scripts: false`. */
     readonly scriptsRun: number,
+    /**
+     * Every attempt this page made to persist something or to tell somebody, in order.
+     *
+     * Empty is the assertion, and it is a fact about the whole app rather than about a
+     * feature: Prepper stores no per-user state and has no server, so a page that reached
+     * for storage or the network is a page doing something the app does not do. See
+     * `wireTripwires`.
+     */
+    readonly recorded: string[] = [],
   ) {}
 
   get document(): Document {
@@ -85,6 +102,39 @@ export class Screen {
   text(selector?: string): string {
     const node = selector ? this.one(selector) : this.root
     return (node.textContent ?? "").replace(/\s+/g, " ").trim()
+  }
+
+  /**
+   * Click an element the way a reader does: a real event, bubbling and cancellable.
+   *
+   * Calling a handler directly would test the handler. This tests the page -- the
+   * listeners, where they were attached, and anything that stops the event on the way.
+   */
+  click(element: Element) {
+    element.dispatchEvent(new this.window.MouseEvent("click", { bubbles: true, cancelable: true }))
+  }
+
+  /** Press a key on an element, for the keyboard half of a control. */
+  press(element: Element, key: string) {
+    element.dispatchEvent(
+      new this.window.KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }),
+    )
+  }
+
+  /**
+   * Whether an element is being shown.
+   *
+   * Concealment in Prepper is markup -- the `hidden` attribute on a quiz explanation, the
+   * closed `<details>` of a Problem's seal -- never a class this test would have to know
+   * the stylesheet to interpret.
+   */
+  isOpen(element: Element): boolean {
+    return !(element as HTMLElement).hidden
+  }
+
+  /** The scope's markup as it currently stands, for "nothing happened" assertions. */
+  html(): string {
+    return this.root.innerHTML
   }
 
   /** One folded section of a Problem's body. */
@@ -114,8 +164,9 @@ export async function openPage(
     runScripts: "outside-only",
     url: `${origin}/${slug}`,
   })
+  const recorded = wireTripwires(dom)
   const ran = scripts ? runPrepperScripts(dom, site, slug) : 0
-  return new Screen(dom.window, dom.window.document.documentElement, ran)
+  return new Screen(dom.window, dom.window.document.documentElement, ran, recorded)
 }
 
 /**
@@ -140,6 +191,7 @@ export async function openSearchPreview(
     runScripts: "outside-only",
     url: `${origin}/${from}`,
   })
+  const recorded = wireTripwires(host)
   const ran = runPrepperScripts(host, site, from)
 
   const { document: doc, DOMParser } = host.window
@@ -156,7 +208,7 @@ export async function openSearchPreview(
   container.append(inner)
   doc.body.append(container)
 
-  return new Screen(host.window, inner, ran)
+  return new Screen(host.window, inner, ran, recorded)
 }
 
 /**
@@ -188,4 +240,84 @@ function runPrepperScripts(dom: JSDOM, site: EmittedSite, slug: string): number 
 function readEmitted(pageDir: string, src: string): string {
   const file = path.resolve(pageDir, src)
   return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : ""
+}
+
+/**
+ * Replace every way this page has of remembering or reporting with a recorder that throws.
+ *
+ * Prepper stores no per-user state and has no server: answering a quiz block, opening a
+ * seal, taking a hint -- none of it is written anywhere or told to anybody. That is a
+ * property of the app rather than of any one feature, so it is checkable in one line, on
+ * every screen: `assert.deepEqual(screen.recorded, [])`.
+ *
+ * Recording alone would let a stored value sit there unnoticed by a test that forgot to
+ * look; throwing as well makes the first attempt the failure. Both, because the two
+ * questions worth asking are "did it try" and "did it get away with it".
+ */
+function wireTripwires(dom: JSDOM): string[] {
+  const recorded: string[] = []
+  const { window } = dom
+
+  const trip = (what: string): never => {
+    recorded.push(what)
+    throw new Error(`the page reached for ${what}, and Prepper records nothing`)
+  }
+
+  const storage = (name: string) => ({
+    getItem: () => trip(`${name}.getItem`),
+    setItem: () => trip(`${name}.setItem`),
+    removeItem: () => trip(`${name}.removeItem`),
+    clear: () => trip(`${name}.clear`),
+    key: () => trip(`${name}.key`),
+    get length(): number {
+      return trip(`${name}.length`)
+    },
+  })
+
+  const replace = (target: object, property: string, value: unknown) => {
+    try {
+      Object.defineProperty(target, property, { value, configurable: true, writable: true })
+    } catch {
+      // A host object this DOM will not let us redefine is one the page could not have
+      // used either. Nothing to guard.
+    }
+  }
+
+  replace(window, "fetch", () => trip("fetch"))
+  replace(
+    window,
+    "XMLHttpRequest",
+    class {
+      open() {
+        trip("XMLHttpRequest.open")
+      }
+    },
+  )
+  replace(
+    window,
+    "WebSocket",
+    class {
+      constructor() {
+        trip("WebSocket")
+      }
+    },
+  )
+  replace(window, "localStorage", storage("localStorage"))
+  replace(window, "sessionStorage", storage("sessionStorage"))
+  replace(window, "indexedDB", { open: () => trip("indexedDB.open") })
+  replace(window.navigator, "sendBeacon", () => trip("navigator.sendBeacon"))
+  replace(window.history, "pushState", () => trip("history.pushState"))
+  replace(window.history, "replaceState", () => trip("history.replaceState"))
+
+  try {
+    Object.defineProperty(window.document, "cookie", {
+      configurable: true,
+      get: () => "",
+      set: () => trip("document.cookie"),
+    })
+  } catch {
+    // As above.
+  }
+
+  return recorded
 }
