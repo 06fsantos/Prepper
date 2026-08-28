@@ -183,16 +183,35 @@ screen does not do what it says. Nothing in the bar animates.
 
 ## The hideable rail
 
-The **left** rail collapses to a gutter behind one control at the top of it, and the prose
-keeps its measure while the page recentres round what is left. The right rail is untouched:
-its table of contents, graph and backlinks are consulted _while_ reading, which is a
-different moment. Below 800px the rail is a strip across the top of the page, under the bar,
-rather than a column, so there is nothing to reclaim and the control is not rendered.
+The **left** rail is hidden **whole** -- one `display: none` on the rail itself -- behind one
+control in the top bar, and **the article does not move by a pixel**. That is the design and
+not a nicety: `prepper/reading` declares the page's grid once per viewport band and
+`prepper/sidebar` re-declares no track, so the rail's `minmax(320px, 1fr)` column stays exactly
+as wide whether or not anything is drawn in it and the reclaimed width becomes margin. The
+collapse that redeclared `grid-template-columns` with the left track reduced to a gutter is
+what made the prose jump sideways; easing that jump would have been a different and lesser
+thing. The collapsed state is deliberately **not an icon rail** -- the rail's contents are
+author-written topic names, and there is no icon for "Big-O notation".
 
-[`prepper/sidebar/`](prepper/sidebar/index.ts) is one component, and its placement is
-load-bearing twice: it is a **direct child of the rail**, because collapsing hides the rail's
-other children by selector and the way back has to survive that, and it is in `left` rather
-than `beforeBody`, which sits inside the `.popover-hint` the search preview clones.
+The right rail is untouched: its table of contents, graph and backlinks are consulted _while_
+reading, which is a different moment. Below 800px the rail is a strip across the top of the
+page, under the bar, rather than a column, so there is nothing to reclaim and the control is
+not rendered.
+
+[`prepper/sidebar/`](prepper/sidebar/index.ts) is one component, in the bar rather than in the
+rail it hides -- the way back cannot be inside the thing that goes away. Its one surviving
+placement constraint is that it may not be in `beforeBody`, which sits inside the
+`.popover-hint` the search preview clones. It used to be a **direct child of the rail**, and
+that was load-bearing while the collapse hid the rail's children by selector and spared this
+one; that constraint is retired
+([ADR 0004](docs/adr/0004-a-persistent-top-bar-and-the-retired-right-column.md)).
+
+Non-movement is proved at seam 1 over the emitted stylesheet, at 1280px, 1600px and 1920px:
+jsdom does no layout, so a bounding box measured at seam 2 would be a number the harness
+invented. What is asserted instead is that no rule the collapse switches on has the grid, the
+centre column, the article or any of their ancestors as its **subject**, and that seam 2's
+click changes one attribute on `<html>` and nothing else -- together, that the browser lays the
+article out from identical rules in both states.
 
 It is also, with the topic tree's own folds, **all this app remembers**: one `localStorage`
 key, `prepper-sidebar`, holding one word. That is a fact about a window -- whether the

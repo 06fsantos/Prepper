@@ -4,9 +4,24 @@
  * The rail holds the topic tree: what the reader needs while they are choosing what to read,
  * and not while they are reading it. (Search and the theme controls used to be here too;
  * they are in `prepper/topbar` now, where they stay put whatever the rail is doing.) So a
- * single control collapses the rail to a gutter: the prose keeps its measure, the page
- * recentres round it, and the button stays exactly where it was, because the way back has to
- * be in the place the way out was.
+ * single control in the top bar takes the rail away **whole** -- `display: none` on the rail
+ * itself, not a gutter, not an icon rail -- and brings it back.
+ *
+ * ## The article does not move, and that is the whole design
+ *
+ * The old collapse redeclared `grid-template-columns` on `.page > #quartz-body` with the left
+ * track reduced to a gutter, so the prose column jumped sideways every time the rail went
+ * away. Easing that jump would have been a different and lesser thing. What is here instead
+ * is the *absence* of a rule: the grid is `prepper/reading`'s, it is declared once per
+ * viewport band, and **nothing conditioned on the collapse touches it**. The rail's track is
+ * `minmax(320px, 1fr)` whether or not anything is drawn in it, so the reclaimed width becomes
+ * margin, the measure is untouched, and the article's box is identical in both states by
+ * construction rather than by arithmetic that happens to agree.
+ *
+ * That is also why the collapsed state is **not an icon rail**, notwithstanding what a
+ * collapsed navigation column usually is. The rail's contents are author-written topic names
+ * -- there is no icon for "Big-O notation" -- so an icon rail would be a column of identical
+ * generic glyphs, which says less than nothing.
  *
  * ## What is hidden, and what is not
  *
@@ -16,9 +31,9 @@
  * the top bar with them, on hover-to-restore, and that is deliberately not this control.
  *
  * Below 800px the rail is not a column at all: Quartz lays it out as a strip across the top
- * of the page, under the top bar, and `prepper/topics` puts the topic tree behind a drawer
- * there. There is nothing to reclaim, so the control is not rendered and none of the collapse
- * rules apply.
+ * of the page, under the top bar. There is nothing to reclaim from a strip, so the control is
+ * not rendered there and the collapse rule does not apply. Making that strip a drawer opened
+ * by this same control is its own ticket.
  *
  * ## Why it is remembered, when nothing else is
  *
@@ -46,13 +61,13 @@
 export const manifest = {
   name: "prepper-sidebar",
   displayName: "Prepper sidebar toggle",
-  description: "Collapses the left rail to a gutter, and remembers that it was collapsed.",
+  description: "Hides the left rail whole from the top bar, and remembers that it is hidden.",
   version: "1.0.0",
   category: "component",
   components: {
     PrepperSidebarToggle: {
       displayName: "Prepper sidebar toggle",
-      defaultPosition: "left",
+      defaultPosition: "header",
       defaultPriority: 5,
     },
   },

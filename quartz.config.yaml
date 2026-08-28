@@ -460,23 +460,29 @@ plugins:
     layout:
       position: afterBody
       priority: 5
-  # Prepper: ours. The control that collapses the left rail to a gutter, and the one
-  # preference this app remembers.
+  # Prepper: ours. The control that hides the left rail outright, and the one preference this
+  # app remembers.
   #
-  # Priority 5 puts it at the top of the rail. Two things about the placement are load-bearing
-  # rather than cosmetic. It is a **direct child of the rail** -- no `group:` -- because
-  # collapsing hides the rail's other children by selector and the control has to survive
-  # that; nested inside a wrapper it would go down with the wrapper. And it is in `left`
-  # rather than `beforeBody`, where a component with nothing much to render usually goes,
-  # because `beforeBody` sits inside the `.popover-hint` that Quartz's search preview clones
-  # -- which would splice a second copy of this button over the page.
+  # It sits in the top bar, at priority 5 -- the first thing in the position, and therefore
+  # the leftmost thing in the bar, because everything ordered below search's 20 is pushed to
+  # the left edge. A control that lived *inside* the rail it hides would be a control the
+  # reader has to restore the rail to reach; the way back has to be somewhere the collapse
+  # cannot take with it, and the bar is the one part of the chrome that is always there.
+  #
+  # That is also what retires the constraint this entry used to record: the control no longer
+  # has to be a direct child of the rail, because the collapse no longer hides the rail's
+  # children one by one while sparing one of them. The rail is hidden whole.
+  #
+  # `beforeBody` is still the position it may not take -- that one sits inside the
+  # `.popover-hint` Quartz's search preview clones, which would splice a second copy of this
+  # button over the page -- but `header` is a sibling of the hint rather than a descendant.
   #
   # See `prepper/sidebar/index.ts` for why one key in `localStorage` is not a hole in "the app
   # records nothing".
   - source: "./prepper/sidebar"
     enabled: true
     layout:
-      position: left
+      position: header
       priority: 5
   # Prepper: ours. The persistent bar across the top of every page -- the app's name, search,
   # the theme switch and reader mode, in one place of their own instead of stacked above a

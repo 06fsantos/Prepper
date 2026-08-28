@@ -145,6 +145,9 @@ describe("the top bar", () => {
     // in them.
     const page = site.page("404")
     assert.ok(page.select(".page-header > header .search", page.tree), "no search on 404")
+    // The rail toggle comes with the bar, and it is harmless on a page whose rails are
+    // cleared: there is nothing in the rail to hide, and pressing it hides nothing.
+    assert.ok(page.select(".page-header > header button.prepper-sidebar-toggle", page.tree))
     assert.deepEqual(page.selectAll(".left.sidebar > *", page.tree), [])
     assert.deepEqual(page.selectAll(".right.sidebar > *", page.tree), [])
   })
@@ -153,7 +156,13 @@ describe("the top bar", () => {
     const page = site.page("lessons/hash-map-lookup-cost")
     const bar = page.require(".page-header > header", page.tree)
 
-    for (const control of [".page-title", ".search", ".darkmode", ".readermode"]) {
+    for (const control of [
+      "button.prepper-sidebar-toggle",
+      ".page-title",
+      ".search",
+      ".darkmode",
+      ".readermode",
+    ]) {
       assert.equal(page.selectAll(control, bar).length, 1, `${control} is not in the bar`)
       assert.equal(
         page.selectAll(control, page.require(".left.sidebar", page.tree)).length,
@@ -167,16 +176,22 @@ describe("the top bar", () => {
     // This is the whole slot mechanism: one CSS rule gives `.search` an automatic inline
     // margin, so everything ordered before it is pushed to the left edge of the bar and
     // everything after it to the right. A control lands in a slot by taking a priority either
-    // side of search's 20 -- the rail toggle at 5 and the graph at 40 arrive that way, with
-    // no re-layout. If this order ever stops being title, search, theme, reader, the slots
-    // have silently changed sides.
+    // side of search's 20 -- the rail toggle arrived at 5 that way, and the graph will at 40,
+    // with no re-layout. If this order ever stops being toggle, title, search, theme, reader,
+    // the slots have silently changed sides.
     const page = site.page("lessons/hash-map-lookup-cost")
     const bar = page.require(".page-header > header", page.tree)
     const order = bar.children
       .filter((child): child is Element => child.type === "element")
       .map((child) => (child.properties.className as string[])[0])
 
-    assert.deepEqual(order, ["page-title", "search", "darkmode", "readermode"])
+    assert.deepEqual(order, [
+      "prepper-sidebar-toggle",
+      "page-title",
+      "search",
+      "darkmode",
+      "readermode",
+    ])
   })
 
   test("the bar is nowhere the search preview would clone it", () => {

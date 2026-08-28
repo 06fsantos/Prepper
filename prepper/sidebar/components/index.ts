@@ -8,14 +8,19 @@ import type {
 } from "../../../quartz/components/types.ts"
 
 /**
- * The control, and the rules that collapse the rail behind it.
+ * The control, and the one rule that hides the rail behind it.
  *
- * It is a plain `<button>` inside the rail itself, and a **direct child** of it rather than
- * something nested inside one of the rail's other children. That placement is load-bearing
- * twice over: the collapse rule hides the rail's other children by selector, so the control
- * has to be one of them to survive it, and `beforeBody` -- where a component with nothing to
- * say usually goes -- is inside the `.popover-hint` that Quartz's search preview clones,
- * which would put a second copy of this button over the top of the page.
+ * It is a plain `<button>` in the **top bar**, at the far left of it, and it is no longer
+ * inside the thing it hides. It used to be a direct child of the rail, and that was
+ * load-bearing while the collapse worked by hiding the rail's children one at a time and
+ * sparing this one; the note is gone because the constraint is. The rail is hidden whole now,
+ * so a control anywhere inside it would go down with it and there would be no way back.
+ *
+ * One placement is still ruled out, for an unrelated reason: `beforeBody` -- where a
+ * component with nothing much to say usually goes -- sits inside the `.popover-hint` that
+ * Quartz's search preview clones out of a fetched page, which would splice a second copy of
+ * this button over the top of the page the reader is on. `header` is a **sibling** of the
+ * hint rather than a descendant, which is why the bar is allowed to hold it.
  *
  * The state is an attribute on `<html>`, written by `remember.js` before the body is parsed
  * and by `toggle.js` on every click. Nothing here renders it: a component that emitted the
@@ -91,66 +96,52 @@ function script(name: string): string {
 }
 
 /**
- * The collapse, as a change of grid.
+ * The collapse, as one declaration -- and, more importantly, as the absence of every other
+ * one.
  *
- * `prepper/reading` sets the three columns -- a rail that absorbs the remainder, the ~38rem
- * measure, a rail -- and this restates them with the left one reduced to a gutter wide enough
- * for the control, plus `justify-content: center`, so what is left of the layout sits in the
- * middle of the window instead of being pushed against the right rail. The breakpoints are
- * the same two upstream declares and the reading surface already mirrors; a rule written at a
- * third breakpoint would be a second layout rather than an override of the one.
+ * `display: none` on `.sidebar.left`, and nothing else. Not `width: 0`, which leaves a box
+ * with padding and a scrollbar in it; not a rule per child, which is what this used to be and
+ * which only existed because the way back was one of those children.
  *
- * The rail's other children are hidden by selector rather than the rail itself, because
- * `display: none` on an ancestor takes the control down with everything else and leaves the
- * reader with a collapsed sidebar and no way back.
+ * What is deliberately *not* here is any rule that touches the grid. `prepper/reading`
+ * declares `grid-template-columns` on `.page > #quartz-body` once per viewport band, and the
+ * collapsed state re-declares none of them: the rail's track stays `minmax(320px, 1fr)`
+ * whether or not a rail is drawn in it, so the centre column resolves against exactly the
+ * same track list in both states and the article cannot move. The old collapse restated the
+ * three columns with the left one reduced to a gutter, plus `justify-content: center`, and
+ * that -- not any transition -- is what made the prose jump sideways. `sidebar.test.ts`
+ * asserts the absence at 1280px, 1600px and 1920px, because an absence is exactly the kind of
+ * thing a later edit restores without noticing.
+ *
+ * The rule is scoped to `min-width: 800px` because below that the rail is not a column: Quartz
+ * lays it out as a strip across the top of the page, there is nothing to reclaim, and the
+ * control is not rendered. 800px is upstream's own breakpoint and the one the reading surface
+ * already mirrors; a third breakpoint here would be a second layout rather than an override of
+ * the one.
+ *
+ * Nothing here animates. Motion is `prepper/tokens`' vocabulary and its own ticket, and a
+ * disclosure that eases is a disclosure whose state a reader can catch mid-flight.
  */
 const styles = `
 .prepper-sidebar-toggle {
-  align-self: flex-start;
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0.4rem;
-  margin: 0 0 0.2rem -0.4rem;
   background: none;
   border: none;
   border-radius: var(--md-sys-shape-corner-full);
   cursor: pointer;
   color: var(--md-sys-color-on-surface-variant);
 }
-/* A round target under the pointer, the way the rail's own rows take a rounded one. The
-   negative margin above puts the glyph back on the rail's left edge, so growing the target
-   does not shift the icon out of line with the names below it. */
+/* A round target under the pointer, the way the bar's other icon controls take one. */
 .prepper-sidebar-toggle:hover {
   color: var(--md-sys-color-on-surface);
   background-color: var(--md-sys-color-surface-container-high);
 }
 @media all and (min-width: 800px) {
-  :root[data-prepper-sidebar="hidden"] .sidebar.left > *:not(.prepper-sidebar-toggle) {
+  :root[data-prepper-sidebar="hidden"] .page > #quartz-body .sidebar.left {
     display: none;
-  }
-  :root[data-prepper-sidebar="hidden"] .sidebar.left {
-    padding-left: 0.9rem;
-    padding-right: 0.9rem;
-  }
-}
-@media all and (min-width: 1200px) {
-  :root[data-prepper-sidebar="hidden"] .page > #quartz-body {
-    grid-template-columns:
-      var(--prepper-rail-collapsed)
-      min(
-        var(--prepper-measure),
-        calc(100% - var(--prepper-rail-collapsed) - var(--prepper-sidebar) - 10px)
-      )
-      var(--prepper-sidebar);
-    justify-content: center;
-  }
-}
-@media all and (min-width: 800px) and (max-width: 1200px) {
-  :root[data-prepper-sidebar="hidden"] .page > #quartz-body {
-    grid-template-columns:
-      var(--prepper-rail-collapsed)
-      min(var(--prepper-measure), calc(100% - var(--prepper-rail-collapsed) - 5px));
-    justify-content: center;
   }
 }
 @media all and (max-width: 800px) {

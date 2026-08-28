@@ -88,11 +88,12 @@ prepper/
     index.ts                the component manifest; one config entry, at `header`
     components/index.ts     a component that renders nothing and carries the bar's stylesheet
   sidebar/                  the left rail, hideable -- and the one preference we remember
-    index.ts                the component manifest; one config entry, at the top of the rail
-    components/index.ts     the control, and the rules that collapse the rail behind it
+    index.ts                the component manifest; one config entry, at `header` priority 5
+    components/index.ts     the control, and the one rule that hides the rail behind it
     remember.js             the head snippet that applies the remembered state, no flash
     toggle.js               the control's browser half: an attribute, and one storage key
-    sidebar.test.ts         the placement, the served state, the collapse, through seam 1
+    sidebar.test.ts         the placement, the served state, and the proof the article
+                            cannot move, through seam 1
     toggling.test.ts        the click, and what it keeps, through seam 2
   problems/                 Problems: the body folded on its H2s, and the CSS-only seal
     index.ts                the transformer, registered from quartz.config.yaml at order 35

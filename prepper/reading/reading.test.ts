@@ -102,13 +102,30 @@ describe("the reading surface", () => {
     const columns = [...css.matchAll(/\.page>#quartz-body\{grid-template-columns:([^};]+)/g)].map(
       (match) => match[1],
     )
-    assert.ok(
-      columns.length >= 3,
-      `expected a measure for every viewport band, found ${columns.length}: ${columns.join(" | ")}`,
+    assert.equal(
+      columns.length,
+      3,
+      `expected one declaration per viewport band, found ${columns.length}: ${columns.join(" | ")}`,
     )
     assert.ok(
       columns.every((track) => track.includes("--prepper-measure")),
       `every band sizes the prose column from the measure: ${columns.join(" | ")}`,
+    )
+  })
+
+  test("this is the only module that declares the page's grid", () => {
+    // Three bands and no fourth. `prepper/sidebar` used to declare a *second*, collapsed grid
+    // with the left track reduced to a gutter, and that -- not any easing -- is what made the
+    // prose jump sideways when the rail went away. The rail is hidden with one `display`
+    // now, and the reclaimed width becomes margin, because the track list never changes.
+    // `prepper/sidebar/sidebar.test.ts` asserts the same fact from the other side, per
+    // viewport width. The count above is what keeps a second grid from creeping back in.
+    const declarations = [...css.matchAll(/grid-template-columns/g)]
+    const ours = [...css.matchAll(/grid-template-columns:[^};]*--prepper-measure/g)]
+    assert.equal(ours.length, 3, `${ours.length} of ${declarations.length} grids are ours`)
+    assert.ok(
+      !/data-prepper-sidebar[^{]*\{[^}]*grid-template-columns/.test(css),
+      "no grid is conditioned on whether the rail is hidden",
     )
   })
 

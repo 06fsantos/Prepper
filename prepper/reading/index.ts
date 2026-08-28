@@ -10,10 +10,10 @@
  * - **Style**: the ~38rem measure the prose column holds at every viewport width, the serif
  *   it is set in, and the blockquote that carries an aside. This is where the page's own
  *   layout is declared rather than a component's -- every other module's CSS is deliberately
- *   in Quartz's theme variables so that it lands here. The one module that writes rules for
- *   the same grid is `prepper/sidebar`, whose collapsed state is these three columns with the
- *   left one reduced to a gutter; `--prepper-rail-collapsed` is declared here with the rest of
- *   the layout for that reason.
+ *   in Quartz's theme variables so that it lands here. It is also the **only** module that
+ *   declares this grid: `prepper/sidebar` hides the left rail with `display: none` and
+ *   re-declares no track, which is what makes the prose column stay exactly where it is when
+ *   the rail goes away.
  *
  * ## Why the page styles ride on a component
  *

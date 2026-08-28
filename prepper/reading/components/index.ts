@@ -136,12 +136,11 @@ const PrepperReading: QuartzComponentConstructor = () => {
 const styles = `
 :root {
   --prepper-measure: 38rem;
+  /* The rail's track, and it is minmax(..., 1fr) below whether or not a rail is drawn in
+     it: prepper/sidebar hides the rail outright and re-declares no track here, so the width
+     the rail gives up becomes margin and the prose column does not move. There is no second,
+     collapsed grid anywhere. */
   --prepper-sidebar: 320px;
-  /* What is left of the left rail once prepper/sidebar collapses it: room for the one
-     control that brings it back, and nothing else. Declared here because this is where the
-     grid is declared -- the collapsed layout is the same three columns with one of them
-     reduced, not a second layout somewhere else. */
-  --prepper-rail-collapsed: 3.25rem;
   --prepper-prose: "Source Serif 4", Charter, "Iowan Old Style", Georgia, serif;
 }
 .page > #quartz-body {
