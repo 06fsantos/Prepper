@@ -79,6 +79,18 @@ prepper/
     prepper-quiz.js           <prepper-quiz>: the browser half, hand-written, no build step
     quiz.test.ts            the three question types and every defect, through seam 1
     answering.test.ts       grade-on-click, over the build's own markup, through seam 2
+  folding/                  collapsible headings: a note's body folded on every heading
+    index.ts                the transformer, registered from quartz.config.yaml at order 36
+    reveal.js               the one thing a closed fold cannot do: be reached by an anchor
+    folding.test.ts         the nesting, the closed state, the whole note, through seam 1
+    revealing.test.ts       an anchor opening the folds it lands in, through seam 2
+  sidebar/                  the left rail, hideable -- and the one preference we remember
+    index.ts                the component manifest; one config entry, at the top of the rail
+    components/index.ts     the control, and the rules that collapse the rail behind it
+    remember.js             the head snippet that applies the remembered state, no flash
+    toggle.js               the control's browser half: an attribute, and one storage key
+    sidebar.test.ts         the placement, the served state, the collapse, through seam 1
+    toggling.test.ts        the click, and what it keeps, through seam 2
   problems/                 Problems: the body folded on its H2s, and the CSS-only seal
     index.ts                the transformer, registered from quartz.config.yaml at order 35
     problems.test.ts        the fold, the seal, the ladder and the chips, through seam 1

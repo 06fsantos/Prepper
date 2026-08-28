@@ -56,10 +56,23 @@ surface** does not -- is a scope boundary, and both terms are defined in
   Grotesk, already configured and served. Roboto would be a third webfont for no gain. The scale's
   tracking values are tuned to Roboto's metrics and are treated as advisory; its sizes,
   line-heights and weights are not.
-- **No motion subsystem, deliberately.** Not an omission to be completed later. Nothing of ours
-  animates, and the one tempting case -- revealing a quiz answer, unsealing a solution -- is
-  precisely where the architecture insists the seal is markup and the browser's own default does
-  the work. A token vocabulary with no consumer invites someone to find one.
+- **~~No motion subsystem, deliberately.~~ Superseded by
+  [ADR 0004](0004-a-persistent-top-bar-and-the-retired-right-column.md).** This ADR originally
+  recorded that there was no motion subsystem and that its absence was a decision rather than an
+  omission: nothing of ours animated, and a token vocabulary with no consumer invites someone to
+  find one. ADR 0004 gave it a consumer -- the left rail collapses behind a control in the new
+  top bar, and that collapse is eased -- so `prepper/tokens` now emits Material's full motion
+  role set, computed wholesale like every other role set it holds.
+
+  What has **not** changed is the half of the original reasoning that was load-bearing. The
+  tempting case named above -- revealing a quiz answer, unsealing a solution -- is still
+  refused, and now explicitly: **`<details>` never animates.** Not the Problem seal, not a
+  heading fold, not a topic-tree fold. Those elements are shut by the HTML specification before
+  a stylesheet loads, before a script runs, and inside the search preview pane that injects a
+  result's real HTML and runs none of its scripts, and every one of those three properties is
+  relied upon somewhere in this codebase. An eased `<details>` is a script-dependent seal
+  wearing a costume. A test asserts that no emitted stylesheet puts a `transition` or
+  `animation` on a `details` element or on anything inside one.
 - **Three surfaces are outside the system and stay that way.** `prepper/search`'s CSS is vendored and
   pinned by the sha256 of the pristine original, and the pin exists so the diff from upstream stays
   legible. `prepper/report` is a whole self-contained HTML document rather than a page through

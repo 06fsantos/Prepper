@@ -89,12 +89,24 @@ A thing the reader can attempt rather than read: a Problem or a Quiz block. Atte
 _Avoid_: reviewable, card, review item
 
 **Reading surface**:
-The article column and the way a note's own prose is set in it: the measure it holds, the serif it is set in, its leading, and its asides. Sovereign — it takes its rules from typography rather than from the app's design system, because a document is a surface the reader dwells in rather than one they operate ([ADR 0003](docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md)).
+The article column and the way a note's own prose is set in it: the measure it holds, the serif it is set in, its leading, and its asides. Sovereign — it takes its rules from typography rather than from the app's design system, because a document is a surface the reader dwells in rather than one they operate ([ADR 0003](docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md)). Defined by **what a page's body is, not by which page it is**: a body of prose is a Reading surface and holds the measure, and a body that is a Topic index is not and is laid out wide. A Term page is both in turn — thin prose above its generated index — and the boundary runs between them on the page ([ADR 0004](docs/adr/0004-a-persistent-top-bar-and-the-retired-right-column.md)).
 _Avoid_: content area, article body, main
 
 **Chrome**:
-Everything the app puts around a note that is not the note: the sidebar and its topic tree, the toolbar, search, the topic chips under a title, and the typed edges rendered in context. Styled as one system from a shared token vocabulary, which is exactly what distinguishes it from the Reading surface. States only what is true — there is no reading order for it to imply and no per-user state for it to display.
+Everything the app puts around a note that is not the note: the top bar and the controls it carries, the rail and its topic tree, search, the topic chips under a title, and the typed edges rendered in context. Styled as one system from a shared token vocabulary, which is exactly what distinguishes it from the Reading surface. States only what is true — there is no reading order for it to imply and no per-user state for it to display. That rule forbids chrome that **asserts something the app does not know**, which is why there is no breadcrumb, progress bar or review-queue badge; it does not forbid chrome that merely gives an existing control a fixed place.
 _Avoid_: UI, shell, navigation, furniture
+
+**Top bar**:
+The one persistent band across the top of every page, carrying every control the app has: the rail toggle and the app's name, search, and the theme, reader-mode and graph controls. Fixed rather than scrolling, and the only Chrome element present on every page whatever the body is. It holds controls and never content — a thing that would go in it because it is important, rather than because it is operated, belongs on the page.
+_Avoid_: header, navbar, app bar, banner
+
+**Rail**:
+The collapsible left column, whose sole occupant is the Topic index in its jump-list view. Collapses to **nothing** rather than to a strip of icons — its contents are author-written topic names, and there is no icon for a topic. Whether it is collapsed is the one fact about a reader that the app remembers, alongside which items of the tree are folded shut, and it is a fact about a window rather than about the reader's work.
+_Avoid_: sidebar, drawer, panel
+
+**Topic index**:
+`topic` inverted: for each topic, every note filed under it, grouped by note type. Computed once from the Link graph and rendered in three **views** that share one source and differ only in density — a bare foldable name list in the Rail, and a wide multi-column landing on the app's entry page and beneath a Term's own prose. One source is what stops two views disagreeing about what is filed where; identical markup was never what it meant.
+_Avoid_: explorer, topic tree (that is one view of it), navigation tree
 
 **Wikilink**:
 An `[[filename]]` reference in a note body, optionally aliased `[[filename|display text]]` (Obsidian's pipe, never a colon) and optionally anchored `[[filename#Heading]]`. Resolves against link identity, case-insensitively. `![[…]]` is an **embed**, which renders the target in place rather than linking to it — an attachment or another note.

@@ -111,6 +111,15 @@ plugins:
   - source: "./prepper/problems"
     enabled: true
     order: 35
+  # Prepper: ours. Order 36 is the free slot straight after `./prepper/problems` (35), and
+  # after is the only place it can go: a Problem has already been folded on its named H2s and
+  # had two of them sealed by then, and this transform leaves that note type alone rather than
+  # putting a fold round a seal. Everything else is folded on every heading it was written
+  # with, nested, and **ships closed** -- the same `<details>` the seal is, for the same reason
+  # it is markup rather than a script. See `prepper/folding/index.ts`.
+  - source: "./prepper/folding"
+    enabled: true
+    order: 36
   - source: "@quartz-community/github-flavored-markdown"
     enabled: true
     order: 40
@@ -443,6 +452,24 @@ plugins:
       view: term-index
     layout:
       position: afterBody
+      priority: 5
+  # Prepper: ours. The control that collapses the left rail to a gutter, and the one
+  # preference this app remembers.
+  #
+  # Priority 5 puts it above the page title (10), at the top of the rail. Two things about the
+  # placement are load-bearing rather than cosmetic. It is a **direct child of the rail** -- no
+  # `group:` -- because collapsing hides the rail's other children by selector and the control
+  # has to survive that; a member of the `toolbar` group would go down with the group. And it
+  # is in `left` rather than `beforeBody`, where a component with nothing much to render
+  # usually goes, because `beforeBody` sits inside the `.popover-hint` that Quartz's search
+  # preview clones -- which would splice a second copy of this button over the page.
+  #
+  # See `prepper/sidebar/index.ts` for why one key in `localStorage` is not a hole in "the app
+  # records nothing".
+  - source: "./prepper/sidebar"
+    enabled: true
+    layout:
+      position: left
       priority: 5
   # Prepper: ours. The chrome's design tokens: Material 3's colour, elevation, typography
   # and shape roles, all derived from the seed `#284b63`, plus the aliases that resolve

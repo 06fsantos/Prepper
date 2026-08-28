@@ -8,9 +8,12 @@
  *   every subject it is about, and the chips say all of them -- the alternative is picking
  *   one arbitrarily and calling it the note's home, which the vault does not believe.
  * - **Style**: the ~38rem measure the prose column holds at every viewport width, the serif
- *   it is set in, and the blockquote that carries an aside. This is the one place in
- *   `prepper/` that styles the page rather than a component of its own -- every other
- *   module's CSS is deliberately in Quartz's theme variables so that it lands here.
+ *   it is set in, and the blockquote that carries an aside. This is where the page's own
+ *   layout is declared rather than a component's -- every other module's CSS is deliberately
+ *   in Quartz's theme variables so that it lands here. The one module that writes rules for
+ *   the same grid is `prepper/sidebar`, whose collapsed state is these three columns with the
+ *   left one reduced to a gutter; `--prepper-rail-collapsed` is declared here with the rest of
+ *   the layout for that reason.
  *
  * ## Why the page styles ride on a component
  *

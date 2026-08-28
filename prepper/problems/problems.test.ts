@@ -93,7 +93,13 @@ describe("`## Solution` and `## Complexity` are sealed", () => {
       const seal = page.require("details.problem-seal", section(page, name))
       assert.equal(seal.properties.open, undefined, `${name} was emitted already open`)
     }
-    assert.equal(/<details[^>]*\sopen[\s>]/.test(page.html), false, page.html)
+    // Scoped to the note's own body: the rail's topic tree is `<details>` too, and that
+    // one legitimately arrives open (`prepper/topics`). What must never be open is
+    // anything inside the article.
+    assert.deepEqual(
+      page.selectAll("details", page.body).map((found) => found.properties.open),
+      [undefined, undefined],
+    )
   })
 
   test("the two are independent, so opening one does not close the other", () => {

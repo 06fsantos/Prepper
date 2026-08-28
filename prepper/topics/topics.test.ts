@@ -162,6 +162,60 @@ describe("the topic index", () => {
     )
   })
 
+  test("every item of the sidebar tree is a fold, and it arrives open", () => {
+    const problem = site.page("problems/two-sum")
+    const tree = problem.require(".prepper-topics", problem.tree)
+
+    // Open, unlike every other fold in the build: a note's headings arrive closed because a
+    // closed outline is how a reader chooses a section, and navigation that arrived closed
+    // would make them open a topic to find out whether it holds anything.
+    const folds = problem.selectAll("details.prepper-topic-fold", tree)
+    assert.equal(folds.length, 2, "a fold for each topic that has anything under it")
+    for (const fold of folds) {
+      assert.equal(fold.properties.open, true, `${String(fold.properties.dataFold)} arrived shut`)
+      assert.ok(problem.select("summary", fold), "a fold with no row to work it")
+    }
+
+    // The id the memory holds an item under, and the only thing the scripts know about the
+    // tree. It is the Term's own slug, so it cannot drift from what the item points at.
+    assert.deepEqual(folds.map((fold) => String(fold.properties.dataFold)).sort(), [
+      "terms/complexity",
+      "terms/hash-maps",
+    ])
+  })
+
+  test("a topic nothing is filed under has no disclosure to work", () => {
+    // "System design" is a Term with no Lessons. There is nothing behind a fold, so there is
+    // no fold -- and the row is still a row, so the names line up down the tree.
+    const problem = site.page("problems/two-sum")
+    const empty = topicNode(problem, "System design", problem.tree)
+
+    assert.deepEqual(problem.selectAll("details.prepper-topic-fold", empty), [])
+    assert.ok(problem.select(".prepper-topic-fold-leaf", empty), "the row is gone as well as the fold")
+  })
+
+  test("the Cheat sheets list folds on its own name", () => {
+    const problem = site.page("problems/two-sum")
+    const sheets = problem.require(".prepper-cheat-sheets", problem.tree)
+    const fold = problem.require("details.prepper-topic-fold", sheets)
+
+    assert.equal(fold.properties.dataFold, "cheat-sheets")
+    assert.equal(fold.properties.open, true)
+  })
+
+  test("the tree marks the page the reader is already on", () => {
+    const term = site.page("terms/hash-maps")
+    const tree = term.require(".prepper-topics", term.tree)
+
+    // `aria-current` rather than a class: "this is the page you are on" is a fact a screen
+    // reader has to be told as well as shown, and the stylesheet paints from the attribute so
+    // there is one statement of it rather than two that can come apart.
+    const current = term
+      .selectAll("[aria-current]", tree)
+      .map((node) => [String(node.properties.ariaCurrent), term.text(undefined, node)])
+    assert.deepEqual(current, [["page", "Hash maps"]])
+  })
+
   test("a Term with no Lessons renders its body as an area overview above its index", () => {
     const term = site.page("terms/system-design")
 

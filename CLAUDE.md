@@ -120,7 +120,70 @@ Markdown does not have.
 [`prepper/reading/`](prepper/reading/index.ts) is one component at `beforeBody`, and it
 carries the page styles as well as the chips: Quartz collects a component's CSS from the
 configured component list rather than from what a page rendered, so the measure lands on
-every page. It is the only module that styles the page rather than a component of its own.
+every page. It owns the page's own layout -- the grid, the measure, the prose -- which no
+other module writes rules for except `prepper/sidebar`, whose collapsed state is that same
+grid with one column reduced.
+
+## Collapsible headings
+
+A note's body is folded on **every heading it was written with**, nested -- an `##` fold
+holds its `###` folds -- and every fold **arrives closed**, so a page opens as its own
+outline. What sits above the first heading is not folded: it is what a reader chooses a
+section by. [`prepper/folding/index.ts`](prepper/folding/index.ts) is one remark transformer
+at `order: 36`, straight after Problems (35), and a **Problem is left alone**: it has
+already been folded on its named H2s and had two of them sealed, and a fold round a seal
+would erase the difference between "sealed because it is the answer" and "folded because
+everything is".
+
+The fold is a `<details>`, for the reason the seal is: it is shut by the HTML specification
+before a stylesheet loads, before a script runs, and in Quartz's search preview pane, which
+injects a result's real HTML and runs none of its scripts. Nothing is concealed -- the whole
+note is on the page and in the search index -- and nothing about which folds a reader opened
+is kept. The one thing a closed fold cannot do for itself is be reached by an anchor, so
+`reveal.js` opens the folds a `#heading` lands in; that is an enhancement over a page that is
+already correct without it.
+
+## The hideable rail
+
+The **left** rail collapses to a gutter behind one control at the top of it, and the prose
+keeps its measure while the page recentres round what is left. The right rail is untouched:
+its table of contents, graph and backlinks are consulted _while_ reading, which is a
+different moment. Below 800px the rail is the page's top bar rather than a column, so there
+is nothing to reclaim and the control is not rendered.
+
+[`prepper/sidebar/`](prepper/sidebar/index.ts) is one component, and its placement is
+load-bearing twice: it is a **direct child of the rail**, because collapsing hides the rail's
+other children by selector and the way back has to survive that, and it is in `left` rather
+than `beforeBody`, which sits inside the `.popover-hint` the search preview clones.
+
+It is also, with the topic tree's own folds, **all this app remembers**: one `localStorage`
+key, `prepper-sidebar`, holding one word. That is a fact about a window -- whether the
+furniture is in the way -- and not about the reader's work, which is still written nowhere at
+all; [`prepper/testing/browser.ts`](prepper/testing/browser.ts) permits that key **by name**
+and records what lands in it, so the carve-out is asserted rather than assumed and every other
+key still trips. `remember.js` runs in the `<head>`, before the body is parsed, so a reader
+who collapsed the rail never sees it flash.
+
+## The topic tree
+
+The rail's navigation is [`prepper/topics`](prepper/topics/index.ts), and every item of it
+**folds**: a topic's note-type groups and the flat Cheat sheets list each sit behind a
+`<details>` whose `<summary>` is the row -- a chevron, and the topic's own name, still a link
+to its Term page. It is the same element the seal and a note's headings are, for the same
+reason, but with the **opposite default**: navigation arrives **open**, because a tree that
+arrived shut would make the reader open a topic to find out whether it holds anything. So what
+is stored is the exceptions -- `prepper-topic-folds`, the ids of the items that are shut, the
+second and last key in the app and the same category as the first.
+
+Two things in [`folds.js`](prepper/topics/folds.js) are load-bearing. It listens to the
+**click on the row, never to `toggle`**: `toggle` cannot say who moved the fold, and two things
+move it that are not the reader -- applying the remembered state, and following the topic name,
+which is a link inside the row the browser toggles on the way out. And `remember-folds.js` runs
+in the `<head>` like the rail's, writing a stylesheet that holds the shut items shut until the
+elements exist to say so on; `folds.js` takes it back out.
+
+A note's own headings are not this: they are [`prepper/folding`](prepper/folding/index.ts), a
+remark transformer over a body, and they arrive closed.
 
 ## Design tokens
 

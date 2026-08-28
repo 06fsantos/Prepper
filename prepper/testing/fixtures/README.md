@@ -79,6 +79,13 @@ anything.
   ordered by difficulty across kinds" a fact about the emitted index. The vault validates
   clean — `problem-body-violations/` is the other half.
 
+- **`folded-headings/`** — one Lesson whose body runs `##` → `###` → `####` → `###` → `##`,
+  with a paragraph above the first heading and a wikilink written under the last one, plus the
+  Term that link names. Its cluster is *collapsible headings*: the depths make nesting
+  statable, the preamble makes "what is above the first heading is not a section" statable, and
+  the wikilink -- which appears nowhere else in the note -- makes "a fold is markup wrapped
+  round the same subtree" statable, because the edge cannot have arrived by another route.
+
 - **`problem-body-violations/`** — four Problems the body contract is not satisfied by: a
   coding problem with only a `## Prompt`, a `kind` nothing answers to, a `difficulty`
   nothing answers to, and a pointer problem whose `source` list holds two sentences and no

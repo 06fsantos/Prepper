@@ -33,8 +33,13 @@
  * Every way a page has of remembering something or telling somebody -- storage, cookies,
  * `fetch`, `XMLHttpRequest`, `sendBeacon`, `WebSocket`, IndexedDB, the history entries --
  * is replaced with a recorder that also throws, and `screen.recorded` is what it caught.
- * Prepper stores no per-user state and has no server, so "this records nothing" is a fact
- * about the app that every screen can be asked to confirm. See `wireTripwires`.
+ * Prepper stores nothing about the reader's work and has no server, so "this records nothing"
+ * is a fact about the app that every screen can be asked to confirm.
+ *
+ * Two keys are exempt by name -- `prepper-sidebar`, whether the left rail is collapsed, and
+ * `prepper-topic-folds`, which items of the topic tree the reader has shut -- and they are
+ * backed by a real map rather than waved through, so `screen.remembered` says what a page kept
+ * and everything else still trips. See `wireTripwires` and `rememberedKeys`.
  */
 import assert from "node:assert"
 import * as fs from "node:fs"
@@ -55,6 +60,22 @@ const prepperScriptMarker = "prepper-"
 
 /** Somewhere fetches are pointed at. Nothing is served from it; jsdom just wants an origin. */
 const origin = "https://prepper.test"
+
+/**
+ * The keys the app is allowed to remember, named here rather than pattern-matched.
+ *
+ * A prefix -- anything starting `prepper-` -- would be a licence: the next feature that
+ * wanted to keep something would find the tripwire already open and nobody would have to
+ * decide anything. Literal strings make the carve-out a list you can read, and adding to it is
+ * an edit to this file that a reviewer sees.
+ *
+ * Both entries are the same kind of fact -- which furniture is in the way -- and neither is
+ * about the reader's work: whether the left rail is collapsed
+ * (`prepper/sidebar/index.ts`), and which items of the topic tree are shut
+ * (`prepper/topics/folds.js`). What was answered, opened, unsealed or unfolded in a note is
+ * still written nowhere at all, and every key that is not on this list still trips.
+ */
+const rememberedKeys = new Set(["prepper-sidebar", "prepper-topic-folds"])
 
 /**
  * A live document, and the part of it a test is asking about.
@@ -80,6 +101,17 @@ export class Screen {
      * `wireTripwires`.
      */
     readonly recorded: string[] = [],
+    /**
+     * What this page has written to the one storage key the app is allowed to use, and
+     * whatever was seeded there before it loaded.
+     *
+     * `recorded` is the assertion that nothing about the reader's *work* is kept. This is the
+     * exceptions, held apart rather than folded in: `prepper-sidebar` remembers whether the
+     * left rail is collapsed and `prepper-topic-folds` which items of the topic tree are
+     * shut, both facts about a window and not about a reader. See `wireTripwires`, and
+     * `prepper/sidebar/index.ts` for why the exceptions are ones.
+     */
+    readonly remembered: Map<string, string> = new Map(),
   ) {}
 
   get document(): Document {
@@ -157,16 +189,36 @@ export class Screen {
 export async function openPage(
   fixture: string,
   slug: string,
-  { scripts = true }: { scripts?: boolean } = {},
+  {
+    scripts = true,
+    remembered = {},
+  }: { scripts?: boolean; remembered?: Record<string, string> } = {},
 ): Promise<Screen> {
   const site = await buildFixture(fixture)
   const dom = new JSDOM(site.page(slug).html, {
     runScripts: "outside-only",
     url: `${origin}/${slug}`,
   })
-  const recorded = wireTripwires(dom)
+  const memory = new Map(Object.entries(remembered))
+  fillJsdomGaps(dom)
+  const recorded = wireTripwires(dom, memory)
   const ran = scripts ? runPrepperScripts(dom, site, slug) : 0
-  return new Screen(dom.window, dom.window.document.documentElement, ran, recorded)
+  return new Screen(dom.window, dom.window.document.documentElement, ran, recorded, memory)
+}
+
+/**
+ * The one thing a page can call that jsdom does not implement.
+ *
+ * jsdom has no layout, so `Element.scrollIntoView` is simply absent -- calling it throws. Our
+ * scripts scroll for one reason: a fold that has just been opened is a section that was not on
+ * screen when the browser followed the anchor. Guarding that call in the script would be a
+ * line of production code written for a test harness, and the harness is where the gap is. So
+ * it is filled here, as a no-op, and nothing asserts on it: where the page scrolled to is a
+ * question about a viewport, and this DOM has none.
+ */
+function fillJsdomGaps(dom: JSDOM) {
+  const element = dom.window.Element.prototype as unknown as Record<string, unknown>
+  if (typeof element.scrollIntoView !== "function") element.scrollIntoView = () => {}
 }
 
 /**
@@ -191,7 +243,8 @@ export async function openSearchPreview(
     runScripts: "outside-only",
     url: `${origin}/${from}`,
   })
-  const recorded = wireTripwires(host)
+  fillJsdomGaps(host)
+  const recorded = wireTripwires(host, new Map())
   const ran = runPrepperScripts(host, site, from)
 
   const { document: doc, DOMParser } = host.window
@@ -218,23 +271,60 @@ export async function openSearchPreview(
  * Quartz extracts a plugin's inline JavaScript into a file under `static/` and links it,
  * so the usual case is a `src` read off the emitted site; the inline branch is there
  * because that is a build-configuration detail and not a fact this seam should depend on.
+ *
+ * ## The two bundles, which are Quartz's and not ours
+ *
+ * `prescript-*.js` and `postscript-*.js` are the build's shared bundles, and the `prepper-`
+ * marker turns up in both -- so the marker alone would have this evaluating Quartz's own
+ * client, which is the one thing this seam exists not to do.
+ *
+ * They are treated differently because they are built differently. **`prescript`** is a
+ * concatenation: every `beforeDOMLoaded` script in the site, ours and upstream's, in one
+ * file with no seam to cut on. It is skipped, and the consequence is stated rather than
+ * hidden -- the head snippet that applies a remembered sidebar state is asserted at seam 1,
+ * on the bundle the build wrote, and the behaviour it produces is reachable here because
+ * `prepper/sidebar/toggle.js` reads the same key when it wires the control.
+ *
+ * **`postscript`** is a module that imports one chunk per component script, and a chunk is
+ * one file: ours are whole and separate in there. So its static imports are followed, and a
+ * chunk carrying the marker is run exactly as a `src` would be.
  */
 function runPrepperScripts(dom: JSDOM, site: EmittedSite, slug: string): number {
   const pageDir = path.dirname(path.join(site.outputDir, `${slug}.html`))
   let ran = 0
 
+  const run = (source: string): number => {
+    if (!source.includes(prepperScriptMarker)) return 0
+    dom.window.eval(source)
+    return 1
+  }
+
   for (const tag of Array.from(dom.window.document.querySelectorAll("script"))) {
     const src = tag.getAttribute("src")
     if (src?.startsWith("http")) continue
 
-    const source = src ? readEmitted(pageDir, src) : (tag.textContent ?? "")
-    if (!source.includes(prepperScriptMarker)) continue
+    const bundle = src ? path.basename(src) : ""
+    if (bundle.startsWith("prescript-")) continue
 
-    dom.window.eval(source)
-    ran += 1
+    if (bundle.startsWith("postscript-")) {
+      // A chunk specifier is relative to the bundle that imports it, which sits at the site
+      // root rather than beside the page.
+      const bundleDir = path.dirname(path.resolve(pageDir, src!))
+      for (const chunk of imported(readEmitted(pageDir, src!))) {
+        ran += run(readEmitted(bundleDir, chunk))
+      }
+      continue
+    }
+
+    ran += run(src ? readEmitted(pageDir, src) : (tag.textContent ?? ""))
   }
 
   return ran
+}
+
+/** The chunks a module bundle pulls in, as written: `import("./static/scripts/…")`. */
+function imported(bundle: string): string[] {
+  return Array.from(bundle.matchAll(/import\(\s*["'`]([^"'`]+)["'`]\s*\)/g), (match) => match[1])
 }
 
 function readEmitted(pageDir: string, src: string): string {
@@ -245,16 +335,20 @@ function readEmitted(pageDir: string, src: string): string {
 /**
  * Replace every way this page has of remembering or reporting with a recorder that throws.
  *
- * Prepper stores no per-user state and has no server: answering a quiz block, opening a
- * seal, taking a hint -- none of it is written anywhere or told to anybody. That is a
- * property of the app rather than of any one feature, so it is checkable in one line, on
- * every screen: `assert.deepEqual(screen.recorded, [])`.
+ * Prepper keeps nothing about the reader's work and has no server: answering a quiz block,
+ * opening a seal, taking a hint, unfolding a heading -- none of it is written anywhere or told
+ * to anybody. That is a property of the app rather than of any one feature, so it is checkable
+ * in one line, on every screen: `assert.deepEqual(screen.recorded, [])`.
+ *
+ * `rememberedKeys` are the exceptions, and they are wired as exceptions rather than as a
+ * hole: reads and writes of those keys on `localStorage` land in `memory`, which is what
+ * `screen.remembered` hands back, and every other key on either storage still trips.
  *
  * Recording alone would let a stored value sit there unnoticed by a test that forgot to
  * look; throwing as well makes the first attempt the failure. Both, because the two
  * questions worth asking are "did it try" and "did it get away with it".
  */
-function wireTripwires(dom: JSDOM): string[] {
+function wireTripwires(dom: JSDOM, memory: Map<string, string>): string[] {
   const recorded: string[] = []
   const { window } = dom
 
@@ -263,10 +357,16 @@ function wireTripwires(dom: JSDOM): string[] {
     throw new Error(`the page reached for ${what}, and Prepper records nothing`)
   }
 
+  const permitted = (name: string, key: unknown) =>
+    name === "localStorage" && typeof key === "string" && rememberedKeys.has(key)
+
   const storage = (name: string) => ({
-    getItem: () => trip(`${name}.getItem`),
-    setItem: () => trip(`${name}.setItem`),
-    removeItem: () => trip(`${name}.removeItem`),
+    getItem: (key: string) =>
+      permitted(name, key) ? (memory.get(key) ?? null) : trip(`${name}.getItem`),
+    setItem: (key: string, value: string) =>
+      permitted(name, key) ? void memory.set(key, String(value)) : trip(`${name}.setItem`),
+    removeItem: (key: string) =>
+      permitted(name, key) ? void memory.delete(key) : trip(`${name}.removeItem`),
     clear: () => trip(`${name}.clear`),
     key: () => trip(`${name}.key`),
     get length(): number {
