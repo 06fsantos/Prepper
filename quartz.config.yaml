@@ -245,14 +245,16 @@ plugins:
   # package is dropped and its two built assets are vendored under `prepper/search/vendor/`,
   # pinned by version and by the sha256 of the pristine originals. Core Quartz stays a
   # remote and is not patched. See `prepper/search/README.md`.
+  #
+  # It sits in the top bar, at priority 20, and that number does two jobs: it orders search
+  # after the app's name and before the theme controls, and it *is* the bar's centre --
+  # `prepper/topbar` gives `.search` an automatic inline margin, so every control ordered
+  # below 20 is pushed to the left edge and every control above it to the right.
   - source: "./prepper/search"
     enabled: true
     layout:
-      position: left
+      position: header
       priority: 20
-      group: toolbar
-      groupOptions:
-        grow: true
   # Prepper: off, replaced by `./prepper/edges` below. Upstream's panel lists every note
   # that links here, whatever field the link sat in, and labels each by `title` -- which is
   # right for a garden and wrong here. Prepper types an edge by the field it was written
@@ -278,23 +280,28 @@ plugins:
     layout:
       position: beforeBody
       priority: 30
+  # Prepper: the app's name, in the top bar's left slot. It is the one piece of chrome that
+  # says which app this is, so it belongs where the controls are rather than at the top of a
+  # navigation column that collapses.
   - source: "@quartz-community/page-title"
     enabled: true
     layout:
-      position: left
+      position: header
       priority: 10
+  # Prepper: the theme switch and reader mode, in the top bar's right slot -- after search
+  # (20), which is what puts them there. They are settings for the window rather than
+  # navigation, and they were in the left rail only because that is where Quartz's toolbar
+  # group was.
   - source: "@quartz-community/darkmode"
     enabled: true
     layout:
-      position: left
+      position: header
       priority: 30
-      group: toolbar
   - source: "@quartz-community/reader-mode"
     enabled: true
     layout:
-      position: left
+      position: header
       priority: 35
-      group: toolbar
   # Prepper: off. A breadcrumb states a path through a hierarchy, and there is none: a
   # note's place is its topics, which it has several of and which `prepper/reading` renders
   # as chips under the title. The directory a note sits in is the build's filing system,
@@ -456,13 +463,13 @@ plugins:
   # Prepper: ours. The control that collapses the left rail to a gutter, and the one
   # preference this app remembers.
   #
-  # Priority 5 puts it above the page title (10), at the top of the rail. Two things about the
-  # placement are load-bearing rather than cosmetic. It is a **direct child of the rail** -- no
-  # `group:` -- because collapsing hides the rail's other children by selector and the control
-  # has to survive that; a member of the `toolbar` group would go down with the group. And it
-  # is in `left` rather than `beforeBody`, where a component with nothing much to render
-  # usually goes, because `beforeBody` sits inside the `.popover-hint` that Quartz's search
-  # preview clones -- which would splice a second copy of this button over the page.
+  # Priority 5 puts it at the top of the rail. Two things about the placement are load-bearing
+  # rather than cosmetic. It is a **direct child of the rail** -- no `group:` -- because
+  # collapsing hides the rail's other children by selector and the control has to survive
+  # that; nested inside a wrapper it would go down with the wrapper. And it is in `left`
+  # rather than `beforeBody`, where a component with nothing much to render usually goes,
+  # because `beforeBody` sits inside the `.popover-hint` that Quartz's search preview clones
+  # -- which would splice a second copy of this button over the page.
   #
   # See `prepper/sidebar/index.ts` for why one key in `localStorage` is not a hole in "the app
   # records nothing".
@@ -471,6 +478,35 @@ plugins:
     layout:
       position: left
       priority: 5
+  # Prepper: ours. The persistent bar across the top of every page -- the app's name, search,
+  # the theme switch and reader mode, in one place of their own instead of stacked above a
+  # topic tree they have nothing to do with.
+  #
+  # The object source form takes an explicit `name`, and it is insurance rather than
+  # decoration. Quartz names a plugin after its **source path's basename**, so as
+  # `"./prepper/topbar"` this would be the plugin named `topbar`, looked up in a flat global
+  # component registry by that name and by its PascalCase form `Topbar` -- which is exactly
+  # how `./prepper/graph` silently adopted `@quartz-community/graph`'s panel and rendered it
+  # twice. Nothing registers `Topbar` today; `prepper-topbar` cannot collide tomorrow.
+  #
+  # A component that renders nothing, like `./prepper/tokens` below and for the same reason:
+  # `header` is a flat array whose components become the children of one `<header>`, so a
+  # component placed there is a sibling of the app's name and of search and can never wrap
+  # them. What the bar needs is the stylesheet that makes that element fixed, full width, and
+  # laid out in three slots -- and Quartz collects a component's CSS from this list rather
+  # than from what a page rendered, so it lands on 404 too. Priority 1 is first in the
+  # position, which nothing renders and nothing depends on.
+  #
+  # The slots are the priorities in this position: 5 the rail toggle, 10 the app's name, 20
+  # search **and the split**, 30 the theme switch, 35 reader mode, 40 the graph. See
+  # `prepper/topbar/index.ts`.
+  - source:
+      repo: "./prepper/topbar"
+      name: prepper-topbar
+    enabled: true
+    layout:
+      position: header
+      priority: 1
   # Prepper: ours. The chrome's design tokens: Material 3's colour, elevation, typography
   # and shape roles, all derived from the seed `#284b63`, plus the aliases that resolve
   # Quartz's nine colour names onto them. No motion subsystem, deliberately -- nothing of
@@ -559,17 +595,31 @@ plugins:
   - source: "./prepper/report"
     enabled: true
 layout:
-  groups:
-    toolbar:
-      priority: 35
-      direction: row
-      gap: 0.5rem
+  # Prepper: no groups. The `toolbar` group held the search field and the two theme controls
+  # together in the left rail; they are in the top bar now, where the order the `header`
+  # position resolves to *is* the layout. A Quartz group renders an anonymous
+  # `<div class="flex-component">` with no name of its own, so grouping the bar's controls
+  # would buy a wrapper no stylesheet can address and cost the ordering that already does the
+  # work. See `prepper/topbar/index.ts`.
   byPageType:
+    # Prepper: 404 is a page of the app, not a page of the vault. Upstream's own page type
+    # declares `frame: "minimal"`, which renders the message and the footer and no chrome at
+    # all -- so a reader who mistyped a URL got no way to search, no way home, and no sign
+    # that this was still Prepper. The positions below were already cleared here on the
+    # assumption of a laid-out page; `template: default` is what makes that assumption true.
+    # What comes out is the top bar and the message: the rails and the rails' contents stay
+    # cleared, because there is nothing about a missing page to put in them.
+    #
+    # `template` is honoured by the loader (`PageTypeLayoutOverride` in
+    # `quartz/plugins/loader/types.ts`) but is missing from upstream's YAML schema, so an
+    # editor reading the schema will flag this line. That is upstream's gap, not a guess.
     "404":
+      template: default
       positions:
         beforeBody: []
         left: []
         right: []
+        afterBody: []
     content: {}
     folder:
       exclude:

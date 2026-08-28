@@ -87,7 +87,16 @@ generated index -- and the boundary runs between them on the page.
   collapsed strip of icons. There is no icon for "Big-O notation": the rail's contents are
   author-written topic names, and an icon rail would be a column of identical generic glyphs.
 - **Reader mode must hide the bar too, or not exist.** A control that hides the chrome while
-  the chrome's most prominent element stays on screen does not do what it says.
+  the chrome's most prominent element stays on screen does not do what it says. It fades the
+  bar with the rails, on upstream's own `reader-mode` attribute and with upstream's own
+  hover-to-restore gesture, so there is one gesture rather than two that nearly agree.
+- **404 becomes a laid-out page.** Upstream's 404 page type declares `frame: "minimal"`, which
+  renders the message and the footer and no chrome at all -- so "the bar is on every page"
+  was false for the one page a lost reader is most likely to be on, and most in need of a way
+  out of. `layout.byPageType` overrides the frame to `default`; the rails and everything in
+  them stay cleared, because a missing page has nothing to put in them. The `template` field
+  that does this is honoured by the loader and documented in its own types but is missing from
+  upstream's YAML schema, so an editor reading the schema flags the line.
 - **The graph is reached deliberately or not at all.** No ambient panel means no glanceable
   graph. Accepted: it was not legible at 250px anyway.
 - **`prepper/topics` renders one index in views that now differ in density, not just in

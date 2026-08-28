@@ -84,6 +84,9 @@ prepper/
     reveal.js               the one thing a closed fold cannot do: be reached by an anchor
     folding.test.ts         the nesting, the closed state, the whole note, through seam 1
     revealing.test.ts       an anchor opening the folds it lands in, through seam 2
+  topbar/                   the persistent bar across the top of every page
+    index.ts                the component manifest; one config entry, at `header`
+    components/index.ts     a component that renders nothing and carries the bar's stylesheet
   sidebar/                  the left rail, hideable -- and the one preference we remember
     index.ts                the component manifest; one config entry, at the top of the rail
     components/index.ts     the control, and the rules that collapse the rail behind it
@@ -102,7 +105,7 @@ prepper/
     search-index.test.ts    what search finds and what it never hands over, through seam 1
   search/                   Quartz's search, vendored: the one place the fork line is crossed
     README.md               what was vendored, from where, and the two alterations
-    index.ts                the component manifest; one config entry, in the toolbar
+    index.ts                the component manifest; one config entry, in the top bar
     components/index.ts     upstream's `Search.tsx`, transcribed into `h`
     vendor/                 upstream's built client script and stylesheet, pinned
     search.test.ts          the chip, the missing excerpt, the vendoring line, through seam 1
@@ -113,7 +116,7 @@ prepper/
     browser.ts              seam 2: an emitted page, in a DOM, running our scripts only
     fixtures/               one small vault per behaviour cluster
     mechanisms.test.ts      the Quartz mechanisms the design rests on, run
-    layout.test.ts          the chrome our config resolves to, per page type
+    layout.test.ts          the chrome our config resolves to, per page type -- and the bar
     spike-build.ts          seam 1 with a plugin that is not in the config yet
     spikes/                 the throwaway plugins those spikes need
   workshop/                 the Workshop boundary, page half: a filter, plus the handoff
@@ -165,7 +168,9 @@ The remedy is the object source form, which lets an entry carry its own `name`:
 entries of one module need distinct names, since `name` is the key Quartz installs and looks
 a plugin up by. Give a new local plugin a `prepper-`-prefixed name whenever its directory
 could collide, and [`testing/layout.test.ts`](testing/layout.test.ts) is the tripwire that
-catches the next one: it counts the graph panel on a page of every type.
+catches the next one: it counts the graph panel on a page of every type. `prepper/topbar`
+carries an explicit `name` for exactly this reason -- as `./prepper/topbar` it would be the
+plugin named `topbar`, one PascalCase away from any package that ever registers a `Topbar`.
 
 ## Testing
 

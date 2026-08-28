@@ -10,12 +10,12 @@ import type {
 /**
  * The control, and the rules that collapse the rail behind it.
  *
- * It is a plain `<button>` inside the rail itself, and a **direct child** of it rather than a
- * member of the toolbar group the search and theme controls sit in. That placement is
- * load-bearing twice over: the collapse rule hides the rail's other children by selector, so
- * the control has to be one of them to survive it, and `beforeBody` -- where a component with
- * nothing to say usually goes -- is inside the `.popover-hint` that Quartz's search preview
- * clones, which would put a second copy of this button over the top of the page.
+ * It is a plain `<button>` inside the rail itself, and a **direct child** of it rather than
+ * something nested inside one of the rail's other children. That placement is load-bearing
+ * twice over: the collapse rule hides the rail's other children by selector, so the control
+ * has to be one of them to survive it, and `beforeBody` -- where a component with nothing to
+ * say usually goes -- is inside the `.popover-hint` that Quartz's search preview clones,
+ * which would put a second copy of this button over the top of the page.
  *
  * The state is an attribute on `<html>`, written by `remember.js` before the body is parsed
  * and by `toggle.js` on every click. Nothing here renders it: a component that emitted the

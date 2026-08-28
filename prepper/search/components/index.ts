@@ -8,7 +8,7 @@ import type {
 } from "../../../quartz/components/types.ts"
 
 /**
- * The search affordance: a button in the toolbar, and the overlay it opens.
+ * The search affordance: a button in the top bar, and the overlay it opens.
  *
  * The markup is `@quartz-community/search` 0.1.0's `Search.tsx`, transcribed into `h`
  * because Quartz imports a local plugin as TypeScript at runtime and Node does not compile

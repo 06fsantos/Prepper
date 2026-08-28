@@ -1,21 +1,24 @@
 /**
  * The left rail, hideable -- and the one preference this app remembers.
  *
- * The rail holds the topic tree, the search field and the theme controls, which is what the
- * reader needs while they are choosing what to read and not while they are reading it. So a
- * single control collapses it to a gutter: the prose keeps its measure, the page recentres
- * round it, and the button stays exactly where it was, because the way back has to be in the
- * place the way out was.
+ * The rail holds the topic tree: what the reader needs while they are choosing what to read,
+ * and not while they are reading it. (Search and the theme controls used to be here too;
+ * they are in `prepper/topbar` now, where they stay put whatever the rail is doing.) So a
+ * single control collapses the rail to a gutter: the prose keeps its measure, the page
+ * recentres round it, and the button stays exactly where it was, because the way back has to
+ * be in the place the way out was.
  *
  * ## What is hidden, and what is not
  *
  * The left rail only. The right rail carries the table of contents, the graph and the
- * backlinks -- things a reader consults *while* reading -- and upstream's reader mode
- * already fades both on hover, which is a different gesture for a different moment.
+ * backlinks -- things a reader consults *while* reading -- which is a different moment.
+ * Reader mode is the gesture that takes *everything* away at once: it fades both rails and
+ * the top bar with them, on hover-to-restore, and that is deliberately not this control.
  *
- * Below 800px the rail is not a column at all: Quartz lays it out as the page's top bar, and
- * `prepper/topics` puts the topic tree behind a drawer there. There is nothing to reclaim, so
- * the control is not rendered and none of the collapse rules apply.
+ * Below 800px the rail is not a column at all: Quartz lays it out as a strip across the top
+ * of the page, under the top bar, and `prepper/topics` puts the topic tree behind a drawer
+ * there. There is nothing to reclaim, so the control is not rendered and none of the collapse
+ * rules apply.
  *
  * ## Why it is remembered, when nothing else is
  *

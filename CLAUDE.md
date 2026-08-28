@@ -150,13 +150,44 @@ is kept. The one thing a closed fold cannot do for itself is be reached by an an
 `reveal.js` opens the folds a `#heading` lands in; that is an enhancement over a page that is
 already correct without it.
 
+## The top bar
+
+Every control the app has -- the app's name, search, the theme switch, reader mode, and in
+time the rail toggle and the graph -- sits in **one persistent band across the top of every
+page**, including 404. It is Quartz's `header` position, which `DefaultFrame` renders inside
+`<header>` and, decisively, **outside the `.popover-hint` the search preview clones** -- the
+hazard that forced `prepper/sidebar` into `left` does not reach here.
+
+[`prepper/topbar/`](prepper/topbar/index.ts) is a component that **renders nothing** and
+carries the stylesheet, the way `prepper/tokens` does: `header` is a flat array whose
+components become the children of one `<header>`, so a component placed there is a sibling of
+the other controls and can never wrap them. What the bar needs is for that element to become
+fixed and full width -- Quartz's grid has no full-width row, so `grid-header` is the centre
+column's top cell and a bar drawn in it would be a banner over the article. Page content is
+offset by `--prepper-topbar-height`, **published once and never restated as a number**.
+
+The **slots are layout priorities**, not wrappers: one rule gives `.search` an automatic
+inline margin, so everything ordered before it (the rail toggle at 5, the app's name at 10) is
+pushed left and everything after it (the theme switch at 30, reader mode at 35, the graph at 40) is pushed right. A new control lands in a slot by taking a number. The `toolbar` flex
+group they used to share is retired: a Quartz group renders an anonymous `div` with no name a
+stylesheet can address.
+
+Two things may never be done to the bar or its ancestors: `transform`, `filter`,
+`backdrop-filter`, `perspective`, `will-change` and `contain` all make a containing block for
+`position: fixed`, and the search overlay is a fixed element **inside** the bar. Hence a solid
+surface rather than frosted glass, and an auto margin rather than a translated centre.
+
+Reader mode fades the bar with the rails, on the same attribute and by the same gesture,
+because a control that hides the chrome while the chrome's most prominent element stays on
+screen does not do what it says. Nothing in the bar animates.
+
 ## The hideable rail
 
 The **left** rail collapses to a gutter behind one control at the top of it, and the prose
 keeps its measure while the page recentres round what is left. The right rail is untouched:
 its table of contents, graph and backlinks are consulted _while_ reading, which is a
-different moment. Below 800px the rail is the page's top bar rather than a column, so there
-is nothing to reclaim and the control is not rendered.
+different moment. Below 800px the rail is a strip across the top of the page, under the bar,
+rather than a column, so there is nothing to reclaim and the control is not rendered.
 
 [`prepper/sidebar/`](prepper/sidebar/index.ts) is one component, and its placement is
 load-bearing twice: it is a **direct child of the rail**, because collapsing hides the rail's

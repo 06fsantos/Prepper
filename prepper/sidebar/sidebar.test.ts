@@ -31,8 +31,8 @@ describe("the hideable left rail", () => {
 
   test("the control is a child of the rail it collapses", () => {
     // Collapsing hides the rail's other children by selector, so a control nested inside one
-    // of them -- the toolbar group the search field and the theme switch share, say -- would
-    // go down with it and leave the reader no way back.
+    // of them -- inside a flex group, say, or inside the topic tree -- would go down with it
+    // and leave the reader no way back.
     const inRail = lesson.selectAll(".sidebar.left > .prepper-sidebar-toggle", lesson.tree)
     assert.equal(inRail.length, 1)
 
