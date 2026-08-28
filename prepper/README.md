@@ -63,6 +63,11 @@ prepper/
     index.ts                the component manifest; one config entry, at `beforeBody`
     components/index.ts     the topic chips, and the page styles that ride on them
     reading.test.ts         the chips, the absent chrome, the measure, through seam 1
+  tokens/                   the chrome's design tokens: Material 3, from one seed
+    tokens.ts               the roles, derived; and Quartz's nine, aliased onto them
+    index.ts                the component manifest; one config entry, at `beforeBody`
+    components/index.ts     a component that renders nothing and carries the stylesheet
+    tokens.test.ts          that a page links the token layer at all, through seam 1
   home/                     the app's entry point: a generated `index.html`
     index.ts                a pageType, so the page comes out through Quartz's own layout
   graph/                    the link graph: four typed edge kinds, computed once

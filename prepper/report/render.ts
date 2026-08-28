@@ -18,6 +18,17 @@
  * this file's, and small -- the report is a build artifact the dev reads, not a surface the
  * reader browses.
  *
+ * ## Its six hexes are a copy of a source of truth that no longer exists
+ *
+ * The colours below were pasted by hand from the palette in `quartz.config.yaml`, and that
+ * palette is now **inert**: the chrome's colour comes from `prepper/tokens`, derived from one
+ * seed through Material 3's roles, and Quartz's nine names are redefined as aliases onto them
+ * ([ADR 0003](../../docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md)). Component
+ * CSS cannot reach this document for the reason above, so these six cannot be tokens; they are
+ * a stale copy, and they are stated as such rather than left to be discovered. Buying them
+ * back would cost a coupling from an emitter to the chrome's stylesheet, which is a worse
+ * trade for a page only the dev opens. If the seed is ever turned, this file will not follow.
+ *
  * ## Unlisted, not `--serve`-only
  *
  * Every build writes it, published where anyone with the URL can read it and nothing links

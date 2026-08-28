@@ -88,6 +88,14 @@ _Avoid_: spoiler, hidden section, collapsed block
 A thing the reader can attempt rather than read: a Problem or a Quiz block. Attempting one is ad-hoc and ephemeral — the reader chooses it by browsing, and nothing is scheduled, queued, or recorded. References, Terms, Cheat sheets, Records, and the Mission are not practice units. Practice units never nest: a Problem carries no Quiz blocks.
 _Avoid_: reviewable, card, review item
 
+**Reading surface**:
+The article column and the way a note's own prose is set in it: the measure it holds, the serif it is set in, its leading, and its asides. Sovereign — it takes its rules from typography rather than from the app's design system, because a document is a surface the reader dwells in rather than one they operate ([ADR 0003](docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md)).
+_Avoid_: content area, article body, main
+
+**Chrome**:
+Everything the app puts around a note that is not the note: the sidebar and its topic tree, the toolbar, search, the topic chips under a title, and the typed edges rendered in context. Styled as one system from a shared token vocabulary, which is exactly what distinguishes it from the Reading surface. States only what is true — there is no reading order for it to imply and no per-user state for it to display.
+_Avoid_: UI, shell, navigation, furniture
+
 **Wikilink**:
 An `[[filename]]` reference in a note body, optionally aliased `[[filename|display text]]` (Obsidian's pipe, never a colon) and optionally anchored `[[filename#Heading]]`. Resolves against link identity, case-insensitively. `![[…]]` is an **embed**, which renders the target in place rather than linking to it — an attachment or another note.
 _Avoid_: internal link, cross-reference

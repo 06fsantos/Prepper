@@ -1,0 +1,13 @@
+{
+  "name": "prepper-tokens",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./index.ts"
+    },
+    "./components": {
+      "import": "./components/index.ts"
+    }
+  }
+}

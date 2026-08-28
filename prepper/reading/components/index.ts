@@ -114,6 +114,16 @@ const PrepperReading: QuartzComponentConstructor = () => {
  * note is one, and so are a quiz's explanation and its reveal. An aside is the blockquote
  * the *author* wrote, and the author's blockquote is the one nothing has classed.
  *
+ * ## The prose rules take no design tokens, and the chips do
+ *
+ * The rules above the chips -- the measure, the serif, the leading, the aside -- are the
+ * **reading surface**, and it is exempt from the chrome's Material token layer on the merits:
+ * Material has no measure and no mechanism for one, no paragraph role above 16px, and no
+ * serif ([ADR 0003](../../../docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md)).
+ * They stay on Quartz's own theme names, which `prepper/tokens` resolves onto roles anyway.
+ * The chips below them are **chrome** -- a note's subjects, stated by the app rather than by
+ * the author -- so they are painted from the tokens like every other chip and rail.
+ *
  * ## The unwritten chip is not a pill
  *
  * `prepper/links` ships the unwritten-link mark as a plugin resource rather than as
@@ -168,20 +178,23 @@ const styles = `
   margin: 0.4rem 0 0.2rem;
 }
 .prepper-topic-chip {
-  font-size: 0.75rem;
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--gray);
+  color: var(--md-sys-color-on-surface-variant);
 }
 a.prepper-topic-chip {
   padding: 0.15rem 0.6rem;
-  border: 1px solid var(--lightgray);
-  border-radius: 1rem;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-small);
   background-color: transparent;
 }
 a.prepper-topic-chip:hover {
-  color: var(--secondary);
-  border-color: var(--secondary);
+  color: var(--md-sys-color-primary);
+  border-color: var(--md-sys-color-primary);
 }
 `
 

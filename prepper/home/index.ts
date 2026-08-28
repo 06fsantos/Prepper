@@ -94,7 +94,16 @@ const PrepperHome = (): QuartzPageTypePluginInstance => ({
   body: HomeBody,
 })
 
-/** Room to breathe around a page that is nothing but navigation. */
+/**
+ * Room to breathe around a page that is nothing but navigation.
+ *
+ * There is no colour and no type here, and that is the point: the entry page renders
+ * `TopicTree` imported from `prepper/topics`, so it is painted from the chrome's Material
+ * token layer by the module that builds the markup
+ * ([ADR 0003](../../docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md)). A
+ * home-page copy of the tree's type and colour is exactly the drift that made the sidebar and
+ * this page two indexes instead of one view of it twice.
+ */
 const styles = `
 .prepper-home {
   margin-top: 1rem;

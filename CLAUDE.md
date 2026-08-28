@@ -122,6 +122,24 @@ carries the page styles as well as the chips: Quartz collects a component's CSS 
 configured component list rather than from what a page rendered, so the measure lands on
 every page. It is the only module that styles the page rather than a component of its own.
 
+## Design tokens
+
+The **chrome** is painted from a Material 3 token layer derived from one seed (`#284b63`), and
+the **reading surface is exempt on the merits** — Material has no measure, no paragraph role
+above 16px and no serif ([ADR 0003](docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md)).
+[`prepper/tokens`](prepper/tokens/index.ts) computes the full `--md-sys-color-*` role set light
+and dark with Google's own `material-color-utilities`, adds the 15-role type scale (both
+reference typefaces mapped to Schibsted Grotesk), the seven-step shape scale and the elevation
+ladder, and **defines no motion token at all** — nothing of ours animates, and the seal is
+markup. It rides the same seam the measure does: a component that renders `null` and carries
+`.css`, which Quartz collects from the configured component list and links after the base
+styles, so a `:root` block in it redefines Quartz's own nine colour names as **aliases onto
+roles**. The palette in `quartz.config.yaml` is therefore **inert** — the only thing still
+reading it is `@quartz-community/og-image`, which composes an image rather than a page.
+Hierarchy comes from `surface-container-*`; shadow is spent only where something floats and
+occludes. `prepper/search`'s vendored CSS and `prepper/report`'s self-contained document are
+outside the system and stay that way.
+
 ## Search
 
 Quartz's search is **adopted whole in mechanism**; what changes is what lands in the index

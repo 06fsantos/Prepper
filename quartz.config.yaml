@@ -16,7 +16,14 @@ configuration:
     fontOrigin: googleFonts
     cdnCaching: true
     typography:
-      header: Schibsted Grotesk
+      # Prepper: 500 is requested alongside Quartz's own 400 and 700 because it is the
+      # weight Material's `title-*` and `label-*` roles are set at, and `prepper/tokens`
+      # maps both Material reference typefaces onto this family. Without it, every role in
+      # the scale that asks for 500 falls back to 400 -- the topic tree's own names among
+      # them -- and the chrome loses a step of hierarchy silently.
+      header:
+        name: Schibsted Grotesk
+        weights: [400, 500, 700]
       # Prepper: a serif, because a Lesson should read like a document rather than like
       # documentation. `prepper/reading` restates this family at the head of a
       # generic-serif stack -- Quartz's own fallback for `--bodyFont` is hard-coded sans,
@@ -24,6 +31,24 @@ configuration:
       # names have to be changed together.
       body: Source Serif 4
       code: IBM Plex Mono
+    # Prepper: **inert**. Colour lives in `./prepper/tokens`, derived from one seed
+    # (`#284b63`) through Material 3's own role set, and Quartz's nine names below are
+    # redefined as aliases onto those roles on every page -- see
+    # `docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md`. Nothing the reader sees
+    # takes its colour from this block. Two files claiming to set the same colour, with one
+    # silently losing, is worse than one file that says where colour lives; pasting hexes
+    # back in here is undoing that decision, not fixing it.
+    #
+    # One loose end, named rather than papered over: Quartz also derives `--accent-h/-s/-l`
+    # from `secondary` below and emits them on every page. No stylesheet in the build reads
+    # them today, so they render nothing -- but they now disagree with the aliased
+    # `--secondary`, and an upstream merge that starts consuming them would paint from here.
+    #
+    # The values are kept, and kept legible, for one reason: `@quartz-community/og-image`
+    # reads them directly to render a social card with satori, which needs a real colour and
+    # cannot resolve a custom property. That renderer is a build artifact outside Quartz's
+    # layout, in the same category as `prepper/report` -- component CSS cannot reach either,
+    # so both hold a copy of a palette they no longer control.
     colors:
       lightMode:
         light: "#faf8f8"
@@ -419,6 +444,27 @@ plugins:
     layout:
       position: afterBody
       priority: 5
+  # Prepper: ours. The chrome's design tokens: Material 3's colour, elevation, typography
+  # and shape roles, all derived from the seed `#284b63`, plus the aliases that resolve
+  # Quartz's nine colour names onto them. No motion subsystem, deliberately -- nothing of
+  # ours animates, and the one place it would tempt is where the architecture insists the
+  # seal is markup.
+  #
+  # A component that renders nothing: Quartz collects `Component.css` from the configured
+  # component list rather than from what a page rendered, so the tokens land on every
+  # laid-out page including 404, and a `:root` block in a component stylesheet redefines
+  # Quartz's own theme by identical selector on source order. The position below is
+  # therefore arbitrary -- the component has to be in the layout for Quartz to instantiate
+  # it, and it occupies an empty slot once it is. See `prepper/tokens/index.ts` and
+  # `docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md`.
+  #
+  # The reading surface is **not** a consumer, on the merits: Material has no measure, no
+  # paragraph role above 16px, and no serif. See the ADR.
+  - source: "./prepper/tokens"
+    enabled: true
+    layout:
+      position: beforeBody
+      priority: 1
   # Prepper: ours. The reading surface: the ~38rem measure the prose column holds at every
   # viewport width, the serif it is set in, the blockquote that carries an aside, and a
   # note's topics as chips under its title. Priority 12 puts the chips directly under the

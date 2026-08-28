@@ -210,14 +210,32 @@ const PrepperTopics: QuartzComponentConstructor<Options> = (opts) => {
  * Enough style for the index to read as navigation, and the drawer that makes it usable on
  * a phone.
  *
- * Entirely in Quartz's own theme variables, so the reading-surface work (ticket 08) can
- * restyle this without first having to find and undo a colour invented here.
+ * Painted from the chrome's Material token layer
+ * ([ADR 0003](../../../docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md)). Every
+ * micro-heading in here -- the note-type groups, the Cheat sheets heading, the Term page's
+ * "In this topic" -- is one role, `label-medium`, and so are the rails in `prepper/edges` and
+ * the chips in `prepper/reading`. They were 0.75rem, 0.75rem and 0.8rem before, which is what
+ * "six modules painting against nine colour names" looked like from the type side.
  *
  * The breakpoint is 900px rather than Quartz's own 800px on purpose: the tree carries note
  * titles two levels deep, so it runs out of horizontal room before the rest of the layout
  * does. Below it the panel is fixed, off-canvas and slid in by the checkbox; above it the
  * panel is an ordinary block and the toggle, the close button and the scrim are not
  * rendered at all.
+ *
+ * ## The one elevated surface of ours
+ *
+ * Above the breakpoint the panel is a column of the page: it carries no surface of its own and
+ * casts nothing, because there is nothing for it to sit on top of. Below it, the drawer is
+ * **fixed over the article with a scrim between**, which is the one thing in this build that
+ * genuinely floats and occludes -- so it is the one thing of ours that takes a shadow, at
+ * Material's level 1, the step for a modal navigation drawer. Quartz's link popover is the
+ * other floating surface, and `prepper/tokens` styles that one because it is global chrome
+ * rather than a module.
+ *
+ * The slide is not motion the token layer knows about: there is deliberately no motion
+ * subsystem, and this transition predates the tokens and belongs to the drawer rather than to
+ * a vocabulary anything else could reach for.
  */
 const styles = `
 .prepper-sidebar-switch,
@@ -226,8 +244,15 @@ const styles = `
 .prepper-sidebar-scrim {
   display: none;
 }
-.prepper-topics {
-  font-size: 0.9rem;
+/* Every list the index renders, wherever it is rendered: the sidebar's tree, the Cheat sheets
+   list beside it, and the Term page's "In this topic". They are siblings rather than nested,
+   so a rule on the tree alone would set two adjacent lists in two typefaces at two sizes. */
+.prepper-topics,
+.prepper-cheat-sheets,
+.prepper-topic-index {
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
 }
 .prepper-topic-list,
 .prepper-topic-groups,
@@ -241,17 +266,27 @@ const styles = `
   margin: 0 0 0.9rem;
 }
 .prepper-topic-name {
-  font-weight: 600;
+  font-size: var(--md-sys-typescale-title-small-size);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
 }
 .prepper-topic-groups {
   margin: 0.2rem 0 0 0.75rem;
 }
+.prepper-group-heading,
+.prepper-cheat-sheets-heading,
+.prepper-topic-index-heading {
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+  text-transform: uppercase;
+  color: var(--md-sys-color-on-surface-variant);
+}
 .prepper-group-heading {
   display: block;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--gray);
   margin: 0.4rem 0 0.1rem;
 }
 .prepper-group-list > li {
@@ -261,34 +296,31 @@ const styles = `
   margin: 1.5rem 0 0;
 }
 .prepper-cheat-sheets-heading {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--gray);
   margin: 0 0 0.3rem;
 }
 .prepper-topic-index {
   margin: 1.5rem 0 0;
 }
 .prepper-topic-index-heading {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--gray);
   margin: 0 0 0.4rem;
 }
 .prepper-topic-index-empty {
-  color: var(--gray);
+  color: var(--md-sys-color-on-surface-variant);
 }
 @media all and (max-width: 900px) {
   .prepper-sidebar-open,
   .prepper-sidebar-close {
     display: inline-block;
     cursor: pointer;
-    border: 1px solid var(--lightgray);
-    border-radius: 5px;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-small);
     padding: 0.3rem 0.7rem;
-    font-size: 0.85rem;
+    font-family: var(--md-sys-typescale-label-large-font);
+    font-size: var(--md-sys-typescale-label-large-size);
+    line-height: var(--md-sys-typescale-label-large-line-height);
+    font-weight: var(--md-sys-typescale-label-large-weight);
+    letter-spacing: var(--md-sys-typescale-label-large-tracking);
+    color: var(--md-sys-color-on-surface-variant);
   }
   .prepper-sidebar-panel {
     position: fixed;
@@ -299,13 +331,17 @@ const styles = `
     width: min(20rem, 85vw);
     padding: 1.5rem 1rem;
     overflow-y: auto;
-    background-color: var(--light);
-    border-right: 1px solid var(--lightgray);
+    background-color: var(--md-sys-color-surface-container-low);
+    border-right: 1px solid var(--md-sys-color-outline-variant);
     transform: translateX(-100%);
     transition: transform 0.2s ease;
   }
+  /* The shadow belongs to the open state, not to the panel: a closed drawer is still in the
+     layout, merely translated off-canvas, and a box-shadow paints outside the border box --
+     so stated on the panel itself it would smudge the left edge of every phone page. */
   .prepper-sidebar-switch:checked ~ .prepper-sidebar-panel {
     transform: translateX(0);
+    box-shadow: var(--md-sys-elevation-level1);
   }
   .prepper-sidebar-switch:checked ~ .prepper-sidebar-scrim {
     display: block;
@@ -315,8 +351,8 @@ const styles = `
     bottom: 0;
     left: 0;
     z-index: 2;
-    background-color: var(--dark);
-    opacity: 0.35;
+    background-color: var(--md-sys-color-scrim);
+    opacity: 0.32;
   }
 }
 `

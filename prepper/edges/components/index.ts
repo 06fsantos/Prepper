@@ -169,8 +169,16 @@ function entry(graph: LinkGraph, from: FullSlug, target: string): ComponentChild
 /**
  * Enough style for a rail to read as chrome rather than as prose, and no more.
  *
- * Entirely in Quartz's own theme variables, so the reading-surface work (ticket 08) can
- * restyle these without first having to find and undo a colour invented here.
+ * Painted from the chrome's Material token layer
+ * ([ADR 0003](../../../docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md)): a rail
+ * is chrome, so it takes its hairline from `outline-variant` -- the role for a divider,
+ * rather than the colour name that used to serve as both a divider and a disabled label --
+ * and its heading from `label-medium`, which is the same role the topic index's group
+ * headings and the chips take. Those three used to be 0.8rem, 0.75rem and 0.75rem, which is
+ * the drift the token layer exists to end.
+ *
+ * A rail is flat: it sits on the page rather than over it, so it has no elevation. Shadow is
+ * spent only on surfaces that genuinely float and occlude.
  */
 const styles = `
 .prepper-edges {
@@ -179,15 +187,18 @@ const styles = `
 .prepper-edges-read-first,
 .prepper-edges-unlocks,
 .prepper-edges-practices {
-  border-left: 2px solid var(--lightgray);
+  border-left: 2px solid var(--md-sys-color-outline-variant);
   padding-left: 1rem;
   margin: 1.5rem 0;
 }
 .prepper-rail-heading {
-  font-size: 0.8rem;
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--gray);
+  color: var(--md-sys-color-on-surface-variant);
   margin: 0 0 0.4rem;
 }
 .prepper-rail-list {
