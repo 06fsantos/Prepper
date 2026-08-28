@@ -148,13 +148,32 @@ describe("searching a topic hands over no answers", () => {
     // The whole trap this plugin walks around: the way to keep an answer out of search is
     // to recompute the index text, never to take the node out of the tree. So the reader
     // still gets every option, every explanation and every reveal.
+    //
+    // The assertion is on the **markup**, not on visible text, and the difference is the
+    // point. An explanation, a reveal and a cloze answer are concealed by the `hidden`
+    // attribute the quiz markup carries, so `text()` -- which models `innerText` and skips
+    // what is not rendered -- will not see them until the element reveals them on a grade.
+    // That is concealment, which is what a quiz is for; the thing this plugin must never do
+    // is *removal*, and removal is what asking the tree catches.
     const lesson = site.page("lessons/hash-map-lookup-cost")
     const prose = lesson.text(undefined, lesson.body)
+    const markup = lesson.html
 
+    // Unconcealed on the page: an option label and a cloze's surface text are the question,
+    // not the answer. The cloze sentence reads around its holes rather than through them,
+    // which is why this asks for the two halves and not the whole sentence.
     assert.match(prose, /Constant time, no scan/)
-    assert.match(prose, /Nothing is scanned unless buckets collide/)
-    assert.match(prose, /Crossing the load factor triggers a resize/)
-    assert.match(prose, /A hash map trades memory for lookup speed/)
+    assert.match(prose, /A hash map trades/)
+    assert.match(prose, /for lookup speed/)
+
+    // Concealed, but present: each of these is one `hidden` node the reader opens. Asking
+    // for the enclosing element rather than the bare word is what makes this an assertion
+    // about the answer still being *there* -- a bare /memory/ would pass on the word
+    // appearing anywhere in the chrome.
+    assert.match(markup, /<span class="cloze-answer" hidden>memory<\/span>/)
+    assert.match(markup, /<span class="cloze-answer" hidden>O\(n\)<\/span>/)
+    assert.match(markup, /Nothing is scanned unless buckets collide/)
+    assert.match(markup, /Crossing the load factor triggers a resize/)
   })
 })
 
