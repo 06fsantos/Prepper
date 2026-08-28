@@ -57,7 +57,7 @@ prepper/
   topics/                   the generated topic index: `topic`, inverted on the Term note
     topic-index.ts          the pure inversion, read by both views and by the entry page
     index.ts                the component manifest; two config entries, one per view
-    components/index.ts     the sidebar tree and the Term page's index, one component
+    components/index.ts     the rail's tree and the Term page's index, one component
     topics.test.ts          one index, three renderings, through seam 1
   reading/                  the reading surface: the measure, the serif, the chips
     index.ts                the component manifest; one config entry, at `beforeBody`
@@ -89,7 +89,8 @@ prepper/
     components/index.ts     a component that renders nothing and carries the bar's stylesheet
   sidebar/                  the left rail, hideable -- and the one preference we remember
     index.ts                the component manifest; one config entry, at `header` priority 5
-    components/index.ts     the control, and the one rule that hides the rail behind it
+    components/index.ts     the control; the rule that hides the rail above 800px, and the
+                            drawer it opens over the article below it
     remember.js             the head snippet that applies the remembered state, no flash
     toggle.js               the control's browser half: an attribute, and one storage key
     sidebar.test.ts         the placement, the served state, and the proof the article

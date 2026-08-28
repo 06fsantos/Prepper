@@ -7,7 +7,8 @@
  * page is served to every reader in the same state, and that the collapse is a stylesheet
  * rather than a script.
  *
- * And then the thing this file mostly exists for: **that the article column cannot move.**
+ * And then the thing this file mostly exists for: **that the article column cannot move** --
+ * whether the rail is a column beside it or a drawer over it.
  *
  * ## Why the proof is a stylesheet proof, and why it is the real one
  *
@@ -33,14 +34,31 @@
  * The old collapse fails this test loudly, which is the point: it restated
  * `grid-template-columns` with the left track reduced to a gutter, and that rule's subject was
  * `#quartz-body`.
+ *
+ * ## And the second presentation
+ *
+ * Below 800px the rail was Quartz's strip across the top of the page: the whole topic tree
+ * above every article, with the control not even rendered. What is asserted for the drawer
+ * that replaced it is what a stylesheet can be asked -- that the rail's default down there is
+ * to be off the page *unconditionally*, so a scriptless reader gets no drawer rather than one
+ * waiting to be shut; that the state that opens it is fixed, viewport-bounded and under the
+ * bar; and, through the same width loop as the collapse, that opening it moves the article no
+ * more than collapsing does.
  */
 import test, { describe, before } from "node:test"
 import assert from "node:assert"
 
 import { buildFixture, type EmittedSite, type Page } from "../testing/build-fixture.ts"
 
-/** The three widths the ticket names. All of them sit above upstream's 1200px breakpoint. */
-const widths = [1280, 1600, 1920]
+/**
+ * The widths the article is proved not to move at.
+ *
+ * The three ticket 03 names, all above upstream's 1200px breakpoint, and a phone width below
+ * its 800px one: the drawer that opens down there is fixed over the article, so "the article
+ * does not move" is the same claim about a different presentation, and it is proved the same
+ * way.
+ */
+const widths = [360, 1280, 1600, 1920]
 
 /**
  * Everything the centre column's position and width are computed from.
@@ -68,10 +86,7 @@ describe("the hideable left rail", () => {
     async () => {
       site = await buildFixture("reading-surface")
       lesson = site.page("lessons/hash-map-lookup-cost")
-      css = site.files
-        .filter((file) => file.endsWith(".css"))
-        .map((file) => site.file(file))
-        .join("\n")
+      css = stylesheets(site, lesson)
     },
     { timeout: 120_000 },
   )
@@ -138,6 +153,64 @@ describe("the hideable left rail", () => {
     assert.doesNotMatch(css, /data-prepper-sidebar[^{]*prepper-sidebar-toggle/)
   })
 
+  test("the control is rendered at every width", () => {
+    // It used to be `display: none` below 800px, because down there the rail was a strip
+    // across the top of the page and there was nothing to reclaim. The strip is gone and the
+    // control is the only way to the drawer that replaced it, so a rule that hid it at any
+    // width would leave a phone reader with no route into the library.
+    for (const width of [360, 600, 799, 800, 1280, 1920]) {
+      const hidden = active(rules(css), width).filter(
+        (rule) =>
+          subjects(rule).includes(".prepper-sidebar-toggle") && /display:\s*none/.test(rule.body),
+      )
+      assert.deepEqual(hidden, [], `the control is hidden at ${width}px`)
+    }
+  })
+
+  test("below 800px the rail is not on the page until it is asked for", () => {
+    // The defect this ticket exists for: Quartz lays the left rail out below 800px as a strip
+    // across the top of the page, so a phone reader met the entire topic tree above every
+    // article, with no way to dismiss it. The default down there is now no rail at all -- and
+    // it is the *markup's* default, an unconditional rule, so a page whose scripts never ran
+    // has no drawer over its article either.
+    const shut = displays(rules(css), 360, null)
+    assert.equal(shut.at(-1), "none", `the rail resolves to ${shut.at(-1)} at 360px`)
+
+    // And the drawer, which only the attribute switches on.
+    const open = drawer(rules(css))
+    assert.equal(declaration(open, "display"), "flex")
+    assert.equal(
+      declaration(open, "position"),
+      "fixed",
+      "a drawer in the flow would push the article down instead of covering it",
+    )
+  })
+
+  test("the drawer cannot push the page sideways", () => {
+    // "No horizontal page scroll at any supported width" is a layout fact, and jsdom lays
+    // nothing out. What can be established is the thing that makes it true: the drawer is
+    // fixed, anchored to the left edge, and its width is bounded by a fraction of the
+    // viewport rather than by a number that a narrow phone could be narrower than -- with
+    // `border-box`, so its padding and border are inside that bound rather than added to it.
+    const open = drawer(rules(css))
+    assert.equal(declaration(open, "left"), "0")
+    assert.equal(declaration(open, "box-sizing"), "border-box")
+    assert.match(
+      declaration(open, "width") ?? "",
+      /min\([^)]*\d+vw\)/,
+      "the drawer's width is not bounded by the viewport",
+    )
+  })
+
+  test("the drawer opens under the bar, and the way out of it stays on top", () => {
+    // The control that opens the drawer is the control that closes it, and it lives in the
+    // bar. So the drawer starts at the bar's own height and sits below the bar's z-index:
+    // a drawer that covered its own toggle would be the strip again, with a shadow.
+    const open = drawer(rules(css))
+    assert.equal(declaration(open, "top"), "var(--prepper-topbar-height)")
+    assert.ok(Number(declaration(open, "z-index")) < 1000, "the drawer paints over the bar")
+  })
+
   for (const width of widths) {
     test(`at ${width}px, nothing the collapse switches on can reach the article`, () => {
       // The proof of non-movement. Every rule that applies at this width and is conditioned on
@@ -202,6 +275,26 @@ describe("the hideable left rail", () => {
     assert.doesNotMatch(sheets[0], /transition|animation/)
   })
 })
+
+/**
+ * Every stylesheet the page links, **in the order it links them**.
+ *
+ * Order is not a detail here: two rules of equal specificity are settled by which came last,
+ * and that is exactly how the drawer's default beats upstream's own mobile `display: flex` on
+ * `.sidebar.left`. Reading the emitted files in whatever order the site happens to list them
+ * would answer "what does the rail resolve to" with a coin toss. The page is the authority on
+ * link order, so the page is what is read.
+ *
+ * Anything served from another origin is skipped: it is not ours, and it is not on disk.
+ */
+function stylesheets(site: EmittedSite, page: Page): string {
+  const links = [...page.html.matchAll(/<link[^>]+href="([^"]+\.css)"[^>]*rel="stylesheet"/g)]
+  return links
+    .map(([, href]) => href)
+    .filter((href) => !href.startsWith("http"))
+    .map((href) => site.file(href.replace(/^(\.\.\/)+/, "")))
+    .join("\n")
+}
 
 /**
  * The emitted stylesheet, flattened into rules that each carry the media queries they sit
@@ -319,9 +412,55 @@ function holds(query: string, width: number): boolean {
   return true
 }
 
-/** Whether a rule only applies while the rail is collapsed. */
+/** Whether a rule only applies while the attribute holds some particular value. */
 function conditional(rule: Rule): boolean {
   return rule.selector.includes("data-prepper-sidebar")
+}
+
+/**
+ * Every `display` the rail resolves through at `width`, in the state named.
+ *
+ * `state` is the attribute's three values: `null` for absent, which is each width's own
+ * default, and `"hidden"` or `"shown"` for a reader who has said something. The last entry is
+ * what wins, every rule here having the same subject and the emitted order being the
+ * cascade's.
+ */
+function displays(all: Rule[], width: number, state: string | null): string[] {
+  return active(all, width)
+    .filter((rule) => (conditional(rule) ? valued(rule, state) : true))
+    .filter((rule) => subjects(rule).includes(".sidebar.left"))
+    .flatMap((rule) => [...rule.body.matchAll(/(?:^|[;{\s])display:([^;}]+)/g)])
+    .map((match) => match[1].trim())
+}
+
+/** The one rule that puts the drawer on screen: the rail, below 800px, called up. */
+function drawer(all: Rule[]): Rule {
+  const found = all.filter(
+    (rule) =>
+      valued(rule, "shown") &&
+      subjects(rule).includes(".sidebar.left") &&
+      rule.media.some((query) => /max-width/.test(query)),
+  )
+  assert.equal(found.length, 1, `${found.length} rules open the drawer`)
+  return found[0]
+}
+
+/**
+ * Whether a rule is conditioned on the attribute holding `state`.
+ *
+ * Quotes are optional in the emitted file -- lightningcss drops them from an identifier-shaped
+ * value -- so the value is matched rather than the source text.
+ */
+function valued(rule: Rule, state: string | null): boolean {
+  return state === null
+    ? false
+    : new RegExp(`data-prepper-sidebar=["']?${state}["']?\\]`).test(rule.selector)
+}
+
+/** One declaration of a rule, or `undefined` if it does not make it. */
+function declaration(rule: Rule, property: string): string | undefined {
+  const match = rule.body.match(new RegExp(`(?:^|[;{\\s])${property}:([^;}]+)`))
+  return match?.[1].trim()
 }
 
 /**

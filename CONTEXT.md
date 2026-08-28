@@ -101,8 +101,8 @@ The one persistent band across the top of every page, carrying every control the
 _Avoid_: header, navbar, app bar, banner
 
 **Rail**:
-The collapsible left column, whose sole occupant is the Topic index in its jump-list view. Collapses to **nothing** rather than to a strip of icons — its contents are author-written topic names, and there is no icon for a topic. Whether it is collapsed is the one fact about a reader that the app remembers, alongside which items of the tree are folded shut, and it is a fact about a window rather than about the reader's work.
-_Avoid_: sidebar, drawer, panel
+The collapsible left column, whose sole occupant is the Topic index in its jump-list view. Collapses to **nothing** rather than to a strip of icons — its contents are author-written topic names, and there is no icon for a topic. Below 800px it has no column to collapse, so it takes its other presentation: absent until called up, and then fixed over the article rather than stacked above it. Same control, same remembered word, two presentations. Whether it is put away is the one fact about a reader that the app remembers, alongside which items of the tree are folded shut, and it is a fact about a window rather than about the reader's work.
+_Avoid_: sidebar, panel; and _drawer_ as a name for the rail — the drawer is its narrow-window presentation, not a second thing beside it
 
 **Topic index**:
 `topic` inverted: for each topic, every note filed under it, grouped by note type. Computed once from the Link graph and rendered in three **views** that share one source and differ only in density — a bare foldable name list in the Rail, and a wide multi-column landing on the app's entry page and beneath a Term's own prose. One source is what stops two views disagreeing about what is filed where; identical markup was never what it meant.

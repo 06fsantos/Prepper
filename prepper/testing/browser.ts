@@ -181,10 +181,25 @@ export class Screen {
 }
 
 /**
+ * The window width a page is opened at, when a test does not say.
+ *
+ * A desktop one, because that is the presentation the emitted markup itself ships in: the
+ * rail is a column, the drawer is not a thing yet, and a test that says nothing about width
+ * is a test about neither.
+ */
+const defaultWidth = 1280
+
+/**
  * Build a fixture, load one of its pages into a DOM, and run Prepper's scripts in it.
  *
  * `scripts: false` is the reader with JavaScript off -- and, near enough, the reader whose
  * page has not finished loading, which is the same reader for the half-second that matters.
+ *
+ * `width` is the viewport a script may **ask about**, and nothing more: jsdom lays nothing
+ * out, so this cannot say what a page looked like at 360px. It answers `matchMedia`, which is
+ * the one question `prepper/sidebar/toggle.js` puts to the window -- which of the rail's two
+ * presentations is on screen, so that a press knows whether it is putting a column away or
+ * calling a drawer up.
  */
 export async function openPage(
   fixture: string,
@@ -192,7 +207,8 @@ export async function openPage(
   {
     scripts = true,
     remembered = {},
-  }: { scripts?: boolean; remembered?: Record<string, string> } = {},
+    width = defaultWidth,
+  }: { scripts?: boolean; remembered?: Record<string, string>; width?: number } = {},
 ): Promise<Screen> {
   const site = await buildFixture(fixture)
   const dom = new JSDOM(site.page(slug).html, {
@@ -200,14 +216,14 @@ export async function openPage(
     url: `${origin}/${slug}`,
   })
   const memory = new Map(Object.entries(remembered))
-  fillJsdomGaps(dom)
+  fillJsdomGaps(dom, width)
   const recorded = wireTripwires(dom, memory)
   const ran = scripts ? runPrepperScripts(dom, site, slug) : 0
   return new Screen(dom.window, dom.window.document.documentElement, ran, recorded, memory)
 }
 
 /**
- * The one thing a page can call that jsdom does not implement.
+ * The two things a page can call that jsdom does not implement.
  *
  * jsdom has no layout, so `Element.scrollIntoView` is simply absent -- calling it throws. Our
  * scripts scroll for one reason: a fold that has just been opened is a section that was not on
@@ -215,10 +231,42 @@ export async function openPage(
  * line of production code written for a test harness, and the harness is where the gap is. So
  * it is filled here, as a no-op, and nothing asserts on it: where the page scrolled to is a
  * question about a viewport, and this DOM has none.
+ *
+ * `matchMedia` is absent for the same reason and filled for a different one. It is not a
+ * viewport this harness is pretending to have -- it is a **question with an answer the test
+ * states**: `prepper/sidebar/toggle.js` asks which of the rail's two presentations is on
+ * screen, and a test that opens a page at 360px is a test that has said which. Only width
+ * conditions are decided, because that is all the question is written in; anything else comes
+ * back true, which is the same conservative direction `sidebar.test.ts` reads media queries
+ * in. Nothing here makes a stylesheet apply: jsdom does not cascade one either.
  */
-function fillJsdomGaps(dom: JSDOM) {
+function fillJsdomGaps(dom: JSDOM, width: number = defaultWidth) {
   const element = dom.window.Element.prototype as unknown as Record<string, unknown>
   if (typeof element.scrollIntoView !== "function") element.scrollIntoView = () => {}
+
+  const window = dom.window as unknown as Record<string, unknown>
+  if (typeof window.matchMedia !== "function") {
+    window.matchMedia = (query: string) => ({
+      media: query,
+      matches: widthHolds(query, width),
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    })
+  }
+}
+
+/** Whether a media query's width conditions hold at `width`. Everything else is left true. */
+function widthHolds(query: string, width: number): boolean {
+  for (const [, bound, value, unit] of query.matchAll(/\((min|max)-width:\s*([\d.]+)(px|rem)\)/g)) {
+    const pixels = unit === "rem" ? Number(value) * 16 : Number(value)
+    if (bound === "min" && width < pixels) return false
+    if (bound === "max" && width > pixels) return false
+  }
+  return true
 }
 
 /**

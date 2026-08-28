@@ -140,26 +140,43 @@ describe("the topic index", () => {
     )
   })
 
-  test("the sidebar goes off-canvas below ~900px, and opens without JavaScript", () => {
+  test("the tree renders no drawer and no control of its own", () => {
+    // It used to render both: a checkbox-and-label drawer at a breakpoint of its own, with an
+    // `id` of `prepper-sidebar-toggle` that shared its word with the bar control's class. Two
+    // drawers over one rail is one too many, and the rail's presentation -- a column above
+    // 800px, a drawer over the article below it -- belongs to `prepper/sidebar`, which drives
+    // it from the one attribute and the one remembered word. What is here is what goes inside
+    // it.
     const problem = site.page("problems/two-sum")
+    const rail = problem.require(".left.sidebar", problem.tree)
 
-    // The control is a label and a checkbox rather than a button, so the drawer opens on a
-    // phone whether or not the page's scripts ran. That it is a real control in the markup
-    // is the half of "usable on a phone" that HTML can state.
-    const toggle = problem.require("label.prepper-sidebar-open", problem.tree)
-    const control = String(toggle.properties.htmlFor)
-    assert.ok(problem.select(`input#${control}`, problem.tree), "the toggle names no control")
+    assert.deepEqual(problem.selectAll("input", rail), [], "the tree renders a control")
+    assert.deepEqual(problem.selectAll("label", rail), [], "the tree renders a control")
+    assert.ok(problem.select(".prepper-topics", rail), "the tree is not in the rail")
 
-    // The other half is the breakpoint itself, which only the stylesheet knows.
+    // And the one control there is, is the bar's -- at every width, because below 800px it is
+    // the only way to the rail at all.
+    const bar = problem.require(".page-header > header", problem.tree)
+    assert.equal(problem.selectAll("button.prepper-sidebar-toggle", bar).length, 1)
+    assert.equal(problem.selectAll("button.prepper-sidebar-toggle", problem.tree).length, 1)
+  })
+
+  test("the tree's own stylesheet has no breakpoint left in it", () => {
+    // The retired drawer took a whole second layout with it: a 900px breakpoint nothing else
+    // in the build changes at, an off-canvas panel, a scrim, an elevation and a
+    // `transition: transform`. A tree of author-written names has no narrow-window form that
+    // differs from its wide one -- it is the same list in a container that has moved -- so
+    // what is left is width-independent, and the last unowned motion in the build went with
+    // the panel it belonged to.
     const styles = site.files
       .filter((f) => f.endsWith(".css"))
       .map((f) => site.file(f))
-      .filter((css) => css.includes("prepper-sidebar-panel"))
-    assert.ok(styles.length > 0, "no emitted stylesheet mentions the sidebar drawer")
-    assert.ok(
-      styles.some((css) => css.includes("900px")),
-      "the sidebar drawer has no ~900px breakpoint",
-    )
+      .filter((css) => css.includes("prepper-topic-fold-row"))
+
+    assert.equal(styles.length, 1, `${styles.length} stylesheets carry the topic tree`)
+    assert.doesNotMatch(styles[0], /900px/)
+    assert.doesNotMatch(styles[0], /prepper-sidebar/)
+    assert.doesNotMatch(styles[0], /transition|animation/)
   })
 
   test("every item of the sidebar tree is a fold, and it arrives open", () => {

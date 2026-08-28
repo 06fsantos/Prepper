@@ -438,7 +438,10 @@ plugins:
   # reason each entry takes its own `name`: `name` is the key Quartz installs and looks a
   # plugin up by, and two entries sharing one would install as one.
   #
-  # The sidebar takes the explorer's old position, which is what it replaces. The Term
+  # The rail's view takes the explorer's old position, which is what it replaces. It renders
+  # the tree and nothing else: the rail's own presentation -- a column above 800px, a drawer
+  # over the article below it -- is `./prepper/sidebar`'s, and the checkbox drawer this entry
+  # used to render at a breakpoint of its own is retired. The Term
   # page's index sits at the top of `afterBody`, which puts it below the note's own body --
   # so a Term with no Lessons reads as an area overview followed by its index, and the
   # typed-edge rails follow both.
@@ -476,6 +479,10 @@ plugins:
   # `beforeBody` is still the position it may not take -- that one sits inside the
   # `.popover-hint` Quartz's search preview clones, which would splice a second copy of this
   # button over the page -- but `header` is a sibling of the hint rather than a descendant.
+  #
+  # It is rendered at every width, and below 800px it is the only way to the rail at all:
+  # down there the rail is off the page until this control calls it up as a drawer over the
+  # article. One control, one key, two presentations.
   #
   # See `prepper/sidebar/index.ts` for why one key in `localStorage` is not a hole in "the app
   # records nothing".

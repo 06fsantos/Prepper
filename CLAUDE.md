@@ -194,9 +194,26 @@ thing. The collapsed state is deliberately **not an icon rail** -- the rail's co
 author-written topic names, and there is no icon for "Big-O notation".
 
 The right rail is untouched: its table of contents, graph and backlinks are consulted _while_
-reading, which is a different moment. Below 800px the rail is a strip across the top of the
-page, under the bar, rather than a column, so there is nothing to reclaim and the control is
-not rendered.
+reading, which is a different moment.
+
+Below 800px the rail is not a column, and Quartz's own answer -- a strip across the top of the
+page -- put the whole topic tree above every article a phone reader opened, with no way to
+dismiss it. So down there the rail is **not on the page at all** until the same control asks
+for it, and then it arrives as a **drawer fixed over the article**, under the bar, dismissed by
+the same press. One mechanism, two presentations: one control, one key, one `<head>` script.
+The attribute therefore has three values -- **absent** is each width's own default (a rail
+beside the article, no drawer over it), `hidden` differs from absent only above 800px, and
+`shown` only below it -- which is what lets one remembered word read sensibly at both widths.
+A remembered `shown` is written but never applied from storage: it decays to absent on every
+load and every navigation, which is invisible on a desktop and is the drawer closing itself
+behind a reader who followed a link out of it. `toggle.js` asks `matchMedia` which presentation
+is on screen, because a press means "put the rail away if it is there, call it up if it is
+not", and that is a different direction at each width.
+
+The price is the drawer on a phone with no JavaScript. `prepper/topics` used to render a
+CSS-only checkbox drawer of its own -- retired with this, along with its 900px breakpoint and
+the last unowned `transition` in the build -- and the way into the library without a script is
+now the app's name in the bar, a plain link to an entry page that _is_ the topic index.
 
 [`prepper/sidebar/`](prepper/sidebar/index.ts) is one component, in the bar rather than in the
 rail it hides -- the way back cannot be inside the thing that goes away. Its one surviving
@@ -206,8 +223,8 @@ that was load-bearing while the collapse hid the rail's children by selector and
 one; that constraint is retired
 ([ADR 0004](docs/adr/0004-a-persistent-top-bar-and-the-retired-right-column.md)).
 
-Non-movement is proved at seam 1 over the emitted stylesheet, at 1280px, 1600px and 1920px:
-jsdom does no layout, so a bounding box measured at seam 2 would be a number the harness
+Non-movement is proved at seam 1 over the emitted stylesheet, at 360px, 1280px, 1600px and
+1920px: jsdom does no layout, so a bounding box measured at seam 2 would be a number the harness
 invented. What is asserted instead is that no rule the collapse switches on has the grid, the
 centre column, the article or any of their ancestors as its **subject**, and that seam 2's
 click changes one attribute on `<html>` and nothing else -- together, that the browser lays the

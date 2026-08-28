@@ -16,6 +16,15 @@
  * exactly the arrangement `prepper/edges` is in, and the reasoning there applies here
  * unchanged.
  *
+ * ## What this module no longer does
+ *
+ * It used to render its own off-canvas drawer for the rail -- a checkbox, two labels, a scrim
+ * and a 900px breakpoint of its own -- so that navigation opened on a phone whether or not the
+ * page's scripts ran. That is retired. The rail's presentation, at every width, is
+ * `prepper/sidebar`'s: a column above 800px, a drawer over the article below it, both driven
+ * by the one attribute and the one remembered word. This module renders what goes *inside* the
+ * rail, which is the same list whatever the rail is doing.
+ *
  * ## Why the components are `.ts` and not `.tsx`
  *
  * Quartz loads a local plugin by importing it, and Node -- which is what performs that

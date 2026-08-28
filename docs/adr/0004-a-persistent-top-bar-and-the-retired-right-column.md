@@ -48,6 +48,33 @@ The second constraint survives untouched and is why the bar is at `header` rathe
 This is recorded because a future reader will find the old note in git history, or a stale copy
 of it, and reinstate a constraint that was retired on purpose.
 
+## One rail, two presentations, one remembered word
+
+Below 800px there is no column to collapse: Quartz lays the left rail out as a strip across the
+top of the page, which meant a phone reader met the whole topic tree above every article and
+had no way to dismiss it -- the collapse control was not even rendered down there. So the rail
+takes a second presentation: absent until the bar's control calls it up, and then fixed over
+the article rather than stacked above it.
+
+The decision worth recording is **not to give that a state of its own**. `prepper/topics` had a
+CSS-only checkbox drawer at a breakpoint of its own (900px), which is a second stateful control
+over the same rail; it is retired. What replaces it is the same control, the same
+`prepper-sidebar` key and the same `<head>` script, and the meaning of the one remembered word
+is resolved by giving the attribute **three** values rather than two: absent is each width's own
+default, `hidden` differs from absent only above 800px, `shown` only below it. A remembered
+`shown` is written but never applied from storage -- it decays to absent on every load and every
+navigation, which is invisible on a desktop and is the drawer closing itself behind a reader who
+followed a link out of it.
+
+Two prices, both paid on purpose. The closed drawer is the **markup's** default rather than a
+script's, so a scriptless phone reader gets no drawer over the article -- but also no way to
+open one; the way into the library without a script is the app's name in the bar, a plain link
+to an entry page that *is* the topic index. And `toggle.js` now asks `matchMedia` which
+presentation is on screen, because a press means "put the rail away if it is there, call it up
+if it is not" and that is a different direction at each width. That is one breakpoint literal
+duplicated between a script and a stylesheet, which is cheaper than the alternative: a script
+that guesses from a measurement jsdom cannot take.
+
 ## The right column is gone rather than resized
 
 The graph panel is promoted to the modal Quartz already ships, and the backlinks panel moves to

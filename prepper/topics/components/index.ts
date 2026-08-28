@@ -211,32 +211,25 @@ function CheatSheets(sheets: GraphNode[], from: FullSlug): ComponentChild {
 }
 
 /**
- * The sidebar: the topic tree, the Cheat sheets list, and the drawer that holds both.
+ * The rail's view of the index: the topic tree, and the Cheat sheets list beside it.
  *
- * ## Why the drawer is a checkbox
+ * This module renders **no drawer and no control of its own**, and that is a retirement
+ * rather than an omission. It used to carry a checkbox-and-label drawer of its own, at a
+ * breakpoint of its own (900px), with an `id` of `prepper-sidebar-toggle` that shared its
+ * word with the bar control's class. Two drawers over one rail is one too many: the rail's
+ * presentation -- a column above 800px, a drawer over the article below it -- is
+ * `prepper/sidebar`'s, driven by the one attribute and the one remembered word, and what is
+ * here is only what goes inside it.
  *
- * Below roughly 900px there is no room for a tree beside the reading column, so the whole
- * panel goes off-canvas behind a toggle. The toggle is a `<label>` over a hidden checkbox
- * rather than a button with a click handler, which means the sidebar opens on a phone
- * **whether or not the page's JavaScript ran** -- on a slow connection, with scripts
- * blocked, or on the first paint before Quartz's SPA router has attached. Navigation that
- * needs a script to open is navigation that is sometimes not there, and this is the only
- * way into the library.
- *
- * The markup order is load-bearing: the checkbox comes first so that `:checked ~ …` can
- * reach the panel and the scrim, which are its later siblings. Nothing else depends on it.
+ * The checkbox opened without JavaScript and this does not, which is the price. It is paid
+ * once, and the argument is in `prepper/sidebar/index.ts`: the way into the library on a
+ * scriptless phone is the app's name in the bar, which is a plain link to an entry page that
+ * *is* the topic index rendered as content.
  */
 function Sidebar(topics: Topic[], sheets: GraphNode[], from: FullSlug): ComponentChild {
-  const control = "prepper-sidebar-toggle"
-  return h("div", { class: "prepper-sidebar" }, [
-    h("input", { type: "checkbox", id: control, class: "prepper-sidebar-switch", hidden: true }),
-    h("label", { class: "prepper-sidebar-open", for: control }, "Topics"),
-    h("div", { class: "prepper-sidebar-panel" }, [
-      h("label", { class: "prepper-sidebar-close", for: control }, "Close"),
-      TopicTree(topics, from),
-      CheatSheets(sheets, from),
-    ]),
-    h("label", { class: "prepper-sidebar-scrim", for: control, "aria-hidden": "true" }, null),
+  return h("div", { class: "prepper-topic-rail" }, [
+    TopicTree(topics, from),
+    CheatSheets(sheets, from),
   ])
 }
 
@@ -312,8 +305,7 @@ function script(name: string): string {
 }
 
 /**
- * Enough style for the index to read as navigation, and the drawer that makes it usable on
- * a phone.
+ * Enough style for the index to read as navigation, and no more.
  *
  * Painted from the chrome's Material token layer
  * ([ADR 0003](../../../docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md)). Every
@@ -322,33 +314,21 @@ function script(name: string): string {
  * the chips in `prepper/reading`. They were 0.75rem, 0.75rem and 0.8rem before, which is what
  * "six modules painting against nine colour names" looked like from the type side.
  *
- * The breakpoint is 900px rather than Quartz's own 800px on purpose: the tree carries note
- * titles two levels deep, so it runs out of horizontal room before the rest of the layout
- * does. Below it the panel is fixed, off-canvas and slid in by the checkbox; above it the
- * panel is an ordinary block and the toggle, the close button and the scrim are not
- * rendered at all.
+ * ## There is no breakpoint in here at all any more
  *
- * ## The one elevated surface of ours
+ * There used to be one, at 900px, and it carried an off-canvas panel, a scrim, a shadow and a
+ * slide -- a second drawer over the same rail, at a width nothing else in the layout changes
+ * at. All of it is gone. The rail's presentation is `prepper/sidebar`'s, at upstream's own
+ * 800px, and this module styles what goes *inside* the rail wherever the rail happens to be.
+ * The elevation and the surface went with the panel, to the drawer that now floats; the
+ * `transition: transform` went with them, which is how the last piece of unowned motion left
+ * the build ahead of `prepper/tokens` acquiring a vocabulary for it.
  *
- * Above the breakpoint the panel is a column of the page: it carries no surface of its own and
- * casts nothing, because there is nothing for it to sit on top of. Below it, the drawer is
- * **fixed over the article with a scrim between**, which is the one thing in this build that
- * genuinely floats and occludes -- so it is the one thing of ours that takes a shadow, at
- * Material's level 1, the step for a modal navigation drawer. Quartz's link popover is the
- * other floating surface, and `prepper/tokens` styles that one because it is global chrome
- * rather than a module.
- *
- * The slide is not motion the token layer knows about: there is deliberately no motion
- * subsystem, and this transition predates the tokens and belongs to the drawer rather than to
- * a vocabulary anything else could reach for.
+ * What is left is width-independent by construction: type, spacing, a hover row and the mark
+ * for the page the reader is on. A tree of author-written names has no narrow-window form that
+ * differs from its wide one -- it is the same list, in a container that has moved.
  */
 const styles = `
-.prepper-sidebar-switch,
-.prepper-sidebar-open,
-.prepper-sidebar-close,
-.prepper-sidebar-scrim {
-  display: none;
-}
 /* Every list the index renders, wherever it is rendered: the sidebar's tree, the Cheat sheets
    list beside it, and the Term page's "In this topic". They are siblings rather than nested,
    so a rule on the tree alone would set two adjacent lists in two typefaces at two sizes. */
@@ -490,54 +470,6 @@ const styles = `
 }
 .prepper-topic-index-empty {
   color: var(--md-sys-color-on-surface-variant);
-}
-@media all and (max-width: 900px) {
-  .prepper-sidebar-open,
-  .prepper-sidebar-close {
-    display: inline-block;
-    cursor: pointer;
-    border: 1px solid var(--md-sys-color-outline);
-    border-radius: var(--md-sys-shape-corner-small);
-    padding: 0.3rem 0.7rem;
-    font-family: var(--md-sys-typescale-label-large-font);
-    font-size: var(--md-sys-typescale-label-large-size);
-    line-height: var(--md-sys-typescale-label-large-line-height);
-    font-weight: var(--md-sys-typescale-label-large-weight);
-    letter-spacing: var(--md-sys-typescale-label-large-tracking);
-    color: var(--md-sys-color-on-surface-variant);
-  }
-  .prepper-sidebar-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    z-index: 3;
-    width: min(20rem, 85vw);
-    padding: 1.5rem 1rem;
-    overflow-y: auto;
-    background-color: var(--md-sys-color-surface-container-low);
-    border-right: 1px solid var(--md-sys-color-outline-variant);
-    transform: translateX(-100%);
-    transition: transform 0.2s ease;
-  }
-  /* The shadow belongs to the open state, not to the panel: a closed drawer is still in the
-     layout, merely translated off-canvas, and a box-shadow paints outside the border box --
-     so stated on the panel itself it would smudge the left edge of every phone page. */
-  .prepper-sidebar-switch:checked ~ .prepper-sidebar-panel {
-    transform: translateX(0);
-    box-shadow: var(--md-sys-elevation-level1);
-  }
-  .prepper-sidebar-switch:checked ~ .prepper-sidebar-scrim {
-    display: block;
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 2;
-    background-color: var(--md-sys-color-scrim);
-    opacity: 0.32;
-  }
 }
 `
 

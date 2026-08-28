@@ -30,10 +30,24 @@
  * Reader mode is the gesture that takes *everything* away at once: it fades both rails and
  * the top bar with them, on hover-to-restore, and that is deliberately not this control.
  *
- * Below 800px the rail is not a column at all: Quartz lays it out as a strip across the top
- * of the page, under the top bar. There is nothing to reclaim from a strip, so the control is
- * not rendered there and the collapse rule does not apply. Making that strip a drawer opened
- * by this same control is its own ticket.
+ * ## Below 800px the same control opens a drawer
+ *
+ * Down there the rail is not a column, and Quartz's own answer -- a strip across the top of
+ * the page -- put the whole topic tree above every article a phone reader opened, with no way
+ * to dismiss it. So below 800px the rail is **not on the page at all** until the control asks
+ * for it, and then it arrives as a drawer fixed over the article rather than as a block that
+ * pushes it down. Same control, same key, same `<head>` script: one mechanism with two
+ * presentations, not a second stateful thing to keep in step.
+ *
+ * What that costs is the drawer on a phone with no JavaScript, and it is worth naming. The
+ * old checkbox drawer in `prepper/topics` opened without a script and is retired with this;
+ * the way into the library without one is the app's name in the bar, which is a plain link to
+ * the entry page, and the entry page **is** the topic index rendered as content. Navigation
+ * that survives a failed script is that page's job, not a drawer's.
+ *
+ * The attribute therefore has three states rather than two -- absent, `hidden`, `shown` --
+ * each explicit one differing from absent at exactly one width. `toggle.js` carries the
+ * argument.
  *
  * ## Why it is remembered, when nothing else is
  *
