@@ -129,6 +129,26 @@ pipeline that mints ULIDs. Its checks are its FORMAT docs and `npm run validate`
 test seam, because a test of its output shape would be a second, weaker copy of the rule
 set. `/import` owns Problems.
 
+### Importing problems
+
+`/import` writes Problems into `content/problems/`, and it is a **separate skill, not a mode of
+`author`** — first-party repo content at [`.agents/skills/import/`](.agents/skills/import/SKILL.md),
+shipping `PROBLEM-FORMAT.md`. The inherited teaching philosophy fires nowhere in *add these fifteen
+problems*, which is the whole reason for the split; what the two share is vault mechanics, so
+`import` reuses `author`'s `TERM-FORMAT.md` and mints missing `term` stubs the same way.
+
+It is **batch-shaped and safe to re-run**: one note at a time, with duplicates **skipped and
+reported** — matched on any shared `source` URL, then on title — and never overwritten.
+**Acquisition is recall over the NeetCode canon and nothing is fetched**; browsing was considered
+and declined, and the corpus scope is what makes recall safe, so widening it invalidates the
+method. Two gates run before writing — on-list, then constraints and one worked example from
+recall — and an item that fails either is **deferred and raised once at the end of the batch**.
+Kinds are `coding` and `system-design`; **behavioural problems are hand-authored** against the
+template in `PROBLEM-FORMAT.md`. `## Prompt` states *what*, never *how*, difficulty is the
+source's own label, and **solutions are C#** — one language vault-wide, kept deliberately apart
+from the build stack. Like `author`, it has no test seam: its checks are its FORMAT doc and
+`npm run validate`.
+
 ### Issue tracker
 
 Issues and specs live as local markdown under `.scratch/<feature>/`; there is no remote
