@@ -15,3 +15,9 @@ docs/adr
 
 # Agent worktrees are checkouts of this repo, not sources in it.
 .claude/worktrees
+
+# Prepper: a vendored build artifact. `prepper/search/vendor/` holds
+# @quartz-community/search 0.1.0's built client script and compiled stylesheet, kept
+# byte-for-byte apart from the marked alterations, so that re-vendoring is a diff. Prettier
+# would reflow the minified script into thousands of lines and the diff with it.
+prepper/search/vendor

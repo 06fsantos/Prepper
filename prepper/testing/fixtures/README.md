@@ -157,8 +157,10 @@ anything.
   it validates clean — because a fixture about navigation should not also be a fixture about
   violations.
 
-- **`schema-and-identity-violations/`** — a vault that is wrong in thirteen ways at once:
-  a Lesson with no `topic`, one with no `id`, one whose `id` was typed by hand, a Problem
+- **`schema-and-identity-violations/`** — a vault that is wrong in fourteen ways at once:
+  a Lesson with no `topic` that wrote a hand-authored `tags` instead — the build's own
+  field, derived from `topic` to feed search — one with no `id`, one whose `id` was typed
+  by hand, a Problem
   missing three of the four fields its type requires, a Record with no `date`, a Term that
   declares no `title`, a `draft: true` note that is wrong anyway, two notes sharing one
   ULID, a quiz block whose infostring ULID belongs to a Term, and an attachment whose stem

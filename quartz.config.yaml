@@ -110,6 +110,16 @@ plugins:
   - source: "@quartz-community/description"
     enabled: true
     order: 70
+  # Prepper: ours, and deliberately carrying **no `order`**. It has to run after
+  # `description` (70), because its whole job is to overwrite the `file.data.text` that
+  # plugin sets -- and that requirement is stated as arithmetic on `description`'s own
+  # declared order rather than as the number 71 typed here. Quartz reads `defaultOrder` off
+  # a plugin's manifest whenever an entry omits one, so leaving `order:` out is what lets
+  # the expression win. Write `order: 71` here and it silently outranks the expression, and
+  # the day upstream moves `description` the index quietly keeps every quiz answer this
+  # plugin exists to strip. See `prepper/search-index/index.ts`.
+  - source: "./prepper/search-index"
+    enabled: true
   - source: "@quartz-community/latex"
     enabled: true
     options:
@@ -171,8 +181,13 @@ plugins:
     enabled: true
   - source: "@quartz-community/folder-page"
     enabled: true
+  # Prepper: off. `./prepper/search-index` copies `topic` into `tags` so that search has
+  # the field it reads, and that is the only thing the derived field is for. Left on, this
+  # would generate `/tags/big-o` listing every note with that topic -- a second index page,
+  # at a second URL, that nothing links to, competing with the Term page that is already
+  # the canonical topic index. "We have tags now" is not an invitation.
   - source: "@quartz-community/tag-page"
-    enabled: true
+    enabled: false
   # Prepper: off, replaced by `./prepper/topics` below. The explorer is a *directory*
   # tree, and the question the sidebar has to answer -- what shall I study today -- is one
   # the dev asks in topics. `lessons/` and `terms/` are where the build reads a note's type
@@ -188,7 +203,15 @@ plugins:
     layout:
       position: right
       priority: 10
-  - source: "@quartz-community/search"
+  # Prepper: ours, and the one place the vendoring line is crossed. Quartz's search is
+  # adopted whole in mechanism -- the same build-time `contentIndex.json`, the same three
+  # Flexsearch indexes, the same preview pane -- but a result has to carry a type chip and
+  # a `problems/` result has to carry no excerpt, and both of those are edits to the client
+  # script `@quartz-community/search` ships, which has no option for either. So that
+  # package is dropped and its two built assets are vendored under `prepper/search/vendor/`,
+  # pinned by version and by the sha256 of the pristine originals. Core Quartz stays a
+  # remote and is not patched. See `prepper/search/README.md`.
+  - source: "./prepper/search"
     enabled: true
     layout:
       position: left
@@ -284,9 +307,13 @@ plugins:
     enabled: true
     options:
       includeAll: false
+      # Prepper: `tags` is deliberately absent. The build owns that field --
+      # `./prepper/search-index` copies `topic` into it -- and it exists to feed search and
+      # nothing else. Rendered here it would be a second topic display competing with the
+      # chips `prepper/reading` puts under the title, linking to `/tags/` pages that
+      # `tag-page` above deliberately does not generate.
       includedProperties:
         - description
-        - tags
         - aliases
       excludedProperties: []
       hidePropertiesView: false

@@ -46,7 +46,7 @@ describe("the validation spine", () => {
 
   describe("`npm run validate` -- the CLI consumer", () => {
     test("one run collects every violation in the vault", () => {
-      // Thirteen defects across seven notes and the vault itself, from one build. This
+      // Fourteen defects across seven notes and the vault itself, from one build. This
       // is the property the whole design is for: renaming one Term must not mean one
       // build run per note that referenced it.
       assert.deepEqual(report(broken.violations), [
@@ -54,6 +54,7 @@ describe("the validation spine", () => {
         "lessons/draft-in-progress.md: record-identity",
         "lessons/hand-typed-id.md: record-identity",
         "lessons/no-id.md: record-identity",
+        "lessons/no-topic.md: authored-tags",
         "lessons/no-topic.md: frontmatter-required-fields",
         "problems/half-declared.md: frontmatter-required-fields",
         "problems/half-declared.md: frontmatter-required-fields",
@@ -74,7 +75,7 @@ describe("the validation spine", () => {
       for (const note of new Set(broken.violations.map((v) => v.note ?? "vault"))) {
         assert.ok(broken.output.includes(note), `"${note}" is missing from:\n${broken.output}`)
       }
-      assert.match(broken.output, /13 errors, 0 warnings in 12 notes/)
+      assert.match(broken.output, /14 errors, 0 warnings in 12 notes/)
     })
 
     test("a clean vault exits zero and says so", () => {
@@ -102,7 +103,7 @@ describe("the validation spine", () => {
     )
 
     test("violations surface in the build's own output", () => {
-      assert.match(site.log, /\[prepper\] validation: 13 errors, 0 warnings in 12 notes/)
+      assert.match(site.log, /\[prepper\] validation: 14 errors, 0 warnings in 12 notes/)
       for (const violation of broken.violations) {
         assert.ok(
           site.log.includes(violation.message),
