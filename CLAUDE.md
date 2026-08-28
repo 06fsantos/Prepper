@@ -42,6 +42,13 @@ Test external behaviour, never implementation. A test that asserts which plugin 
 what order, or what an intermediate mdast node looked like, will break on the next
 upstream merge for no reason.
 
+**Seam 2** is the remainder: what our custom elements do when clicked, in a DOM. The
+harness is [`prepper/testing/browser.ts`](prepper/testing/browser.ts), and the page it
+loads is always one seam 1 emitted — never markup written for the test. It runs our scripts
+and none of Quartz's, found by the `prepper-` prefix **every custom element of ours is named
+with**, and it tripwires every way a page has of storing or sending anything, so
+`screen.recorded` being empty is a fact any screen can be asked for.
+
 ## Validation
 
 The build talks back on two channels that never share a line. **Validation** shouts:
@@ -73,6 +80,19 @@ after highlighting and before obsidian-flavoured-markdown, which is what lets th
 subtree be walked by every transform downstream. A fence the build cannot make a quiz of is
 left as the code block it was written as — which is what Obsidian shows anyway — and raises
 a validation **error**.
+
+A block **arrives closed**: an explanation, a reveal and a cloze answer carry the `hidden`
+attribute, so nothing is on screen before the reader answers — not in the search preview
+pane, not during a slow load, not with scripting off.
+[`prepper/quiz/prepper-quiz.js`](prepper/quiz/prepper-quiz.js) is the browser half, a
+hand-written custom element with **no build step**, and it only ever _opens_ things. An mcq
+grades the instant an option is clicked — no submit control, single-select — and opens the
+clicked option's explanation and the correct one's, leaving the rest shut; a cloze reveals
+every hole on one grade; a recall reveals and offers a self-grade. Answering **records
+nothing at all** — no storage, no request, no history entry — so scrolling straight past a
+block has no consequence. Its behaviour is **seam 2**
+([`prepper/testing/browser.ts`](prepper/testing/browser.ts)): the build's markup and the
+build's script, in a DOM.
 
 ## Problems
 

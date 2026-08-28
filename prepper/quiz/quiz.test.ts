@@ -16,6 +16,8 @@
 import test, { describe, before } from "node:test"
 import assert from "node:assert"
 
+import type { Element } from "hast"
+
 import {
   buildFixture,
   validateFixture,
@@ -45,6 +47,12 @@ describe("a well-formed quiz fence becomes an answerable block", () => {
       page.selectAll(".quiz", page.body).map((q) => q.properties.dataQuizType),
       ["mcq", "cloze", "recall", "mcq"],
     )
+    // A custom element, because the browser half is one: defining `prepper-quiz` upgrades
+    // every block on the page and every block the SPA router brings in afterwards.
+    assert.deepEqual(
+      page.selectAll(".quiz", page.body).map((q) => q.tagName),
+      ["prepper-quiz", "prepper-quiz", "prepper-quiz", "prepper-quiz"],
+    )
     assert.equal(page.selectAll("pre code.language-quiz", page.body).length, 0)
   })
 
@@ -67,12 +75,28 @@ describe("a well-formed quiz fence becomes an answerable block", () => {
       ["true", "false", "false"],
     )
     assert.deepEqual(
-      options.map((o) => page.text(".quiz-explanation", o)),
+      options.map((o) => concealedText(page, ".quiz-explanation", o)),
       [
         "The key hashes straight to its bucket.",
         "Nothing is scanned unless buckets collide. See collision-handling.",
         "That is an unsorted array, not a hash map.",
       ],
+    )
+  })
+
+  test("and ships with every explanation closed, by the markup rather than by a script", () => {
+    // The `hidden` attribute, so the block is closed in Quartz's search preview pane, on a
+    // page whose stylesheet has not landed, and for a reader with scripting off. The
+    // browser half only ever opens things; see `prepper/quiz/prepper-quiz.js`.
+    const quiz = quizById(page, "01M0Z900000000000000000604")
+    assert.deepEqual(
+      page.selectAll(".quiz-explanation", quiz).map((e) => e.properties.hidden),
+      [true, true, true],
+    )
+    assert.equal(
+      page.text(undefined, quiz),
+      "A hash map lookup, average case, costs what? " +
+        "Constant time, no scan Constant time, one scan Linear time, full scan",
     )
   })
 
@@ -85,30 +109,47 @@ describe("a well-formed quiz fence becomes an answerable block", () => {
     assert.equal(page.text(undefined, quiz).includes("[x]"), false)
   })
 
-  test("a cloze emits a span per hole, and the prose around them reads unbroken", () => {
+  test("a cloze emits a blank per hole, with its answer behind it, and reads unbroken", () => {
     const quiz = quizById(page, "01M0Z900000000000000000605")
     assert.deepEqual(
-      page.selectAll(".cloze", quiz).map((span) => page.text(undefined, span)),
+      page.selectAll(".cloze", quiz).map((span) => concealedText(page, ".cloze-answer", span)),
       ["memory", "O(n)"],
+    )
+    // A blank the reader sees, and the same one for both holes: a blank as long as the word
+    // it hides is a clue about the word.
+    assert.deepEqual(
+      page.selectAll(".cloze-blank", quiz).map((span) => page.text(undefined, span)),
+      ["…", "…"],
     )
     assert.equal(
       page.text(undefined, quiz),
-      "A hash map trades memory for lookup speed, and degrades to O(n) when every key " +
+      "A hash map trades … for lookup speed, and degrades to … when every key " +
         "lands in one bucket. A {{literal}} inside a code span is not a hole.",
     )
   })
 
-  test("a recall emits its prompt and its reveal, told apart", () => {
+  test("a recall emits its prompt and its reveal, told apart, with the reveal closed", () => {
     const quiz = quizById(page, "01M0Z900000000000000000606")
     assert.equal(
       page.text(".quiz-prompt", quiz),
       "Explain why an insert is O(1) amortised rather than O(1).",
     )
+    assert.equal(page.require(".quiz-reveal", quiz).properties.hidden, true)
     assert.equal(
-      page.text(".quiz-reveal", quiz),
+      concealedText(page, ".quiz-reveal", quiz),
       "Crossing the load factor triggers a resize that rehashes every entry, which is " +
         "O(n). It happens rarely enough that the cost spread over all inserts stays constant.",
     )
+  })
+
+  test("the page ships the script that makes the block answerable", () => {
+    // Seam 2 asserts what the script *does*, over this same emitted page. What belongs
+    // here is that the reader is sent it at all: the block's markup is inert without it.
+    const shipped = site.files.filter(
+      (file) => file.endsWith(".js") && site.file(file).includes("prepper-quiz"),
+    )
+    assert.equal(shipped.length, 1, shipped.join(", "))
+    assert.ok(page.html.includes(shipped[0]), `the page links no script: ${shipped[0]}`)
   })
 
   test("a `~~~~quiz` fence carries a body that has a fence of its own", () => {
@@ -213,6 +254,19 @@ describe("a fence the build cannot make a quiz of", () => {
     assert.equal(page.selectAll("pre", page.body).length, 1)
   })
 })
+
+/**
+ * The text of an element the block ships closed.
+ *
+ * `page.text` answers what the *reader* sees, and a concealed element is nothing -- which is
+ * the point of concealing it. So the copy asserted here is read off a shown copy of the same
+ * subtree, which is what the reader gets once they have answered.
+ */
+function concealedText(page: Page, selector: string, scope: Element): string {
+  const shown = structuredClone(page.require(selector, scope))
+  delete shown.properties.hidden
+  return page.text(undefined, shown)
+}
 
 /** The one quiz block in the page carrying this ULID. */
 function quizById(page: Page, ulid: string) {

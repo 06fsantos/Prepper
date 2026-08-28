@@ -49,7 +49,7 @@ describe("mechanism 1: a quiz fence body is re-parsed into real Markdown", () =>
 
   test("a wikilink written inside a fence body renders as a resolved link", () => {
     const page = site.page("lessons/hash-map-lookup-cost")
-    const quiz = page.require("div.quiz")
+    const quiz = page.require("prepper-quiz.quiz")
     assert.deepEqual(
       page.links({ scope: quiz }).map(({ href, text }) => ({ href, text })),
       [{ href: "../terms/collision-handling", text: "collision-handling" }],
@@ -71,16 +71,20 @@ describe("mechanism 1: a quiz fence body is re-parsed into real Markdown", () =>
     // `prepper/quiz` unmakes the task list on the way out, so what proves the `[x]` was
     // read as a task marker is that exactly one option came out marked correct.
     const page = site.page("lessons/hash-map-lookup-cost")
-    const quiz = page.require("div.quiz")
+    const quiz = page.require("prepper-quiz.quiz")
     assert.equal(page.selectAll("li.quiz-option", quiz).length, 3)
     assert.equal(page.selectAll('li.quiz-option[data-quiz-correct="true"]', quiz).length, 1)
-    assert.equal(page.text("blockquote", quiz), "The key hashes straight to its bucket.")
+    // The blockquote ships concealed -- an explanation is not shown until the reader has
+    // answered -- so what it holds is asserted on the markup rather than on visible text.
+    const explanation = page.require("blockquote.quiz-explanation", quiz)
+    assert.equal(explanation.properties.hidden, true)
+    assert.match(page.html, /The key hashes straight to its bucket\./)
   })
 
   test("the infostring survives to the emitted element", () => {
     // `data.hProperties` -> hast element attributes, through rehype-raw's reparse.
     // The browser half reads the type back off this attribute.
-    const quiz = site.page("lessons/hash-map-lookup-cost").require("div.quiz")
+    const quiz = site.page("lessons/hash-map-lookup-cost").require("prepper-quiz.quiz")
     // hast normalises `data-*` attribute names to camelCase in `properties`; the
     // emitted HTML carries them hyphenated.
     assert.equal(quiz.properties.dataQuizId, "01M0Z900000000000000000022")

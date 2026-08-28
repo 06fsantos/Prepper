@@ -63,7 +63,9 @@ prepper/
     graph.test.ts           what is a node and what is an edge, through seam 1
   quiz/                     quiz fences: a fenced quiz block becomes an answerable question
     index.ts                the transformer, registered from quartz.config.yaml at order 25
+    prepper-quiz.js           <prepper-quiz>: the browser half, hand-written, no build step
     quiz.test.ts            the three question types and every defect, through seam 1
+    answering.test.ts       grade-on-click, over the build's own markup, through seam 2
   problems/                 Problems: the body folded on its H2s, and the CSS-only seal
     index.ts                the transformer, registered from quartz.config.yaml at order 35
     problems.test.ts        the fold, the seal, the ladder and the chips, through seam 1
@@ -74,6 +76,7 @@ prepper/
     build-fixture.ts        seam 1: build(fixtureVault) -> emitted site, and
                             validate(fixtureVault) -> violation list
     build-fixture.test.ts   the seam's own test
+    browser.ts              seam 2: an emitted page, in a DOM, running our scripts only
     fixtures/               one small vault per behaviour cluster
     mechanisms.test.ts      the Quartz mechanisms the design rests on, run
     spike-build.ts          seam 1 with a plugin that is not in the config yet
@@ -118,6 +121,18 @@ states a fact about Markdown that goes in and a fact about the output that comes
 A test that asserts which plugin ran, in what order, or what an intermediate mdast node
 looked like, is testing our arrangement of Quartz rather than Prepper's behaviour — and it
 will break on the next merge for no reason.
+
+**Seam 2** is the small remainder: what our custom elements do when clicked, in a real DOM.
+[`testing/browser.ts`](testing/browser.ts) is the harness, and its rule is that the page it
+loads is one **seam 1 emitted** — a DOM test over hand-written markup can pass while the
+build writes something else, and then the two seams agree with each other about a page that
+does not exist. It runs Prepper's scripts and not Quartz's, picked out by the `prepper-`
+prefix every custom element of ours is named with; `{ scripts: false }` runs none, which is
+the reader with JavaScript off and is a fixture in its own right rather than a lesser one.
+
+Every way a page has of storing something or sending it anywhere is replaced with a tripwire,
+collected on `screen.recorded`, because Prepper keeps no per-user state and has no server:
+"this records nothing" is a fact about the app that any screen can be asked to confirm.
 
 The exception is [`testing/mechanisms.test.ts`](testing/mechanisms.test.ts), which asserts
 on Quartz's behaviour rather than on ours, on purpose: it pins the three mechanisms
