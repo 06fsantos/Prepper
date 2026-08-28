@@ -78,6 +78,11 @@ prepper/
     mechanisms.test.ts      the Quartz mechanisms the design rests on, run
     spike-build.ts          seam 1 with a plugin that is not in the config yet
     spikes/                 the throwaway plugins those spikes need
+  report/                   the Vault report: the build's other channel, at `/report`
+    report.ts               the computation: the authoring queue and the three hygiene facts
+    render.ts               the page, whole and self-contained -- emitter output, never a note
+    index.ts                the emitter, and the one terminal line per build
+    report.test.ts          the queue, the fold and the hygiene facts, through seam 1
   workshop/                 the Workshop boundary, page half: a filter, plus the handoff
     index.ts                withholds Workshop notes, and hands them to validation
   validation/               the validation spine: one rule module, two consumers

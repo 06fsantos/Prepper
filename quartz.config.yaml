@@ -433,6 +433,18 @@ plugins:
   # never throws: under `--serve` the dev server has to survive a broken vault.
   - source: "./prepper/validation"
     enabled: true
+  # Prepper: ours. The build's other channel -- validation shouts, the report whispers, and
+  # the two never share a line. A page at `/report` written by **every** build, published
+  # unlisted rather than `--serve`-only, so the build has one mode rather than two that
+  # diverge.
+  #
+  # An emitter, and that is load-bearing rather than incidental: an emitter runs after the
+  # last transform, so nothing the report links to can become a graph edge. Generated as a
+  # virtual `content/` file instead, it would link to every orphan it lists, each orphan
+  # would gain an inbound link, and the hygiene section would erase itself on the second
+  # build -- silently. See `prepper/report/render.ts`.
+  - source: "./prepper/report"
+    enabled: true
 layout:
   groups:
     toolbar:
