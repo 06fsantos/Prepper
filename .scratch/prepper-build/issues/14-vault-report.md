@@ -34,14 +34,50 @@ Nothing on this channel is ever validated.
 
 **Blocked by:** 05, 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Every build emits `/report`, and prints exactly one terminal line pointing at it
-- [ ] The report is published unlisted, in both `build` and `build --serve`
-- [ ] The authoring queue ranks unwritten notes typed-then-total, printing the breakdown, with no weighting constant
-- [ ] Each queue row links to the notes that link to it
-- [ ] Terms with an empty body appear in the queue
-- [ ] A `draft: true` note's body links do not contribute to queue ranking
-- [ ] Hygiene lists unreferenced attachments, Library notes with no inbound links, and Terms with no inbound `topic` edge
-- [ ] Building twice in a row leaves the hygiene section unchanged
-- [ ] `/report` contributes no edges to the link graph and does not appear in `contentIndex.json`
+- [x] Every build emits `/report`, and prints exactly one terminal line pointing at it
+- [x] The report is published unlisted, in both `build` and `build --serve`
+- [x] The authoring queue ranks unwritten notes typed-then-total, printing the breakdown, with no weighting constant
+- [x] Each queue row links to the notes that link to it
+- [x] Terms with an empty body appear in the queue
+- [x] A `draft: true` note's body links do not contribute to queue ranking
+- [x] Hygiene lists unreferenced attachments, Library notes with no inbound links, and Terms with no inbound `topic` edge
+- [x] Building twice in a row leaves the hygiene section unchanged
+- [x] `/report` contributes no edges to the link graph and does not appear in `contentIndex.json`
+
+## What was built
+
+`prepper/report/`, registered from `quartz.config.yaml` as one **emitter** entry
+(`- source: "./prepper/report"`, `enabled: true`, appended after `./prepper/validation`;
+that is the only edit to that file).
+
+- **`report.ts`** — the computation, pure. Reads the link graph rather than re-deriving it:
+  the queue's rows are the graph's **placeholder nodes** (a target no node answers to) plus
+  Terms whose body is empty, ranked `typed → total → alphabet` with no weighting constant,
+  each row carrying its inbound edges grouped by type and named by their source note's
+  `title`. `draft: true` drops a note's *relates-to* edges and nothing else — its
+  frontmatter edges are commitments whatever its publication state. Hygiene is three
+  derivations off the same graph plus `ctx.allFiles`: an attachment nothing links or shows,
+  a node with no inbound edge, a Term with no inbound *about* edge.
+- **`render.ts`** — the page: one self-contained HTML document. Quartz's `renderPage` is
+  `.tsx` and therefore unreachable from a local plugin, which settled the question the spike
+  had already answered from the other side. The tail folds at ten rows into a `<details>`;
+  nothing is ever dropped.
+- **`index.ts`** — the emitter. Writes `report.html` (Quartz's dev server serves `/report`
+  from it), prints exactly one line — `[prepper] report: /report — N in the authoring queue,
+  M in vault hygiene` — and never throws, for the same reason validation does not. It reads
+  `content[]` **plus `withheldNotes(ctx)`**: an attachment a research note shows is an
+  attachment in use, and the graph drops the Workshop half on its own anyway.
+
+Attachment references needed one thing no existing list held: `crawl-links` rewrites an
+`<img>` src and does not record it, so an embedded image is invisible in `file.data.links`
+and in `bodyLinks`. `assetsOf(tree, slug)` reads them off the emitted tree — the build's own
+output, not a second parse of the Markdown.
+
+Fixtures: **`vault-report/`** (the ranking, the empty Term, the draft, and one item in each
+hygiene list) and **`long-authoring-queue/`** (twelve identically-ranked rows, so the fold is
+statable). Both described in `prepper/testing/fixtures/README.md`.
+
+`npm test` 337 pass / 0 fail; `npx tsc --noEmit` clean; `npm run validate` clean;
+`npx prettier . --check` clean.

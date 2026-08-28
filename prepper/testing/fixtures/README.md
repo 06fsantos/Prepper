@@ -175,3 +175,29 @@ anything.
   because Obsidian Markdown has no notation for a margin note. It is deliberately smaller
   than `topic-index/`, which is about the same field read the other way round: this one
   never asks what is filed under a topic, only what a note says it is about.
+
+- **`vault-report/`** — a vault with a backlog and some rot. Its cluster is *the Vault
+  report*, so every detail is a fact about what the build has to say that is not a failure.
+  Three notes nobody has written yet are leaned on differently on purpose:
+  `robin-hood-hashing` carries two `practices` obligations and two mentions,
+  `linear-probing` one obligation and two links, `open-addressing` three mentions and no
+  obligation at all — which is what makes "typed first, then total, and no constant deciding
+  by how much" a fact a test can state, since a weighting constant is exactly what would let
+  three mentions overtake one obligation. `terms/eviction` is minted with an **empty body**,
+  so backlog and defect are told apart. `lessons/speculative-sketch` is `draft: true` and
+  names `speculative-idea`, which nothing else names, so a note that is only ever
+  speculated about must not reach the queue at all. On the hygiene side:
+  `attachments/unused-diagram.png` is shown by nothing while `bucket-diagram.png` is
+  embedded, `references/interview-notes-index` is the one note nothing links to, and
+  `terms/probing` is named in a sentence and has nothing filed under it — the narrow
+  reading, which is the one that does not fire on correct authoring. Every other note has an
+  inbound link deliberately, so each hygiene list holds exactly one thing. The vault has no
+  errors; its warnings are unwritten links and one missing cheat sheet, both of which are
+  the authoring practice the fixture is about.
+
+- **`long-authoring-queue/`** — one Lesson naming twelve unwritten notes, and the Term it is
+  about. Its cluster is *the queue's long tail*: twelve rows leaned on identically, so the
+  ranking has nothing to separate them and the whole queue is tail. It exists because the
+  tail is **folded and never capped**, and a fixture whose queue fits on a screen cannot say
+  so. Deliberately kept apart from `vault-report/`, whose ranking assertions read the whole
+  queue and would be about this instead.

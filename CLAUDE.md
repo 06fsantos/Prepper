@@ -52,6 +52,24 @@ surfaces violations under `npm run serve` without killing the dev server, and
 CI is the only hard gate. See [`prepper/validation/README.md`](prepper/validation/README.md),
 including how to add a rule.
 
+## The Vault report
+
+The build's other channel. **Validation shouts and the report whispers, and the two never
+share a line**: nothing is wrong when the report prints, and nothing on this channel is
+ever validated. A page at `/report` emitted by **every** build — published unlisted rather
+than `--serve`-only, so the build has one mode rather than two that diverge — plus one
+terminal line per build pointing at it. Two sections: an **authoring queue** (unwritten
+notes and empty Terms, sorted **typed-then-total with the breakdown printed and no
+weighting constant**, each row linking to its inbound sources, a `draft: true` note's body
+links excluded, the long tail folded and never capped) and **vault hygiene** (unreferenced
+attachments, Library notes with no inbound links, Terms with no inbound `topic` edge).
+
+[`prepper/report/`](prepper/report/index.ts) is an **emitter**, and that is load-bearing:
+an emitter runs after the last transform, so nothing the report links to can become a graph
+edge. Generated as a virtual `content/` file instead, it would link to every orphan it
+lists, each orphan would gain an inbound link, and the hygiene section would erase itself on
+the second build — silently.
+
 ## The link graph
 
 Every link the vault contains, indexed once at build, with each edge **typed by the field
