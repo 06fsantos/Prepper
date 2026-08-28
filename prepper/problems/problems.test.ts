@@ -172,8 +172,15 @@ describe("`## Hints` is an ordered ladder", () => {
     )
   })
 
-  test("and it is open, because nothing can yet reveal a rung that was hidden", () => {
+  test("and the build ships it open, inside the element that takes it away again", () => {
+    // The hiding is `hints.js`'s, and it can be, because a script that never arrives
+    // leaves every hint on screen -- which is what the vault says and what Obsidian
+    // shows. The seal is the other way round and is why it is not a script. The click
+    // itself is seam 2's: `prepper/problems/browser.test.ts`.
     assert.equal(page.selectAll("details", section(page, "hints")).length, 0)
+    assert.equal(page.selectAll(".problem-hint[hidden]", section(page, "hints")).length, 0)
+    const ladder = page.require("prepper-hint-ladder", section(page, "hints"))
+    assert.equal(page.selectAll(".problem-hint", ladder).length, 3)
   })
 })
 

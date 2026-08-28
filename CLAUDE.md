@@ -42,6 +42,10 @@ Test external behaviour, never implementation. A test that asserts which plugin 
 what order, or what an intermediate mdast node looked like, will break on the next
 upstream merge for no reason.
 
+**Seam 2** is the remainder: what our custom elements do when clicked, in a DOM. The
+harness is [`prepper/testing/browser.ts`](prepper/testing/browser.ts), and the page it
+loads is always one seam 1 emitted — never markup written for the test.
+
 ## Validation
 
 The build talks back on two channels that never share a line. **Validation** shouts:
@@ -100,9 +104,15 @@ boundaries. Which are required depends on the declared `kind`, which is never in
 `## Solution` and `## Complexity` come out inside a closed `<details>`, and that is
 load-bearing: **the seal is markup, never a script**, because Quartz's search preview
 injects a result's real HTML and a JS-initialised seal would render open there and leak the
-solution. [`prepper/problems/index.ts`](prepper/problems/index.ts) is one remark transformer
-at `order: 35`. A Problem missing a section its kind requires renders the sections it has
-and raises a validation **error**.
+solution. Unsealing is that same element's other half and is **the browser's own click** —
+Prepper ships no script for it, because the script would be the very thing whose absence in
+the preview pane the seal depends on. `## Hints` goes the other way: it is shipped open and
+[`prepper/problems/hints.js`](prepper/problems/hints.js) — one custom element, no build step
+— hides the rungs and reveals them one at a time, in authored order, which is safe precisely
+because a script that never runs leaves the hints on screen.
+[`prepper/problems/index.ts`](prepper/problems/index.ts) is one remark transformer at
+`order: 35`. A Problem missing a section its kind requires renders the sections it has and
+raises a validation **error**.
 
 ## The reading surface
 

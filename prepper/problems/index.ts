@@ -37,15 +37,24 @@
  * independent: `name` is what groups disclosures into an exclusive accordion, and reading
  * the complexity of a solution you have already read should not re-hide the solution.
  *
+ * Unsealing is the same element's other half, and it is the browser's: a click on the
+ * `<summary>` opens the disclosure in place, moving nothing else on the page, so the scroll
+ * position holds without anyone writing a line about scrolling. Prepper ships **no script
+ * for it at all** -- one would have to fight the behaviour it was duplicating, and it would
+ * be the exact script whose absence in the search preview pane the seal depends on.
+ *
  * ## What is not sealed, and why
  *
  * `## Constraints` and `## Follow-ups` render open. Reading the follow-ups before attempting
  * sharpens the attempt rather than spoiling it, and the constraints *are* the problem.
  *
  * `## Hints` renders open too, and marked: an `ol` of rungs, one per top-level list item,
- * each numbered in `data-hint`. The ladder is the markup ticket 12's control needs, and
- * hiding the rungs now -- before there is a control to reveal them -- would be exactly the
- * mistake the paragraph above describes.
+ * each numbered in `data-hint`, wrapped in a `<prepper-hint-ladder>`. The build ships that
+ * open on purpose. `hints.js` is what takes the rungs away and hands the dev one control,
+ * and it is allowed to because the *degraded* state -- every hint on screen, which is what
+ * the vault says and what Obsidian shows -- is the harmless one. The seal cannot be built
+ * that way round, and that asymmetry is the whole reason the two halves of a Problem page
+ * are written in two different languages.
  *
  * ## Sealing is a rendering rule of the app alone
  *
@@ -70,6 +79,8 @@
  * the half of the build that decided what this Problem is and rendered it accordingly, and
  * a rule that read `kind` for itself could eventually disagree with the page.
  */
+import { readFileSync } from "node:fs"
+
 import { visit } from "unist-util-visit"
 import type { Heading, List, Root, RootContent } from "mdast"
 import type { Data } from "unist"
@@ -196,13 +207,48 @@ const problemStyles = `
 .problem-seal > summary > h2 { margin: 0.8rem 0; }
 .problem-seal > summary::after { content: "Reveal"; color: var(--secondary); font-size: 0.8rem; }
 .problem-seal[open] > summary::after { content: "Hide"; }
+prepper-hint-ladder { display: block; }
 .problem-hints { padding-left: 1.2rem; }
 .problem-hint { margin: 0.4rem 0; }
+.problem-hint-control {
+  border: 1px solid var(--lightgray);
+  border-radius: 5px;
+  background: none;
+  color: var(--secondary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+}
+.problem-hint-control[disabled] { color: var(--gray); cursor: default; }
 `
+
+/**
+ * The hint ladder's control, as the page will run it.
+ *
+ * Read off disk rather than written here as a string, so that the browser half is a real
+ * `.js` file the editor, the formatter and the reader all treat as code. There is no build
+ * step and nothing is bundled: what is in `hints.js` is what reaches the page.
+ */
+const hintLadderScript = readFileSync(new URL("hints.js", import.meta.url), "utf8")
 
 const PrepperProblems = (): QuartzTransformerPluginInstance => ({
   name: "PrepperProblems",
-  externalResources: () => ({ css: [{ content: problemStyles, inline: true }] }),
+  externalResources: () => ({
+    css: [{ content: problemStyles, inline: true }],
+    // `afterDOMReady`, so the ladder is in the document by the time the element is
+    // registered; `spaPreserve`, so an SPA navigation does not tear the registration out
+    // of the page and put a fresh copy back. Neither matters to the seal, which is shut
+    // whether this script arrives, arrives late, or never arrives at all.
+    js: [
+      {
+        script: hintLadderScript,
+        loadTime: "afterDOMReady",
+        contentType: "inline",
+        spaPreserve: true,
+      },
+    ],
+  }),
   markdownPlugins() {
     return [
       () => (tree: Root, file: VFile) => {
@@ -317,10 +363,14 @@ function seal(heading: Heading, children: RootContent[]): RootContent {
  * The hint ladder: the section's first list, one rung per **top-level** item.
  *
  * Numbered on the item rather than left to the list marker, because the rung number is what
- * ticket 12's control counts and a nested bullet under hint two is part of hint two rather
- * than a rung of its own. The list's own `ordered` flag is left exactly as the author wrote
- * it: how the numbers *look* is theirs to decide, and the order is in the document either
- * way.
+ * `hints.js` counts and a nested bullet under hint two is part of hint two rather than a
+ * rung of its own. The list's own `ordered` flag is left exactly as the author wrote it:
+ * how the numbers *look* is theirs to decide, and the order is in the document either way.
+ *
+ * The whole section body goes inside a `<prepper-hint-ladder>`, which is what the browser
+ * upgrades and what the control is appended to. A `## Hints` with no list gets no wrapper:
+ * there is no ladder there, only prose, and an element with nothing to reveal would sit on
+ * the page announcing a control it could not offer.
  */
 function ladder(children: RootContent[]): RootContent[] {
   const list = children.find((child): child is List => child.type === "list")
@@ -331,7 +381,7 @@ function ladder(children: RootContent[]): RootContent[] {
     hProperties(item, { className: ["problem-hint"], "data-hint": String(index + 1) })
   })
 
-  return children
+  return [element("problemHintLadder", "prepper-hint-ladder", {}, children)]
 }
 
 /**
