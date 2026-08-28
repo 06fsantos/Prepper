@@ -100,7 +100,10 @@ export function TopicTree(topics: Topic[], from: FullSlug): ComponentChild {
  */
 function fold(id: string, heading: ComponentChild, body: ComponentChild): ComponentChild {
   if (body === null) {
-    return h("div", { class: "prepper-topic-fold-row prepper-topic-fold-leaf" }, [chevron(false), heading])
+    return h("div", { class: "prepper-topic-fold-row prepper-topic-fold-leaf" }, [
+      chevron(false),
+      heading,
+    ])
   }
   return h("details", { class: "prepper-topic-fold", "data-fold": id, open: true }, [
     h("summary", { class: "prepper-topic-fold-row" }, [chevron(true), heading]),

@@ -191,7 +191,10 @@ describe("the topic index", () => {
     const empty = topicNode(problem, "System design", problem.tree)
 
     assert.deepEqual(problem.selectAll("details.prepper-topic-fold", empty), [])
-    assert.ok(problem.select(".prepper-topic-fold-leaf", empty), "the row is gone as well as the fold")
+    assert.ok(
+      problem.select(".prepper-topic-fold-leaf", empty),
+      "the row is gone as well as the fold",
+    )
   })
 
   test("the Cheat sheets list folds on its own name", () => {
