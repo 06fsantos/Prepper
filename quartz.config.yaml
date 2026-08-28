@@ -517,7 +517,20 @@ plugins:
   # Prepper: ours. The link graph, computed once over the whole corpus and written to
   # `static/linkGraph.json` for the topic index (07) and the Vault report (14) to read.
   # It does not replace `contentIndex.json`, which stays exactly as Quartz emits it.
-  - source: "./prepper/graph"
+  #
+  # The object source form here buys one thing, and it is not decoration. Quartz names a
+  # plugin after its **source path's basename**, never after the `manifest.name` the module
+  # exports -- so as `"./prepper/graph"` this emitter was the plugin named `graph`. An entry
+  # with no `layout:` block is then looked up in the component registry by that name and by
+  # its PascalCase form, and placed at whatever `defaultPosition` the thing that answers
+  # declares; the registry is flat and global, and `@quartz-community/graph` registers its
+  # panel under the unqualified key `Graph`. This emitter therefore adopted the community
+  # graph panel and asked for it a second time, in the same right rail the entry below
+  # already places it in -- silently, with the plugin named exactly once in this file.
+  # `prepper/testing/layout.test.ts` is the tripwire for the next such collision.
+  - source:
+      repo: "./prepper/graph"
+      name: prepper-graph
     enabled: true
   # Prepper: ours. The Workshop boundary, page half: `research`, `record` and `mission`
   # are withheld from the emitted site, so the reader never meets one. It is a *filter*,

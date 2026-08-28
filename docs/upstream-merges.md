@@ -79,6 +79,13 @@ The failure is almost always one of two things, and they are worth telling apart
   written up in
   [`.scratch/prepper-build/research/`](../.scratch/prepper-build/research/). A failure
   there is an **ADR amendment**, not a workaround invented on the spot.
+- **Layout resolution placed something we did not ask for.** The loader names a local plugin
+  after its source path's basename and, for an entry with no `layout:` block, looks that name
+  up in a component registry shared with every installed package — so a name collision places
+  a component nobody configured, without a warning.
+  [`prepper/testing/layout.test.ts`](../prepper/testing/layout.test.ts) is the tripwire: it
+  counts the graph panel on a page of every type, and
+  [`prepper/README.md`](../prepper/README.md) says what to do about a collision.
 
 ## What is deliberately not done
 

@@ -113,6 +113,7 @@ prepper/
     browser.ts              seam 2: an emitted page, in a DOM, running our scripts only
     fixtures/               one small vault per behaviour cluster
     mechanisms.test.ts      the Quartz mechanisms the design rests on, run
+    layout.test.ts          the chrome our config resolves to, per page type
     spike-build.ts          seam 1 with a plugin that is not in the config yet
     spikes/                 the throwaway plugins those spikes need
   workshop/                 the Workshop boundary, page half: a filter, plus the handoff
@@ -126,7 +127,7 @@ prepper/
 Plugins, components, and browser code land here as they are built, each in its own
 directory, each registered from `quartz.config.yaml`.
 
-## Two things Quartz's plugin loader constrains
+## Three things Quartz's plugin loader constrains
 
 **A component plugin is `.ts`, never `.tsx`.** Quartz loads a local plugin by importing it,
 and the thing performing that import is Node, which strips TypeScript types but does not
@@ -140,6 +141,31 @@ it for upstream's own plugins.
 **A component plugin needs a `package.json`.** Quartz finds a plugin's components through
 its `./components` subpath export, and the fallback it tries when there is no `exports` map
 looks only for `.js`. Ours is three lines and exists for that one reason.
+
+**A local plugin is named after its directory, in a registry shared with every package.**
+Quartz derives a config entry's plugin name from the **basename of its source path** —
+`"./prepper/graph"` is the plugin named `graph` — and never from the `manifest.name` the
+module exports. That name is then looked up in the component registry, by itself and by its
+PascalCase form, for any entry that declares **no `layout:` block**; if something answers,
+that component is placed at _its own_ manifest's `defaultPosition`. The registry is flat and
+global: `@quartz-community/graph` registers its panel under the unqualified key `Graph`
+beside its fully-qualified one. So `./prepper/graph`, an emitter that renders nothing,
+adopted the community graph panel and asked for a second copy of it in the rail the config
+had already placed it in — silently, with the plugin named once in the file.
+
+The remedy is the object source form, which lets an entry carry its own `name`:
+
+```yaml
+- source:
+    repo: "./prepper/graph"
+    name: prepper-graph
+```
+
+`prepper/edges` and `prepper/topics` already use it, for a different reason — several
+entries of one module need distinct names, since `name` is the key Quartz installs and looks
+a plugin up by. Give a new local plugin a `prepper-`-prefixed name whenever its directory
+could collide, and [`testing/layout.test.ts`](testing/layout.test.ts) is the tripwire that
+catches the next one: it counts the graph panel on a page of every type.
 
 ## Testing
 

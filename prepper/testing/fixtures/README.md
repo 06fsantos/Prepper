@@ -162,7 +162,11 @@ anything.
   vault-wide ([ADR 0001](../../../docs/adr/0001-split-note-identity.md)) and a
   `cheat-sheets/hash-maps.md` would collide with the Term. The vault is otherwise correct —
   it validates clean — because a fixture about navigation should not also be a fixture about
-  violations.
+  violations. It is also read by
+  [`layout.test.ts`](../layout.test.ts), which is not a second cluster: that test needs one
+  page of every kind at once — a home page, a Lesson, a Term, a Problem, a folder index and
+  404 — and this is the smallest vault that already emits them all. Nothing was added for it,
+  and nothing should be.
 
 - **`schema-and-identity-violations/`** — a vault that is wrong in fourteen ways at once:
   a Lesson with no `topic` that wrote a hand-authored `tags` instead — the build's own

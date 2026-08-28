@@ -13,6 +13,13 @@ our code lives under [`prepper/`](prepper/README.md) and reaches Quartz through
 `tsconfig.json` (`include` paths, `allowImportingTsExtensions`, `noEmit`),
 `.github/workflows/prepper.yaml`, and `content/` — and nothing else is. See [`prepper/README.md`](prepper/README.md).
 
+A plugin of ours is named after its **directory**, in a component registry shared with every
+installed package, and an entry with no `layout:` block is placed wherever a component of that
+name says it belongs. A colliding basename therefore renders a panel nobody configured, silently
+— which is what put two graph panels on every page. Give such an entry its own `name` through
+the object source form; [`prepper/testing/layout.test.ts`](prepper/testing/layout.test.ts) is the
+tripwire.
+
 The merge procedure is [`docs/upstream-merges.md`](docs/upstream-merges.md).
 
 `docs/` holds Quartz's own documentation vault as well as ours. Ours is `docs/adr/`,
