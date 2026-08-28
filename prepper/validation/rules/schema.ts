@@ -77,4 +77,32 @@ function isEmpty(value: unknown): boolean {
   return false
 }
 
-export const schemaRules: Rule[] = [requiredFrontmatter]
+/**
+ * `tags` is the build's field, not the author's.
+ *
+ * `prepper/search-index` derives it from `topic` so that Quartz's search has the field it
+ * reads. A hand-written `tags:` is therefore either silently overwritten or silently
+ * merged, and either way the vault grows a second, uncontrolled topic vocabulary beside
+ * the controlled one -- which is the exact failure `topic` resolving to a Term that must
+ * exist is there to prevent. Trivial to detect, trivial to fix.
+ *
+ * Every type, including Workshop: a Research note is invisible to the reader but not to
+ * Obsidian, and two vocabularies in one vault is one vault's problem.
+ */
+const authoredTags: Rule = {
+  name: "authored-tags",
+  check(vault: Vault): Finding[] {
+    return vault.notes
+      .filter((note) => note.declaredFields.has("tags"))
+      .map((note) => ({
+        severity: "error" as const,
+        note: note.path,
+        message:
+          "declares frontmatter `tags`: the build owns that field -- it derives it from " +
+          "`topic` to feed search -- so a hand-written one is overwritten. File the note " +
+          "under a `topic` instead.",
+      }))
+  },
+}
+
+export const schemaRules: Rule[] = [requiredFrontmatter, authoredTags]

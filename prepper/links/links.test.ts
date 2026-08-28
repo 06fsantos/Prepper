@@ -122,18 +122,24 @@ describe("an unwritten link", () => {
   })
 
   test("a page Quartz generates is not an unwritten note", () => {
-    // A tag and a folder both get a page at emit time, from no file on disk -- so
+    // A tag and a folder are both *addressed* at emit time from no file on disk -- so
     // neither is in `ctx.allSlugs`, and a naive existence check marks every tagged note
-    // and every folder link broken. Nobody can write `tags/hashing.md` to fix it, which
-    // is what makes this a bug and not a gap: the affordance would be pointing at work
-    // that cannot be done.
+    // and every folder link broken. Nobody can write `tags/hashing.md` or `terms/index.md`
+    // to fix it, which is what makes this a bug and not a gap: the affordance would be
+    // pointing at work that cannot be done.
     for (const generated of ["tags/hashing", "terms/index"]) {
       assert.ok(
         !unwrittenLinks(lesson).some((link) => link.target === generated),
         `${generated} was marked unwritten`,
       )
-      assert.ok(site.hasPage(generated), `${generated} was never emitted`)
     }
+    // Only the folder actually gets a page. `tag-page` is disabled (13): the build owns
+    // `tags` -- it derives the field from `topic` to feed search -- and the Term page is
+    // the canonical topic index, so `/tags/hashing` would be a second one at a second URL.
+    // An inline `#hashing` is outside the vault's vocabulary altogether, and that it now
+    // addresses a page the site does not emit is a fact about the tag, not about this rule.
+    assert.ok(site.hasPage("terms/index"), "terms/index was never emitted")
+    assert.ok(!site.hasPage("tags/hashing"), "tags/hashing was emitted after all")
     // Still anchors, so still clickable -- the half that `unwrittenLinks` cannot see.
     const hrefs = lesson.links().map((link) => link.href)
     assert.ok(hrefs.includes(".././tags/hashing"), `no live tag link in ${hrefs.join(", ")}`)

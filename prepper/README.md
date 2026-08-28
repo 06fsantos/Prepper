@@ -15,6 +15,14 @@ so there is never a reason to reach into `quartz/` and change something.
 If you find yourself editing a file under `quartz/`, stop: the change belongs here, and if
 it genuinely cannot, it belongs upstream as a pull request.
 
+**The one case configuration does not reach**, and the line drawn for it: a _community_
+plugin whose client script has to change. Search is that case — a result has to carry a
+type chip and a `problems/` result has to carry no excerpt, and neither is an option
+`@quartz-community/search` offers. So **core Quartz stays a remote; a community plugin we
+alter is vendored in-tree**, dropped as a dependency and pinned by version and content
+hash. `prepper/search/` is the only instance, and [its README](search/README.md) says what
+was vendored and why a fork and a patch file were both rejected.
+
 ## What may be edited outside `prepper/`
 
 Six files, all configuration, all expected to conflict occasionally on a merge and all
@@ -72,6 +80,15 @@ prepper/
   links/                    wikilink resolution's one gap: the unwritten-link affordance
     index.ts                the transformer, registered from quartz.config.yaml at order 65
     links.test.ts           resolution and unwritten links, through seam 1
+  search-index/             the index, deliberately unlike the page
+    index.ts                the transformer, ordered after `description` by arithmetic
+    search-index.test.ts    what search finds and what it never hands over, through seam 1
+  search/                   Quartz's search, vendored: the one place the fork line is crossed
+    README.md               what was vendored, from where, and the two alterations
+    index.ts                the component manifest; one config entry, in the toolbar
+    components/index.ts     upstream's `Search.tsx`, transcribed into `h`
+    vendor/                 upstream's built client script and stylesheet, pinned
+    search.test.ts          the chip, the missing excerpt, the vendoring line, through seam 1
   testing/
     build-fixture.ts        seam 1: build(fixtureVault) -> emitted site, and
                             validate(fixtureVault) -> violation list

@@ -122,6 +122,29 @@ carries the page styles as well as the chips: Quartz collects a component's CSS 
 configured component list rather than from what a page rendered, so the measure lands on
 every page. It is the only module that styles the page rather than a component of its own.
 
+## Search
+
+Quartz's search is **adopted whole in mechanism**; what changes is what lands in the index
+and how a result reads. `contentIndex.json`'s `content` field is the **rendered tree
+flattened**, so anything rendered is searchable — including what the page conceals. Making
+the index differ from the page therefore means **recomputing `file.data.text` in our own
+htmlPlugin ordered after `description`, and never mutating the tree**, which would strip the
+content off the page too. [`prepper/search-index/`](prepper/search-index/index.ts) is that
+plugin; it states its order as _greater than `description`'s_, never as a literal, and it
+also copies `topic` to `tags` — the field the build owns, feeding search and nothing else,
+which is why `tag-page` stays disabled and an authored `tags:` is a validation **error**.
+
+It strips quiz material per type: an mcq loses its options and explanations, a cloze loses
+what is inside its holes, a recall loses its reveal. **A Problem's sealed sections stay in**
+— a solution is often the richest prose on a topic and has to be findable — and the spoiler
+is handled at the result instead. Workshop is out **structurally**, by never rendering,
+never by a type-level exclusion rule.
+
+The component is **vendored**, not forked or patched: results carry a type chip derived from
+the slug, and a `problems/` result carries no excerpt. This is where the line gets drawn —
+core Quartz stays a remote, an altered community plugin is vendored. See
+[`prepper/search/README.md`](prepper/search/README.md).
+
 ## Research output
 
 `/research` writes its notes into `content/research/`, named after the **question** they
