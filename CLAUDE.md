@@ -143,6 +143,22 @@ contents**, a sticky element offset by `var(--prepper-topbar-height)` and bounde
 whose components are direct children of the grid. Below 1200px it is not rendered, which is
 what upstream already did with it.
 
+**Prose keeps the measure; a generated index does not.** A page whose body is an index -- the
+app's entry point, and the index under a Term's own definition -- takes the whole of the second
+track (`calc(100% - var(--prepper-sidebar) - 10px)`, the prose track's clamp with the measure
+taken out) rather than 38rem, because a topic index is a list scanned in two dimensions. The
+distinction is keyed off **what the page's body is**: the index views render themselves with
+`prepper-generated-index` and the stylesheet asks `:has()` whether the page holds one. No slug,
+filename or page type is named, so the next generated index page inherits the layout by
+rendering that class.
+
+A **Term page is both**, and that is where the rule earns its keep: the width is given to the
+column and taken back, by two `max-width` rules, from everything in the column that is not the
+index -- so the definition above stays at the measure and the index below does not. And the
+**table of contents is not rendered on an index page**: it is a margin note and the index has
+taken the margin, so the collision is settled by deciding which of the two is that page's
+navigation rather than by squeezing both.
+
 ## Collapsible headings
 
 A note's body is folded on **every heading it was written with**, nested -- an `##` fold

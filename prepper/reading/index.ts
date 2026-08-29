@@ -15,7 +15,12 @@
  *   re-declares no track, which is what makes the prose column stay exactly where it is when
  *   the rail goes away. And since there is no right column, the grid is what places the one
  *   thing left over from it -- upstream's table of contents, as a sticky element in the margin
- *   rather than the top of a 320px track.
+ *   rather than the top of a 320px track. It is also where the app's one **layout
+ *   distinction** is drawn: a page whose body is prose holds the measure and spends the rest
+ *   on margin, and a page whose body is a **generated index** spends it on the index. That is
+ *   keyed off the class the index views render themselves with (`prepper-generated-index`),
+ *   through `:has()`, and never off a slug, a filename or a page type -- so a Term page, which
+ *   is both a definition and an index, keeps the measure above and goes wide below.
  *
  * ## Why the page styles ride on a component
  *

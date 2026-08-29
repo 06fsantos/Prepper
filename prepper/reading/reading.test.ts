@@ -24,13 +24,15 @@ import assert from "node:assert"
 import { buildFixture, classesOf, type EmittedSite, type Page } from "../testing/build-fixture.ts"
 import {
   active,
+  container,
   customProperties,
   declaration,
+  floor,
+  grid,
   pixels,
   rules,
   stylesheets,
   tracks,
-  type Rule,
 } from "../testing/stylesheets.ts"
 
 /** Every chip on a page, as `[label, href]`, in rendered order. */
@@ -43,6 +45,31 @@ function chips(page: Page): [label: string, href: string | undefined][] {
 function hrefOf(chip: { properties: Record<string, unknown> }): string | undefined {
   const href = chip.properties.href
   return typeof href === "string" ? href : undefined
+}
+
+/**
+ * The page's own grid, as the two selectors that can declare it.
+ *
+ * `body` is on every page. `indexBody` is on a page **whose body is a generated index** --
+ * the app's entry point, a Term page's index, and whatever the build generates next -- and it
+ * is the whole of how the layout tells the two apart: no slug, no filename, no page title, one
+ * class the index views render themselves with.
+ */
+const body = ".page>#quartz-body"
+const indexBody = ".page>#quartz-body:has(.prepper-generated-index)"
+
+/**
+ * Which of those two a given emitted page actually matches, decided by **running the selector
+ * against the page** rather than by knowing which page it is.
+ *
+ * This is the composition every width assertion below rests on. A stylesheet cannot say which
+ * rules reach a particular page and the markup cannot say how wide a column is, so the tests
+ * ask the markup which selectors match and the stylesheet what those selectors declare. If the
+ * marker class ever stopped being rendered, or started being rendered on a Lesson, every one
+ * of those assertions changes answer -- which is the point.
+ */
+function bodySelectors(page: Page): string[] {
+  return [body, indexBody].filter((selector) => page.selectAll(selector, page.tree).length > 0)
 }
 
 describe("the reading surface", () => {
@@ -130,6 +157,16 @@ describe("the reading surface", () => {
     const declarations = [...css.matchAll(/grid-template-columns/g)]
     const ours = [...css.matchAll(/grid-template-columns:[^};]*--prepper-measure/g)]
     assert.equal(ours.length, 3, `${ours.length} of ${declarations.length} grids are ours`)
+
+    // Three more, in the same three bands, for a page whose body is a generated index --
+    // and they are this module's too. They have to be declared in every band rather than
+    // only the wide one: `:has()` makes the index selector more specific than the plain
+    // one, so a band that did not restate it would be overruled by the wide band's rule at
+    // a width the wide band is not meant to reach.
+    const indexes = rules(css).filter(
+      (rule) => rule.selector === indexBody && declaration(rule, "grid-template-columns"),
+    )
+    assert.equal(indexes.length, 3, `${indexes.length} index grids, one per band`)
     assert.ok(
       !/data-prepper-sidebar[^{]*\{[^}]*grid-template-columns/.test(css),
       "no grid is conditioned on whether the rail is hidden",
@@ -151,7 +188,7 @@ describe("the reading surface", () => {
       const all = rules(css)
       const properties = customProperties(all)
       const applies = active(all, width)
-      const columns = tracks(grid(applies))
+      const columns = tracks(grid(applies, [body]))
 
       assert.equal(
         columns.length,
@@ -159,7 +196,10 @@ describe("the reading surface", () => {
         `the wide band declares ${columns.length} tracks: ${columns.join(" | ")}`,
       )
       assert.equal(
-        pixels(columns[1], { container: container(applies, width, properties), properties }),
+        pixels(columns[1], {
+          container: container(applies, width, properties, [body]),
+          properties,
+        }),
         38 * 16,
         `the prose column is not 38rem at ${width}px: ${columns[1]}`,
       )
@@ -175,7 +215,7 @@ describe("the reading surface", () => {
     // sides. Ticket 07 is where a page whose body is an index spends it on something else.
     const all = rules(css)
     const properties = customProperties(all)
-    const columns = tracks(grid(active(all, 1920)))
+    const columns = tracks(grid(active(all, 1920), [body]))
 
     assert.equal(columns.length, 3, `the wide band declares ${columns.length} tracks`)
     assert.ok(
@@ -227,6 +267,26 @@ describe("the reading surface", () => {
     assert.equal(active([hidden], 800).length, 1)
   })
 
+  test("the table of contents gives way to an index, because both want the margin", () => {
+    // The collision this ticket had to settle, and the one page in the app that has it: a
+    // Term with headings carries upstream's table of contents *and* the generated index, and
+    // the list is a margin element while the index has taken the margin. Both facts are here
+    // rather than only the rule, because a rule that resolved a collision the build cannot
+    // actually produce would be a rule nobody could check.
+    assert.ok(term.select(".toc", term.tree), "the fixture Term emits no table of contents")
+    assert.ok(term.select(".prepper-generated-index", term.tree), "and no index either")
+
+    const gives = rules(css).filter(
+      (rule) => rule.selector === `${indexBody}>.toc` && /display:\s*none/.test(rule.body),
+    )
+    assert.equal(gives.length, 1, `${gives.length} rules stand the list down`)
+    assert.deepEqual(gives[0].media, [], "the list stands down at one width only")
+
+    // And a prose page keeps it: the rule is about the body, not about the component.
+    assert.equal(lesson.selectAll(`${indexBody}>.toc`, lesson.tree).length, 0)
+    assert.equal(term.selectAll(`${indexBody}>.toc`, term.tree).length, 1)
+  })
+
   test("body prose is serif, all the way down its fallbacks", () => {
     // A serif whose fallback stack is sans is a serif only while the webfont is arriving.
     const stack = css.match(/--prepper-prose:([^;}]+)/)?.[1]
@@ -250,50 +310,175 @@ describe("the reading surface", () => {
 })
 
 /**
- * The `grid-template-columns` the page's own grid resolves to out of the rules that apply.
+ * Prose keeps the measure, and a generated index does not — seam 1, over the one fixture that
+ * emits every page type at once.
  *
- * The last one wins, which is the cascade's rule for declarations of equal specificity, and
- * `.page>#quartz-body` exactly -- never `.page[data-frame=...]>#quartz-body`, because a page
- * that opted into the full-width or minimal frame asked for the whole window and gets it.
- */
-function grid(applies: Rule[]): string {
-  const declared = applies
-    .filter((rule) => rule.selector === ".page>#quartz-body")
-    .map((rule) => declaration(rule, "grid-template-columns"))
-    .filter((value): value is string => value !== undefined)
-
-  assert.ok(declared.length >= 1, "no grid applies")
-  return declared.at(-1) as string
-}
-
-/**
- * The width the grid is laid out in, read off the emitted stylesheet rather than assumed.
+ * The claim these tests make is a **composition of two halves**, and neither half is worth
+ * anything alone. The markup half asks the emitted page which of the layout's two body
+ * selectors it matches, by running them against it; the stylesheet half evaluates what those
+ * selectors declare at a given viewport width. Neither is a measurement: nothing in this repo
+ * lays a page out, and a `getBoundingClientRect` at seam 2 would be a number jsdom invented.
+ * What is computed is what a browser would compute out of the same two inputs.
  *
- * `.page` is centred and capped, so the grid gets the narrower of the window and that cap --
- * and the check that nothing pads `#quartz-body` at this width is part of the sum rather than
- * a nicety: upstream pads it by `1rem` on everything below the desktop breakpoint, and a
- * container computed without that padding would be wrong by 32px wherever it applied.
+ * The distinction under test is written against **what the page's body is** rather than
+ * against which page it is, so there is no assertion in here on a slug, a filename or a title.
+ * A Lesson holds the measure because it renders no index, not because it lives in `lessons/`;
+ * the day a third kind of generated index page arrives it will be wide without this file
+ * changing.
  */
-function container(applies: Rule[], width: number, properties: Record<string, string>): number {
-  const body = applies.filter((rule) => rule.selector === ".page>#quartz-body")
-  for (const rule of body) {
-    assert.equal(
-      declaration(rule, "padding"),
-      undefined,
-      `#quartz-body is padded at ${width}px, so the container is not the page's width`,
+describe("prose keeps the measure, and a generated index does not", () => {
+  let site: EmittedSite
+  let css: string
+
+  /** The four page types whose body is prose, and which therefore hold the measure. */
+  const prose = [
+    ["a Lesson", "lessons/array-indexing"],
+    ["a Reference", "references/hash-map-internals"],
+    ["a Cheat sheet", "cheat-sheets/hash-map-quick-reference"],
+    ["a Problem", "problems/two-sum"],
+  ] as const
+
+  before(
+    async () => {
+      site = await buildFixture("topic-index")
+      css = stylesheets(site, site.page("lessons/array-indexing"))
+    },
+    { timeout: 120_000 },
+  )
+
+  test("a Lesson, a Reference, a Cheat sheet and a Problem render no index at all", () => {
+    // The premise of every width assertion below: these four pages match the plain body
+    // selector and nothing else, so the wide grid cannot reach them.
+    assert.deepEqual(
+      prose.map(([, slug]) => bodySelectors(site.page(slug))),
+      prose.map(() => [body]),
     )
+  })
+
+  test("the home page and a Term page are both generated indexes", () => {
+    // The other side of the same premise, and the two shapes of it: the entry point *is* an
+    // index, and a Term page *carries* one under its own prose.
+    assert.deepEqual(bodySelectors(site.page("index")), [body, indexBody])
+    assert.deepEqual(bodySelectors(site.page("terms/hash-maps")), [body, indexBody])
+  })
+
+  for (const width of [1280, 1600, 1920]) {
+    test(`the four prose page types each hold 38rem at ${width}px`, () => {
+      const all = rules(css)
+      const properties = customProperties(all)
+      const applies = active(all, width)
+
+      assert.deepEqual(
+        prose.map(([, slug]) => {
+          const columns = tracks(grid(applies, bodySelectors(site.page(slug))))
+          return pixels(columns[1], {
+            container: container(applies, width, properties, [body, indexBody]),
+            properties,
+          })
+        }),
+        prose.map(() => 38 * 16),
+      )
+    })
+
+    test(`the home page's index fills the available width at ${width}px`, () => {
+      // "Wide" is not a second magic number: it is the prose track's own clamp with the
+      // measure taken out of it, so an index page takes everything the rail and the gaps
+      // leave. At 1920 that is the page's own cap rather than the window, which is why the
+      // container is read off the sheet rather than assumed to be the width.
+      const all = rules(css)
+      const properties = customProperties(all)
+      const applies = active(all, width)
+      const room = container(applies, width, properties, [body, indexBody])
+
+      const columns = tracks(grid(applies, bodySelectors(site.page("index"))))
+      const centre = pixels(columns[1], { container: room, properties })
+
+      assert.equal(centre, room - 320 - 10, `the index does not fill ${room}px: ${columns[1]}`)
+      assert.ok(centre > 38 * 16, `the index is no wider than the measure: ${centre}px`)
+    })
   }
 
-  const capped = applies
-    .filter((rule) => rule.selector === ".page")
-    .map((rule) => declaration(rule, "max-width"))
-    .filter((value): value is string => value !== undefined)
+  for (const width of [360, 900, 1280, 1600, 1920]) {
+    test(`nothing scrolls sideways on an index page at ${width}px`, () => {
+      // The acceptance criterion, at one width from each of the layout's three bands and at
+      // both ends of the desktop one. An index track is the only track in the app written to
+      // *take* the leftover rather than to be given it, so it is the only one that can
+      // overshoot -- and an entry page with a horizontal scrollbar is the first thing a
+      // reader of this app would see. The tracks are guaranteed exactly the container, gaps
+      // included, and the gap is read off the sheet rather than restated here.
+      const all = rules(css)
+      const properties = customProperties(all)
+      const applies = active(all, width)
+      const selectors = bodySelectors(site.page("index"))
+      const room = container(applies, width, properties, selectors)
 
-  assert.ok(capped.length >= 1, "the page declares no maximum width")
-  return Math.min(width, pixels(capped.at(-1) as string, { container: width, properties }))
-}
+      const columns = tracks(grid(applies, selectors))
+      const guaranteed = columns
+        .map((track) => pixels(floor(track), { container: room, properties }))
+        .reduce((a, b) => a + b)
 
-/** What a track is guaranteed to take: the first argument of a `minmax()`, or the track. */
-function floor(track: string): string {
-  return track.match(/^minmax\(([^,]+),/)?.[1] ?? track
-}
+      // `gap`, not `column-gap`: upstream writes the two separately and lightningcss folds
+      // them into the shorthand, whose first value is the *row* gap and whose second, when
+      // there is one, is the column gap.
+      const gaps = applies
+        .filter((rule) => selectors.includes(rule.selector))
+        .map((rule) => declaration(rule, "gap"))
+        .filter((value): value is string => value !== undefined)
+      assert.ok(gaps.length >= 1, `the grid declares no column gap at ${width}px`)
+      const declared = (gaps.at(-1) as string).split(/\s+/)
+      const gap = pixels(declared.at(-1) as string, { container: room, properties })
+
+      assert.equal(
+        guaranteed + gap * (columns.length - 1),
+        room,
+        `${columns.length} tracks over ${room}px at ${width}px: ${columns.join(" | ")}`,
+      )
+    })
+  }
+
+  test("a Term page is both: the prose is capped at the measure and the index is not", () => {
+    // The ticket's main hazard, and the only assertion in the file that reads a rule's
+    // selector back onto the page it applies to. A Term page's body is a sentence or two of
+    // definition followed by the generated index, and the two want different widths out of
+    // one column. So the width is given to the *column* and taken back from everything in it
+    // that is not the index -- which is checked here by selecting, from the emitted page, the
+    // elements each capping rule reaches.
+    const term = site.page("terms/hash-maps")
+    const capped = rules(css).filter(
+      (rule) => declaration(rule, "max-width") === "var(--prepper-measure)",
+    )
+    assert.equal(capped.length, 2, `${capped.length} rules cap the prose`)
+
+    const reached = capped.flatMap((rule) => term.selectAll(rule.selector, term.tree))
+    const index = term.require(".prepper-generated-index", term.tree)
+    const article = term.require(".center > article", term.tree)
+
+    assert.ok(reached.includes(article), "the Term's own prose is not held to the measure")
+    assert.ok(!reached.includes(index), "the Term's index is held to the measure")
+    assert.ok(
+      !reached.some((element) => element.children.includes(index)),
+      "a box holding the index is held to the measure, which holds the index to it too",
+    )
+
+    // And the prose is really there: a Term whose body were empty would satisfy the above
+    // vacuously, and a Term's own definition is half of what this page is.
+    assert.match(term.text(undefined, article), /A map from keys to values/)
+  })
+
+  test("no prose page is capped, because its column is the measure already", () => {
+    // The cap exists to undo the widening, so it must not reach a page that was never
+    // widened -- a second, weaker measure on a Lesson would be a rule nobody could reason
+    // about the day the first one changed.
+    const capped = rules(css).filter(
+      (rule) => declaration(rule, "max-width") === "var(--prepper-measure)",
+    )
+    for (const [name, slug] of prose) {
+      const page = site.page(slug)
+      assert.deepEqual(
+        capped.flatMap((rule) => page.selectAll(rule.selector, page.tree)),
+        [],
+        `${name} is capped by a rule meant for an index page`,
+      )
+    }
+  })
+})

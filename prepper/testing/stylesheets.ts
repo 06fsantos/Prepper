@@ -31,6 +31,22 @@
  * transparent because they wrap rules without conditioning them on a width; `@keyframes` and
  * `@font-face` are skipped whole because what is inside them is not a style rule.
  *
+ * ## What is here, in two layers
+ *
+ * `rules`, `active`, `holds`, `subjects`, `declaration` and `customProperties` read the sheet.
+ * `pixels`, `tracks`, `grid`, `container` and `floor` evaluate the page's own grid out of what
+ * they found -- which track list applies, in what width, and what each track is guaranteed.
+ * The second layer names two of Quartz's selectors (`.page` and, through its callers,
+ * `.page>#quartz-body`), because the arithmetic is arithmetic *about* that grid and pretending
+ * otherwise would push the same three lines into every caller.
+ *
+ * `grid` and `container` take the selectors the page's own `#quartz-body` matches rather than
+ * assuming one, because since ticket 07 there are two: every page matches `.page>#quartz-body`
+ * and a page whose body is a generated index also matches
+ * `.page>#quartz-body:has(.prepper-generated-index)`. Which of them a given page matches is a
+ * fact about markup, so the caller reads it off the emitted page -- by running the selector
+ * against it -- and hands it in.
+ *
  * This file has no tests of its own on purpose. It is read by `prepper/sidebar/sidebar.test.ts`
  * and `prepper/reading/reading.test.ts`, both of which assert facts that are false if the
  * scanner is wrong -- and both of which have been checked against a deliberately broken build
@@ -402,4 +418,82 @@ export function tracks(value: string): string[] {
   }
   if (current) out.push(current)
   return out
+}
+
+/**
+ * The `grid-template-columns` a page's own grid resolves to, out of the rules that apply.
+ *
+ * The last one wins, which is the cascade's rule for declarations of equal specificity --
+ * and a caller passes **every selector the page's `#quartz-body` matches**, in sheet order,
+ * because that is the part a stylesheet cannot answer on its own. `.page>#quartz-body` is on
+ * every page; `.page>#quartz-body:has(.prepper-generated-index)` is on a page whose body is a
+ * generated index, and it is more specific as well as later, so passing it says "and this one
+ * too" rather than "instead". `.page[data-frame=...]>#quartz-body` is never passed: a page
+ * that opted into the full-width or minimal frame asked for the whole window and gets it.
+ */
+export function grid(applies: Rule[], subjects: string[]): string {
+  const declared = applies
+    .filter((rule) => subjects.includes(rule.selector))
+    .map((rule) => declaration(rule, "grid-template-columns"))
+    .filter((value): value is string => value !== undefined)
+
+  if (declared.length === 0) throw new Error(`no grid applies to ${subjects.join(" or ")}`)
+  return declared.at(-1) as string
+}
+
+/**
+ * The width the grid's own tracks are laid out in, read off the emitted stylesheet rather
+ * than assumed.
+ *
+ * Two things narrow it and both are upstream's. `.page` is centred and **capped**, so the grid
+ * never gets more than that cap however wide the window is. And `#quartz-body` is **padded** by
+ * `1rem` on everything below the desktop breakpoint -- written `@media not (min-width: 1200px)`
+ * -- which is 32px the track list does not get and which a container computed without it would
+ * hand to the columns. Both are subtracted here rather than left to the caller, because a
+ * caller that forgot one would get a plausible number rather than a failure.
+ */
+export function container(
+  applies: Rule[],
+  width: number,
+  properties: Record<string, string>,
+  subjects: string[],
+): number {
+  const capped = applies
+    .filter((rule) => rule.selector === ".page")
+    .map((rule) => declaration(rule, "max-width"))
+    .filter((value): value is string => value !== undefined)
+
+  if (capped.length === 0) throw new Error("the page declares no maximum width")
+  const outer = Math.min(width, pixels(capped.at(-1) as string, { container: width, properties }))
+  return outer - 2 * padding(applies, subjects, outer, properties)
+}
+
+/**
+ * What one side of the grid is padded by: the horizontal half of the last `padding` shorthand
+ * that applies to it, or nothing.
+ *
+ * The shorthand's four forms are read the way CSS reads them -- one value is every side, two
+ * are vertical then horizontal, three are top, horizontal, bottom, and four run clockwise from
+ * the top -- so the horizontal one is the second of anything but a single value.
+ */
+function padding(
+  applies: Rule[],
+  subjects: string[],
+  outer: number,
+  properties: Record<string, string>,
+): number {
+  const declared = applies
+    .filter((rule) => subjects.includes(rule.selector))
+    .map((rule) => declaration(rule, "padding"))
+    .filter((value): value is string => value !== undefined)
+
+  const last = declared.at(-1)
+  if (last === undefined) return 0
+  const sides = last.split(/\s+/)
+  return pixels(sides.length === 1 ? sides[0] : sides[1], { container: outer, properties })
+}
+
+/** What a track is guaranteed to take: the first argument of a `minmax()`, or the track. */
+export function floor(track: string): string {
+  return track.match(/^minmax\(([^,]+),/)?.[1] ?? track
 }

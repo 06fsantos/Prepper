@@ -245,18 +245,28 @@ function Sidebar(topics: Topic[], sheets: GraphNode[], from: FullSlug): Componen
  * An empty topic still gets the heading and a line saying so, rather than nothing at all.
  * The reader has arrived at a topic that exists and is unwritten, and being told that is
  * more use than being shown a page that looks like it forgot to render.
+ *
+ * `prepper-generated-index` beside its own class is what tells the reading surface that this
+ * page's body is an index, so that the column is laid out wide -- and, because a Term page is
+ * **both**, that the note's own definition above is held to the measure while this section is
+ * not. `prepper/home` renders the same marker, and nothing in `prepper/reading` knows that
+ * either of them is a Term or an entry page. See `prepper/reading/components/index.ts`.
  */
 function TermIndex(topic: Topic, from: FullSlug): ComponentChild {
-  return h("section", { class: "prepper-topic-index", "data-topic": topic.term.slug }, [
-    h("h2", { class: "prepper-topic-index-heading" }, "In this topic"),
-    topic.groups.length > 0
-      ? h("ul", { class: "prepper-topic-groups" }, groups(topic, from))
-      : h(
-          "p",
-          { class: "prepper-topic-index-empty" },
-          "Nothing has been written under this topic yet.",
-        ),
-  ])
+  return h(
+    "section",
+    { class: "prepper-topic-index prepper-generated-index", "data-topic": topic.term.slug },
+    [
+      h("h2", { class: "prepper-topic-index-heading" }, "In this topic"),
+      topic.groups.length > 0
+        ? h("ul", { class: "prepper-topic-groups" }, groups(topic, from))
+        : h(
+            "p",
+            { class: "prepper-topic-index-empty" },
+            "Nothing has been written under this topic yet.",
+          ),
+    ],
+  )
 }
 
 const PrepperTopics: QuartzComponentConstructor<Options> = (opts) => {

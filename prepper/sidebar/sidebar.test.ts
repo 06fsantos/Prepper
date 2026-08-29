@@ -258,6 +258,19 @@ describe("the hideable left rail", () => {
     )
     assert.equal(grids.length, 3, "one band each: wide, medium, narrow")
     assert.ok(grids.every((rule) => !conditional(rule)))
+
+    // Three more for a page whose body is a generated index, in the same three bands and
+    // from the same module -- the width a prose page spends on margin, spent on the index
+    // instead. They are counted here for the same reason as the three above: what this test
+    // is guarding is that no second module, and above all not this one, starts declaring the
+    // page's grid. None of them is conditioned on the rail either, which is what keeps the
+    // article still on an index page as well as on a prose one.
+    const indexes = rules(css).filter(
+      (rule) =>
+        /grid-template-columns/.test(rule.body) && /prepper-generated-index/.test(rule.selector),
+    )
+    assert.equal(indexes.length, 3, "one band each, for the index too")
+    assert.ok(indexes.every((rule) => !conditional(rule)))
   })
 
   test("the collapse is not what retired the right rail", () => {

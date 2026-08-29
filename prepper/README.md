@@ -61,8 +61,8 @@ prepper/
     topics.test.ts          one index, three renderings, through seam 1
   reading/                  the reading surface: the measure, the serif, the chips
     index.ts                the component manifest; one config entry, at `beforeBody`
-    components/index.ts     the topic chips, the grid, and the page styles on them
-    reading.test.ts         the chips, the absent chrome, the measure, through seam 1
+    components/index.ts     the chips, the grid, the measure, and where it gives way
+    reading.test.ts         the chips, the measure, and the wide index, through seam 1
   tokens/                   the chrome's design tokens: Material 3, from one seed
     tokens.ts               the roles, derived; and Quartz's nine, aliased onto them
     index.ts                the component manifest; one config entry, at `beforeBody`
@@ -213,6 +213,16 @@ stylesheet instead: the rules a page links, in link order, with the media condit
 inside, the rules that apply at a width, and a length expression evaluated to pixels with its
 custom properties resolved. That is an **evaluation of the declaration**, not a measurement,
 and every caller says so where it makes its claim.
+
+Since ticket 07 it also evaluates the page's own grid — `grid`, `container` and `floor`,
+lifted out of `reading/reading.test.ts` when a second kind of page started needing them. They
+take the selectors the page's `#quartz-body` matches rather than assuming one, because there
+are now two: every page matches `.page>#quartz-body`, and a page whose body is a generated
+index also matches `.page>#quartz-body:has(.prepper-generated-index)`. Which of them a page
+matches is a fact about markup, so the caller **runs the selector against the emitted page**
+and hands in the answer. That composition — the markup says which rules reach this page, the
+stylesheet says what they declare — is what "a Lesson holds 38rem and the home page does not"
+is asserted with.
 
 The exception is [`testing/mechanisms.test.ts`](testing/mechanisms.test.ts), which asserts
 on Quartz's behaviour rather than on ours, on purpose: it pins the three mechanisms

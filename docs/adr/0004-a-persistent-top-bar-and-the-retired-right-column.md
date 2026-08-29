@@ -156,6 +156,30 @@ prose body keeps the measure and spends reclaimed width on margin; a topic-index
 and multi-column and spends it on columns. A Term page is both at once -- thin prose above its
 generated index -- and the boundary runs between them on the page.
 
+**How that is written, given CSS can only see markup.** The two index views render themselves
+with one class, `prepper-generated-index`, and the reading surface asks `:has()` whether the
+page holds one. Nothing in the layout names a slug, a filename, a page title or a page type, so
+the next generated index page is laid out correctly by rendering that class rather than by
+being added to a list -- which is the difference between a rule and a special case. The wide
+page takes the whole of the grid's second track (`calc(100% - var(--prepper-sidebar) - 10px)`,
+the prose track's own clamp with the measure taken out of it), so "wide" introduces no third
+number, and the track list still sums to exactly the container.
+
+The Term page's two halves are separated by giving the width to the **column** and taking it
+back from everything in the column that is not the index. The alternative -- letting only the
+index break out of a measured column -- would have required restating the grid's arithmetic a
+second time to know how much margin there was to break into, and it would have been wrong the
+first time the grid changed.
+
+**The table of contents stands down on an index page.** This is the one collision the change
+creates: a Term page with headings has both, and the list is a margin element while the index
+has taken the margin. Squeezing both was rejected -- a 16rem sticky list in what a full-width
+index leaves is a column of wrapped single words beside a truncated index -- so the collision
+is settled by deciding which of the two is that page's navigation. On a page whose body is an
+index it is the index; a Term's headings are a sentence or two of definition. The home page
+never had one (no headings, so upstream's component renders nothing), so only the Term case
+was ever real.
+
 ## Consequences
 
 - **Motion tokens now exist, and ADR 0003 is amended.** The rail's collapse is eased, which

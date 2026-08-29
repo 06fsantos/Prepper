@@ -134,7 +134,9 @@ plugins:
   #
   # Priority 10 puts it before the page footer (50) in document order. Below 1200px it is not
   # rendered at all, which is what it already did: upstream hid it in the rail down there, and
-  # a margin note wants a margin. See `prepper/reading/components/index.ts`.
+  # a margin note wants a margin. Nor is it rendered on a page whose body is a generated index
+  # -- the index has taken the margin, and on such a page the index *is* the navigation the
+  # list would have been. See `prepper/reading/components/index.ts`.
   - source: "@quartz-community/table-of-contents"
     enabled: true
     order: 50
@@ -477,7 +479,9 @@ plugins:
   # used to render at a breakpoint of its own is retired. The Term
   # page's index sits at the top of `afterBody`, which puts it below the note's own body --
   # so a Term with no Lessons reads as an area overview followed by its index, and the
-  # typed-edge rails follow both.
+  # typed-edge rails follow both. That view renders `prepper-generated-index` on its section,
+  # which is what tells `./prepper/reading` to lay the column out wide while holding the note's
+  # own prose above it to the measure: a Term page is both halves at once.
   - source:
       repo: "./prepper/topics"
       name: topics-sidebar
@@ -593,7 +597,9 @@ plugins:
   # Prepper: ours. The app's entry point: a generated `index.html` holding the same topic
   # index the sidebar renders. A **pageType** rather than an emitter, so the page comes out
   # through Quartz's own layout instead of through a copy of it -- and it yields to a
-  # written `content/index.md` if one ever exists. See `prepper/home/index.ts`.
+  # written `content/index.md` if one ever exists. Its body renders
+  # `prepper-generated-index`, which is what lays the page out wide rather than at the prose
+  # measure -- the layout knows this page only by that class. See `prepper/home/index.ts`.
   - source: "./prepper/home"
     enabled: true
   # Prepper: ours. The link graph, computed once over the whole corpus and written to

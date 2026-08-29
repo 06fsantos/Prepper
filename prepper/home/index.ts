@@ -33,6 +33,15 @@
  * entry page is a third view of it -- if it built its own markup, the day the grouping rule
  * changed would be the day the home page and the sidebar started disagreeing about what is
  * filed where.
+ *
+ * ## Why the body says it is an index
+ *
+ * `prepper-generated-index` on the wrapper is how this page is **laid out wide**: the reading
+ * surface holds the ~38rem measure on a page whose body is prose and gives the whole column to
+ * a page whose body is an index, and it decides which by asking `:has()` whether the page
+ * contains one of these. The class is the marker, not the module -- nothing in
+ * `prepper/reading` names this page, this slug or this page type, so the next generated index
+ * page is laid out correctly by rendering the same class. See `prepper/reading/components`.
  */
 import { h } from "preact"
 
@@ -70,7 +79,7 @@ const homeSlug = "index" as FullSlug
 const HomeBody: QuartzComponentConstructor = () => {
   const Home: QuartzComponent = ({ fileData, allFiles }: QuartzComponentProps) => {
     const slug = fileData.slug ?? homeSlug
-    return h("div", { class: "prepper-home popover-hint" }, [
+    return h("div", { class: "prepper-home prepper-generated-index popover-hint" }, [
       TopicTree(topicIndex(graphOf(allFiles)), slug),
     ])
   }

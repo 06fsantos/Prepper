@@ -185,7 +185,12 @@ anything.
   cluster is *the reading surface*: the chips under the title (two of them, in the order
   `topic` wrote them, labelled by each Term's own `title`), the Term that has no `topic` of
   its own and therefore no chips at all, and the ordinary blockquote that carries an aside
-  because Obsidian Markdown has no notation for a margin note. It is deliberately smaller
+  because Obsidian Markdown has no notation for a margin note. `terms/hash-maps` carries a
+  paragraph of definition and **two** H2s, which is the one page in the app that has a table
+  of contents and a generated index at once — the collision the layout settles by standing the
+  list down. Two headings rather than one because upstream renders a table of contents only for
+  a note with more than `minEntries` (1) of them, so a single heading would have made the
+  collision untestable while looking as though it had been tested. It is deliberately smaller
   than `topic-index/`, which is about the same field read the other way round: this one
   never asks what is filed under a topic, only what a note says it is about.
 

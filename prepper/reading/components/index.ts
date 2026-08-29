@@ -111,7 +111,42 @@ const PrepperReading: QuartzComponentConstructor = () => {
  *
  * What the reclaimed width becomes on a prose page is **margin on both sides** -- the two
  * flexible tracks split it, so the prose is centred in the window instead of pushed off it.
- * A page whose body is an index wants that width as columns instead, and that is ticket 07's.
+ *
+ * ## Prose keeps the measure, and a generated index does not
+ *
+ * A page whose body is a **generated index** -- the app's entry point, and the index under a
+ * Term's own definition -- wants that reclaimed width as *content*. A topic index is a list
+ * scanned in two dimensions, and 38rem of it in a 1500px window is the complaint this whole
+ * effort started from. So such a page takes the whole of the second track:
+ * `calc(100% - var(--prepper-sidebar) - 10px)`, which is the prose track's own clamp with the
+ * measure taken out of it. A prose page takes the smaller of the measure and what is
+ * available; an index page takes what is available. There is no third number.
+ *
+ * **The rule is keyed off what the page's body is, never off which page it is.** The two index
+ * views render themselves with `prepper-generated-index`, and the layout asks `:has()` whether
+ * the page contains one. No slug, no filename, no page title and no page type is named
+ * anywhere in this stylesheet, which is what makes the next generated index page inherit the
+ * layout by rendering that class rather than by being added to a list here.
+ *
+ * Three things follow, and each is a rule of its own.
+ *
+ * *It is declared in **every** band.* `:has()` makes the index selector more specific than the
+ * plain one, so the wide band's rule would otherwise beat the tablet and phone bands at widths
+ * they own. The tablet band is the two-track grid without its `min()`; the phone band is one
+ * track of `100%`.
+ *
+ * *The prose on that page keeps the measure anyway*, which is the ticket's real hazard. **A
+ * Term page is both**: a sentence or two of definition, or an area overview where the topic has
+ * no Lessons, and then the generated index under it. The width is given to the column and taken
+ * back from everything in the column that is not the index -- the two `max-width` rules, which
+ * name the two depths the index views sit at (a direct child of `.center` on the home page,
+ * inside `.page-footer` on a Term). What is left uncapped is the index and its ancestors, so
+ * the definition above and the index below share a left edge and differ in width, which is the
+ * relationship they are actually in.
+ *
+ * *The track list still sums to exactly the container*, gaps included, so a wide index cannot
+ * put a horizontal scrollbar under the app's own entry page -- and the rail's track is the one
+ * it always was, so `prepper/sidebar`'s collapse still moves nothing on an index page either.
  *
  * ## The table of contents floats in the margin
  *
@@ -135,6 +170,15 @@ const PrepperReading: QuartzComponentConstructor = () => {
  * Below 1200px it is not rendered, which is exactly what it did before: upstream hid it in the
  * rail at that width. Where there is no margin there is no room for a margin note, and a table
  * of contents stacked under the article is a list of places the reader has already been.
+ *
+ * And it is not rendered on an **index page** at any width, which is the one collision the two
+ * halves of this stylesheet have with each other. A Term page with headings carries a table of
+ * contents *and* a generated index; the list is a margin element and the index has taken the
+ * margin. Both cannot have the leftover space, and the alternative -- letting the index run
+ * under a 16rem sticky list and squeezing both -- would leave a column of wrapped single words
+ * beside a truncated index. So the collision is settled by deciding which of the two is that
+ * page's navigation. On a page whose body is an index, it is the index: a Term's headings are
+ * a sentence or two of definition, and the list the reader came for is the one below them.
  *
  * ## The serif
  *
@@ -213,6 +257,43 @@ const styles = `
     justify-content: center;
   }
 }
+/* A page whose body is a generated index takes the width the margins were holding, in
+   every band, because the selector outranks the band rules above whatever their order.
+   The centre track is the prose track's clamp with the measure taken out of it: a prose
+   page takes the smaller of the measure and what is available, and an index page takes
+   what is available. The track list still sums to exactly 100%, so nothing scrolls
+   sideways, and the rail's track is the one it always was -- the collapse still moves
+   nothing. */
+.page > #quartz-body:has(.prepper-generated-index) {
+  grid-template-columns:
+    minmax(var(--prepper-sidebar), 1fr)
+    calc(100% - var(--prepper-sidebar) - 10px)
+    minmax(0, 1fr);
+}
+@media all and (min-width: 800px) and (max-width: 1200px) {
+  .page > #quartz-body:has(.prepper-generated-index) {
+    grid-template-columns:
+      minmax(var(--prepper-sidebar), 1fr)
+      calc(100% - var(--prepper-sidebar) - 5px);
+  }
+}
+@media all and (max-width: 800px) {
+  .page > #quartz-body:has(.prepper-generated-index) {
+    grid-template-columns: 100%;
+  }
+}
+/* ...and the prose on that page keeps the measure anyway, so that widening the track
+   widens the index and nothing else. Two selectors, because the two index views sit at
+   two depths: the home page's is a direct child of the column and a Term's is inside the
+   page footer, under the note's own body. Everything in the column that is neither an
+   index nor a box holding one is capped, and so is everything standing beside an index in
+   that box -- which on a Term page is the typed-edge rails. What is left uncapped is the
+   index and its ancestors, which is exactly the chain that has to reach the track's full
+   width for the widening to mean anything. */
+.page > #quartz-body:has(.prepper-generated-index) > .center > *:not(.prepper-generated-index, :has(.prepper-generated-index)),
+.page > #quartz-body:has(.prepper-generated-index) > .center > .page-footer > *:not(.prepper-generated-index) {
+  max-width: var(--prepper-measure);
+}
 @media all and (min-width: 1200px) {
   .page > #quartz-body > .toc {
     grid-area: grid-sidebar-right;
@@ -231,6 +312,16 @@ const styles = `
   .page > #quartz-body > .toc {
     display: none;
   }
+}
+/* And it is not rendered on an index page at any width. A table of contents is a margin
+   note, and on a page whose body is an index there is no margin left to put one in: the
+   index has taken it. The two could not both be given the leftover space, and the answer
+   is not to squeeze a 16rem list into what a full-width index leaves -- a Term's headings
+   are a sentence or two of definition, while the list the reader of an index page came for
+   is the index itself. So the collision is resolved by deciding which of the two is the
+   page's navigation, rather than by making both of them narrow. */
+.page > #quartz-body:has(.prepper-generated-index) > .toc {
+  display: none;
 }
 .page > #quartz-body .center article {
   font-family: var(--prepper-prose);
