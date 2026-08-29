@@ -13,7 +13,9 @@
  *   in Quartz's theme variables so that it lands here. It is also the **only** module that
  *   declares this grid: `prepper/sidebar` hides the left rail with `display: none` and
  *   re-declares no track, which is what makes the prose column stay exactly where it is when
- *   the rail goes away.
+ *   the rail goes away. And since there is no right column, the grid is what places the one
+ *   thing left over from it -- upstream's table of contents, as a sticky element in the margin
+ *   rather than the top of a 320px track.
  *
  * ## Why the page styles ride on a component
  *

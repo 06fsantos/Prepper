@@ -22,6 +22,16 @@ import test, { describe, before } from "node:test"
 import assert from "node:assert"
 
 import { buildFixture, classesOf, type EmittedSite, type Page } from "../testing/build-fixture.ts"
+import {
+  active,
+  customProperties,
+  declaration,
+  pixels,
+  rules,
+  stylesheets,
+  tracks,
+  type Rule,
+} from "../testing/stylesheets.ts"
 
 /** Every chip on a page, as `[label, href]`, in rendered order. */
 function chips(page: Page): [label: string, href: string | undefined][] {
@@ -46,10 +56,7 @@ describe("the reading surface", () => {
       site = await buildFixture("reading-surface")
       lesson = site.page("lessons/hash-map-lookup-cost")
       term = site.page("terms/hash-maps")
-      css = site.files
-        .filter((file) => file.endsWith(".css"))
-        .map((file) => site.file(file))
-        .join("\n")
+      css = stylesheets(site, lesson)
     },
     { timeout: 120_000 },
   )
@@ -129,6 +136,97 @@ describe("the reading surface", () => {
     )
   })
 
+  for (const width of [1280, 1600, 1920]) {
+    test(`the prose column comes out at 38rem at ${width}px`, () => {
+      // The ticket's own criterion, and the constraint the right column was retired under.
+      //
+      // **This is an evaluation, not a measurement.** Nothing in this repo lays a page out:
+      // seam 1 emits files and seam 2 is jsdom, which has no viewport and no box tree. What is
+      // computed here is what a browser would compute -- the track list that applies at this
+      // width, with its custom properties resolved and its `min()` and `calc()` worked out
+      // against the width the page's own `max-width` leaves the grid. It fails if the track
+      // list changes shape, if `--prepper-measure` or `--prepper-sidebar` is redefined, or if
+      // a second rule starts declaring the grid at one of these widths. It would not catch a
+      // browser disagreeing with the specification, and nothing in this repo could.
+      const all = rules(css)
+      const properties = customProperties(all)
+      const applies = active(all, width)
+      const columns = tracks(grid(applies))
+
+      assert.equal(
+        columns.length,
+        3,
+        `the wide band declares ${columns.length} tracks: ${columns.join(" | ")}`,
+      )
+      assert.equal(
+        pixels(columns[1], { container: container(applies, width, properties), properties }),
+        38 * 16,
+        `the prose column is not 38rem at ${width}px: ${columns[1]}`,
+      )
+    })
+  }
+
+  test("the reclaimed width is margin, not a narrower column", () => {
+    // The right column is gone rather than resized. Said as arithmetic on the wide band's
+    // track list: the prose track is the measure, and the two tracks either side of it are
+    // **flexible with nothing guaranteed to them but the rail's own floor**. Where a fixed
+    // 320px column used to stand there is now a track that takes zero when there is nothing
+    // spare and everything left over when there is -- which on a prose page is margin, on both
+    // sides. Ticket 07 is where a page whose body is an index spends it on something else.
+    const all = rules(css)
+    const properties = customProperties(all)
+    const columns = tracks(grid(active(all, 1920)))
+
+    assert.equal(columns.length, 3, `the wide band declares ${columns.length} tracks`)
+    assert.ok(
+      columns[0].includes("1fr") && columns[2].includes("1fr"),
+      `the margins are not flexible: ${columns.join(" | ")}`,
+    )
+    assert.deepEqual(
+      [columns[0], columns[2]].map((track) => pixels(floor(track), { container: 0, properties })),
+      [320, 0],
+      `the margins are not free: ${columns.join(" | ")}`,
+    )
+  })
+
+  test("nothing is laid out in the right rail, because there is no right rail", () => {
+    // Quartz's frame renders the box whatever we put in the position, so the retirement is a
+    // `display` as well as an empty `right` array in the config. It is unconditional and it is
+    // this module's: `prepper/sidebar/sidebar.test.ts` asserts from the other side that the
+    // rail's collapse cannot bring it back.
+    const hides = rules(css).filter(
+      (rule) => rule.selector.includes(".right.sidebar") && /display:\s*none/.test(rule.body),
+    )
+    assert.equal(hides.length, 1, `${hides.length} rules retire the right rail`)
+    assert.deepEqual(hides[0].media, [], "the right rail is retired at one width only")
+  })
+
+  test("the table of contents is a sticky margin element, offset by the bar's own token", () => {
+    // It is a direct child of the grid rather than the top of a column -- see
+    // `quartz.config.yaml` for why that means the `footer` position -- and it sticks under the
+    // fixed top bar. `top: 0` would stick it *behind* the bar, and a literal would be a second
+    // copy of a height `prepper/topbar` publishes once.
+    const all = rules(css)
+    const toc = all.filter((rule) => rule.selector === ".page>#quartz-body>.toc")
+    assert.equal(toc.length, 2, `${toc.length} rules place the table of contents`)
+
+    const placed = toc.find((rule) => declaration(rule, "position") === "sticky")
+    assert.ok(placed, "the table of contents is not sticky at any width")
+    assert.match(declaration(placed, "top") ?? "", /var\(--prepper-topbar-height\)/)
+    assert.equal(declaration(placed, "grid-area"), "grid-sidebar-right")
+    assert.ok(
+      active([placed], 1280).length === 1 && active([placed], 1199).length === 0,
+      "the table of contents is placed at a width where there is no margin to place it in",
+    )
+
+    // And below the desktop breakpoint it is not rendered, which is what upstream already did
+    // with it inside the rail. Where there is no margin there is no margin note.
+    const hidden = toc.find((rule) => /display:\s*none/.test(rule.body))
+    assert.ok(hidden, "the table of contents is never hidden")
+    assert.equal(active([hidden], 1280).length, 0)
+    assert.equal(active([hidden], 800).length, 1)
+  })
+
   test("body prose is serif, all the way down its fallbacks", () => {
     // A serif whose fallback stack is sans is a serif only while the webfont is arriving.
     const stack = css.match(/--prepper-prose:([^;}]+)/)?.[1]
@@ -150,3 +248,52 @@ describe("the reading surface", () => {
     assert.match(aside, /max-width:100%/)
   })
 })
+
+/**
+ * The `grid-template-columns` the page's own grid resolves to out of the rules that apply.
+ *
+ * The last one wins, which is the cascade's rule for declarations of equal specificity, and
+ * `.page>#quartz-body` exactly -- never `.page[data-frame=...]>#quartz-body`, because a page
+ * that opted into the full-width or minimal frame asked for the whole window and gets it.
+ */
+function grid(applies: Rule[]): string {
+  const declared = applies
+    .filter((rule) => rule.selector === ".page>#quartz-body")
+    .map((rule) => declaration(rule, "grid-template-columns"))
+    .filter((value): value is string => value !== undefined)
+
+  assert.ok(declared.length >= 1, "no grid applies")
+  return declared.at(-1) as string
+}
+
+/**
+ * The width the grid is laid out in, read off the emitted stylesheet rather than assumed.
+ *
+ * `.page` is centred and capped, so the grid gets the narrower of the window and that cap --
+ * and the check that nothing pads `#quartz-body` at this width is part of the sum rather than
+ * a nicety: upstream pads it by `1rem` on everything below the desktop breakpoint, and a
+ * container computed without that padding would be wrong by 32px wherever it applied.
+ */
+function container(applies: Rule[], width: number, properties: Record<string, string>): number {
+  const body = applies.filter((rule) => rule.selector === ".page>#quartz-body")
+  for (const rule of body) {
+    assert.equal(
+      declaration(rule, "padding"),
+      undefined,
+      `#quartz-body is padded at ${width}px, so the container is not the page's width`,
+    )
+  }
+
+  const capped = applies
+    .filter((rule) => rule.selector === ".page")
+    .map((rule) => declaration(rule, "max-width"))
+    .filter((value): value is string => value !== undefined)
+
+  assert.ok(capped.length >= 1, "the page declares no maximum width")
+  return Math.min(width, pixels(capped.at(-1) as string, { container: width, properties }))
+}
+
+/** What a track is guaranteed to take: the first argument of a `minmax()`, or the track. */
+function floor(track: string): string {
+  return track.match(/^minmax\(([^,]+),/)?.[1] ?? track
+}

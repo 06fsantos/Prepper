@@ -15,10 +15,10 @@ import { buildFixture, classesOf, type EmittedSite, type Page } from "../testing
 /**
  * The rail with this heading, as `[label, href]` pairs. A placeholder has no href.
  *
- * The default scope is the page's own column, which is where a **typed** edge renders --
- * in context, beside what the reader came for. The backlinks panel is chrome and lives in
- * the sidebar, so a test about it passes `page.tree`. That the two need different scopes
- * is the arrangement, not an accident of it.
+ * The scope is the page's own column, and since ticket 06 that is where **every** rail is:
+ * the typed ones in context, beside what the reader came for, and the untyped bucket at the
+ * foot of the article with them. It used to be a panel in the right column and needed a scope
+ * of its own; the column is retired and the distinction went with it.
  */
 function rail(
   page: Page,
@@ -88,7 +88,15 @@ describe("typed edges, rendered in context", () => {
     // Where a link sits is part of what it means: a prerequisite is wanted before the
     // reader starts, and what a Lesson unlocks is only interesting once they have
     // finished. Both are in the page's own column; neither is inside the note.
-    assert.deepEqual(railHeadings(lesson), ["Read first", "Practised by", "This unlocks"])
+    // And the foot of the article reads in one order: what this note practises, what it
+    // unlocks, and last the untyped leftovers that merely point at it. Backlinks used to be a
+    // panel in the right column and joined the others here when that column was retired.
+    assert.deepEqual(railHeadings(lesson), [
+      "Read first",
+      "Practised by",
+      "This unlocks",
+      "Backlinks",
+    ])
     assert.equal(
       lesson.selectAll(".prepper-rail", lesson.body).length,
       0,
@@ -157,7 +165,7 @@ describe("the backlinks panel", () => {
     // sorted by code point, "Éviction policies" and "open addressing" would both land
     // after every title starting with an ASCII capital -- past "Hash map internals", at
     // the bottom of a panel a reader is scanning for the letter É.
-    assert.deepEqual(rail(lesson, "Backlinks", lesson.tree), [
+    assert.deepEqual(rail(lesson, "Backlinks"), [
       ["Complexity", "../terms/complexity"],
       ["Éviction policies", "../terms/eviction"],
       ["Hash map internals", "../references/hash-map-internals"],
@@ -169,7 +177,7 @@ describe("the backlinks panel", () => {
     // `hash-map-internals` wrote `[[hash-map-lookup-cost|why lookups are cheap]]`. That
     // alias was fitted to the sentence it sat in and says nothing outside it, so the panel
     // never shows it.
-    const panel = lesson.require(".prepper-edges-backlinks", lesson.tree)
+    const panel = lesson.require(".prepper-edges-backlinks")
     assert.ok(
       !lesson.text(undefined, panel).includes("why lookups are cheap"),
       `the alias reached the panel: ${lesson.text(undefined, panel)}`,
@@ -180,7 +188,7 @@ describe("the backlinks panel", () => {
     // `load-factor-tuning` names this Lesson in `prerequisites` and `two-sum` in
     // `practices`. Both are already stated in context, on this very page; listing them
     // again here would make the panel a second, worse copy of the rails above it.
-    const labels = rail(lesson, "Backlinks", lesson.tree).map(([label]) => label)
+    const labels = rail(lesson, "Backlinks").map(([label]) => label)
     for (const typed of ["Tuning the load factor", "Two sum", "LRU cache"]) {
       assert.ok(!labels.includes(typed), `${typed} is a typed edge and is in the panel`)
     }
@@ -190,10 +198,23 @@ describe("the backlinks panel", () => {
     // The research note links this Lesson in its prose. It is in the vault and the reader
     // never sees it, so it is not a node -- and a note that is not a node cannot put its
     // title on somebody else's page.
-    const labels = rail(lesson, "Backlinks", lesson.tree).map(([label]) => label)
+    const labels = rail(lesson, "Backlinks").map(([label]) => label)
     assert.ok(
       !labels.some((label) => label.includes("Why hash maps were chosen")),
       `a Workshop note is in the panel: ${labels.join(", ")}`,
+    )
+  })
+
+  test("the panel is at the foot of the article, and in no rail", () => {
+    // Where it went when the right column was retired: `afterBody`, which renders inside the
+    // page's own `.page-footer` -- below the note, after "This unlocks", among the rails it
+    // was always the leftover of. `prepper/edges` had argued for years that a typed edge
+    // belongs in context and backlinks are what is left; the panel is now filed accordingly.
+    assert.equal(lesson.selectAll(".page-footer .prepper-edges-backlinks").length, 1)
+    assert.deepEqual(lesson.selectAll(".sidebar .prepper-edges-backlinks", lesson.tree), [])
+    assert.ok(
+      lesson.html.indexOf("prepper-edges-backlinks") > lesson.html.indexOf("<article"),
+      "the panel is above the note it collects links to",
     )
   })
 
@@ -201,7 +222,7 @@ describe("the backlinks panel", () => {
     // An empty panel is chrome stating nothing. `array-indexing` is named by one
     // `prerequisites` field and by no prose anywhere.
     const orphan = site.page("lessons/array-indexing")
-    assert.equal(orphan.select(".prepper-edges-backlinks", orphan.tree), undefined)
+    assert.equal(orphan.select(".prepper-edges-backlinks"), undefined)
     assert.deepEqual(railHeadings(orphan), ["This unlocks"])
   })
 

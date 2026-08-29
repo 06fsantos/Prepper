@@ -123,12 +123,24 @@ plugins:
   - source: "@quartz-community/github-flavored-markdown"
     enabled: true
     order: 40
+  # Prepper: the right column is retired, and this is where its one survivor went. `footer` is
+  # not a place on the page here -- it is the only one of Quartz's six layout positions whose
+  # components are rendered as **direct children of the grid** (`DefaultFrame.tsx` puts `left`,
+  # `right` and `footer` beside `.center`, and everything else inside it). That is what lets
+  # `prepper/reading` place the list in the grid's third track, which is now leftover margin
+  # rather than a 320px column, as one sticky element bounded by `--prepper-toc`. The other
+  # candidate, `beforeBody`, sits inside the `.popover-hint` the search preview clones, which
+  # would put a table of contents in every search result.
+  #
+  # Priority 10 puts it before the page footer (50) in document order. Below 1200px it is not
+  # rendered at all, which is what it already did: upstream hid it in the rail down there, and
+  # a margin note wants a margin. See `prepper/reading/components/index.ts`.
   - source: "@quartz-community/table-of-contents"
     enabled: true
     order: 50
     layout:
-      position: right
-      priority: 30
+      position: footer
+      priority: 10
   - source: "@quartz-community/crawl-links"
     enabled: true
     options:
@@ -284,9 +296,6 @@ plugins:
   # that repeated them would be a second, worse copy of what the page already shows.
   - source: "@quartz-community/backlinks"
     enabled: false
-    layout:
-      position: right
-      priority: 50
   - source: "@quartz-community/article-title"
     enabled: true
     layout:
@@ -416,8 +425,10 @@ plugins:
   # and exits on.
   #
   # Priorities put "Read first" below the title and the meta line (10, 20) and above the
-  # note, and the two afterBody rails in reading order: what this note practises, then what
-  # it unlocks.
+  # note, and the three afterBody rails in reading order: what this note practises, what it
+  # unlocks, and then what else happens to point at it. Backlinks used to be a panel in the
+  # right column; that column is retired, and the foot of the article is where every other
+  # rail already was. It is the leftover, untyped bucket, so it reads last.
   - source:
       repo: "./prepper/edges"
       name: edges-read-first
@@ -452,8 +463,8 @@ plugins:
     options:
       section: backlinks
     layout:
-      position: right
-      priority: 50
+      position: afterBody
+      priority: 30
   # Prepper: ours, twice over. The generated topic index -- `topic` inverted on the Term
   # note -- has two placements, so the plugin is listed once per placement and told which
   # view it is by `options.view`. Same arrangement as `./prepper/edges` above, and the same
@@ -653,18 +664,16 @@ layout:
       positions:
         beforeBody: []
         left: []
-        right: []
         afterBody: []
     content: {}
+    # Prepper: these two used to clear `right` as well. There is no `right` to clear -- the
+    # column is retired and nothing is configured into the position at all -- so the clears
+    # were config describing a layout the build no longer has.
     folder:
       exclude:
         - reader-mode
-      positions:
-        right: []
     tag:
       exclude:
         - reader-mode
-      positions:
-        right: []
     canvas: {}
     bases: {}

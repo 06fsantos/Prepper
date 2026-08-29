@@ -86,6 +86,15 @@ The failure is almost always one of two things, and they are worth telling apart
   [`prepper/testing/layout.test.ts`](../prepper/testing/layout.test.ts) is the tripwire: it
   counts the graph panel on a page of every type, and
   [`prepper/README.md`](../prepper/README.md) says what to do about a collision.
+- **The frame's own shape changed.** Two facts about
+  `quartz/components/frames/DefaultFrame.tsx` and `quartz/styles/variables.scss` are
+  load-bearing since the right column was retired: components in the `footer` layout position
+  are rendered as **direct children of `#quartz-body`** rather than inside `.center`, which is
+  the only reason the table of contents can be a grid item in the margin; and the desktop grid
+  names its third area `grid-sidebar-right`, which is the area that list is placed in.
+  `prepper/reading/reading.test.ts` and `prepper/testing/layout.test.ts` assert both, and a
+  merge that renames the area or reparents the position fails them rather than silently putting
+  the list back in the flow.
 
 ## What is deliberately not done
 

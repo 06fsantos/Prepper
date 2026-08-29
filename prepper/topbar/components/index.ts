@@ -44,8 +44,9 @@ function script(name: string): string {
  * ## The offset is one number, written once
  *
  * `--prepper-topbar-height` is declared in `:root` and then referred to by everything that
- * has to begin below the bar: the page's own top padding, the sticky rails' `top` and the
- * height they are allowed, and the scroll padding an in-page anchor lands against. A literal
+ * has to begin below the bar: the page's own top padding, the sticky rail's `top` and the height
+ * it is allowed, the table of contents in the margin, and the scroll padding an in-page anchor
+ * lands against. A literal
  * anywhere else would be a second copy of the bar's height, free to disagree with it, and
  * `prepper/testing/layout.test.ts` asserts that the value appears exactly once in the emitted
  * stylesheet.
@@ -55,14 +56,16 @@ function script(name: string): string {
  * scroll to it; without the padding it would scroll that heading to y=0, which is underneath
  * a bar that is nailed there.
  *
- * ## Why the rails are moved and not just the page
+ * ## Why the rail is moved and not just the page
  *
  * Padding the body starts the *document* below the bar, but a sticky rail with `top: 0`
- * climbs back to the top of the **viewport** on scroll, which is behind the bar. So the two
- * rails take the bar's height as their `top` and lose it from their `height`. The rules are
- * split across upstream's own 800px and 1200px breakpoints because upstream unsets the
- * height of each rail at the width where it stops being a sticky column: the right rail
- * below 1200px, the left rail below 800px. Setting a height there would put it back.
+ * climbs back to the top of the **viewport** on scroll, which is behind the bar. So the rail
+ * takes the bar's height as its `top` and loses it from its `height` -- above 800px, which is
+ * where upstream makes it a sticky column at all; below that it is the drawer, which anchors
+ * itself to the same token.
+ *
+ * There is one rail. The right one is retired (`prepper/reading`), and these rules used to
+ * carry a second media band for it that did nothing but say so.
  *
  * ## The three slots
  *
@@ -109,7 +112,7 @@ function script(name: string): string {
  *
  * ## Reader mode
  *
- * Upstream's reader mode fades the two rails to nothing and brings them back on hover. The
+ * Upstream's reader mode fades the rails to nothing and brings them back on hover. The
  * bar joins them, on the same attribute and with the same gesture -- and with no transition
  * of its own, because motion is `prepper/tokens`' vocabulary and it does not have one yet.
  * `opacity` is the right tool here and is safe: unlike `transform` and `filter`, it makes a
@@ -172,16 +175,10 @@ body {
 .page > #quartz-body .page-header {
   margin-top: 2rem;
 }
-.page > #quartz-body .sidebar {
+.page > #quartz-body .sidebar.left {
   padding-top: 2rem;
 }
-@media all and (min-width: 1200px) {
-  .page > #quartz-body .sidebar {
-    top: var(--prepper-topbar-height);
-    height: calc(100vh - var(--prepper-topbar-height));
-  }
-}
-@media all and (min-width: 800px) and (max-width: 1200px) {
+@media all and (min-width: 800px) {
   .page > #quartz-body .sidebar.left {
     top: var(--prepper-topbar-height);
     height: calc(100vh - var(--prepper-topbar-height));

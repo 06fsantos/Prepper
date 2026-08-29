@@ -74,7 +74,8 @@ it was written in** — `prerequisites`, `topic`, `practices`, or the body. Node
 [`prepper/graph/graph.ts`](prepper/graph/graph.ts) computes it, and two things read it —
 an emitter that writes `static/linkGraph.json` for the topic index and the Vault report,
 and the components in [`prepper/edges/`](prepper/edges/index.ts) that render a typed edge
-**in context** and collect untyped ones in one backlinks panel. Nothing is ever gated.
+**in context** and collect untyped ones in one backlinks panel -- all four at the foot of the
+article except "Read first", which is above the note. Nothing is ever gated.
 
 ## Quiz blocks
 
@@ -127,9 +128,20 @@ Markdown does not have.
 [`prepper/reading/`](prepper/reading/index.ts) is one component at `beforeBody`, and it
 carries the page styles as well as the chips: Quartz collects a component's CSS from the
 configured component list rather than from what a page rendered, so the measure lands on
-every page. It owns the page's own layout -- the grid, the measure, the prose -- which no
-other module writes rules for except `prepper/sidebar`, whose collapsed state is that same
-grid with one column reduced.
+every page. It owns the page's own layout -- the grid, the measure, the prose -- and it is the
+**only** module that declares that grid; `prepper/sidebar` hides the rail with one `display`
+and re-declares no track.
+
+The grid is **two content tracks and two margins**. There is no right column: upstream's third
+track was a fixed 320px and ours is `minmax(0, 1fr)`, which takes nothing when there is nothing
+spare and everything left over when there is. The measure comes through that change
+**unchanged** -- 608px at 1280px, 1600px and 1920px, evaluated off the emitted stylesheet in
+`reading.test.ts` rather than assumed -- and on a prose page the width the column gave up
+becomes margin on both sides. The one thing still laid out in that margin is the **table of
+contents**, a sticky element offset by `var(--prepper-topbar-height)` and bounded by
+`--prepper-toc`, placed from the `footer` layout position because that is the only position
+whose components are direct children of the grid. Below 1200px it is not rendered, which is
+what upstream already did with it.
 
 ## Collapsible headings
 
@@ -182,7 +194,7 @@ because a control that hides the chrome while the chrome's most prominent elemen
 screen does not do what it says. Nothing in the bar animates.
 
 The **graph control is `@quartz-community/graph` itself**, placed at `header`/40 instead of in
-the right rail. The plugin already ships a global-graph modal opened from its own
+the right rail it used to panel. The plugin already ships a global-graph modal opened from its own
 `.global-graph-icon` and by Ctrl/Cmd-G, and its client finds both by a **document-wide query**
 -- so moving the component into the bar promotes the modal with no code of ours in the path,
 and the plugin stays a remote that is neither forked, patched nor vendored. The 250px panel is
@@ -203,8 +215,11 @@ what made the prose jump sideways; easing that jump would have been a different 
 thing. The collapsed state is deliberately **not an icon rail** -- the rail's contents are
 author-written topic names, and there is no icon for "Big-O notation".
 
-The right rail is untouched: its table of contents and backlinks are consulted _while_
-reading, which is a different moment.
+There is no right rail to hide. It is retired ([ADR
+0004](docs/adr/0004-a-persistent-top-bar-and-the-retired-right-column.md)): the graph became a
+control in the bar, the backlinks panel joined the typed rails at the foot of the article, and
+the table of contents is a sticky element in `prepper/reading`'s margin. Redistributing 320px of
+empty column is not the same as not having one.
 
 Below 800px the rail is not a column, and Quartz's own answer -- a strip across the top of the
 page -- put the whole topic tree above every article a phone reader opened, with no way to

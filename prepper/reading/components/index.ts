@@ -94,6 +94,48 @@ const PrepperReading: QuartzComponentConstructor = () => {
  * component stylesheet is emitted into the same `@layer quartz-base` as the base styles
  * and linked after them, so an identical selector wins on order.
  *
+ * ## The third track is margin, not a column
+ *
+ * There is no right column. Upstream's grid ends in a fixed `320px` track and ours ends in
+ * `minmax(0, 1fr)`: a track that takes **nothing** when there is nothing to give and grows only
+ * out of what the window has left over. That is the difference between removing a column and
+ * making one narrower, and it is the whole of what ticket 06 did to the layout.
+ *
+ * The measure comes through it **unchanged**, and that is the constraint the change was made
+ * under rather than a happy result. The centre track's clamp lost one sidebar --
+ * `calc(100% - var(--prepper-sidebar) - 10px)`, one rail and two 5px gaps, which is now the
+ * same shape the tablet band already had -- and at every width the page is laid out at, that
+ * clamp is far larger than 38rem, so `min()` still answers with the measure. It is evaluated
+ * rather than assumed: `reading.test.ts` computes the declared track list at 1280px, 1600px and
+ * 1920px and asserts 608px.
+ *
+ * What the reclaimed width becomes on a prose page is **margin on both sides** -- the two
+ * flexible tracks split it, so the prose is centred in the window instead of pushed off it.
+ * A page whose body is an index wants that width as columns instead, and that is ticket 07's.
+ *
+ * ## The table of contents floats in the margin
+ *
+ * It used to be the top of a 320px column and it is now one narrow sticky list in the leftover
+ * space, bounded by `--prepper-toc` rather than by a track. Two things make that work and both
+ * are worth stating.
+ *
+ * It is a **direct child of the grid**, which is why `quartz.config.yaml` places it in the
+ * `footer` position: of the six layout positions, `footer` is the only one whose components are
+ * rendered as children of `#quartz-body` rather than inside `.center` or a rail. That is a fact
+ * about `DefaultFrame`, not about the foot of the page -- the ToC is not in the footer, it is in
+ * the grid. `beforeBody` would have put it inside the `.popover-hint` the search preview clones,
+ * which is the hazard `prepper/sidebar` is placed around.
+ *
+ * And it is `position: sticky` against **`var(--prepper-topbar-height)`**, never against a
+ * number: the bar is fixed over the top of the page and a list that stuck to `top: 0` would
+ * stick underneath it. `prepper/topbar` declares that token once and
+ * `prepper/testing/layout.test.ts` asserts the literal appears exactly once, so this is the
+ * offset rather than a second copy of it.
+ *
+ * Below 1200px it is not rendered, which is exactly what it did before: upstream hid it in the
+ * rail at that width. Where there is no margin there is no room for a margin note, and a table
+ * of contents stacked under the article is a list of places the reader has already been.
+ *
  * ## The serif
  *
  * `--bodyFont` is the family named in `quartz.config.yaml`, and it is a serif -- but
@@ -141,13 +183,22 @@ const styles = `
      the rail gives up becomes margin and the prose column does not move. There is no second,
      collapsed grid anywhere. */
   --prepper-sidebar: 320px;
+  /* What the table of contents is allowed of the margin it floats in -- a bound on the list,
+     not a track in the grid. The margin itself is whatever the window has left over. */
+  --prepper-toc: 16rem;
   --prepper-prose: "Source Serif 4", Charter, "Iowan Old Style", Georgia, serif;
 }
 .page > #quartz-body {
   grid-template-columns:
     minmax(var(--prepper-sidebar), 1fr)
-    min(var(--prepper-measure), calc(100% - 2 * var(--prepper-sidebar) - 10px))
-    var(--prepper-sidebar);
+    min(var(--prepper-measure), calc(100% - var(--prepper-sidebar) - 10px))
+    minmax(0, 1fr);
+}
+/* The right rail is retired, and Quartz's frame renders its (now empty) box on every page
+   regardless. Hidden rather than left to sit there: upstream makes it sticky, 100vh tall and
+   padded, so an empty one would still be a full-height box in the margin. */
+.page > #quartz-body > .right.sidebar {
+  display: none;
 }
 @media all and (min-width: 800px) and (max-width: 1200px) {
   .page > #quartz-body {
@@ -160,6 +211,25 @@ const styles = `
   .page > #quartz-body {
     grid-template-columns: min(var(--prepper-measure), 100%);
     justify-content: center;
+  }
+}
+@media all and (min-width: 1200px) {
+  .page > #quartz-body > .toc {
+    grid-area: grid-sidebar-right;
+    align-self: start;
+    justify-self: start;
+    position: sticky;
+    top: calc(var(--prepper-topbar-height) + 2rem);
+    box-sizing: border-box;
+    width: min(var(--prepper-toc), 100%);
+    max-height: calc(100vh - var(--prepper-topbar-height) - 4rem);
+    overflow-y: auto;
+    padding-left: 1.5rem;
+  }
+}
+@media all and (max-width: 1200px) {
+  .page > #quartz-body > .toc {
+    display: none;
   }
 }
 .page > #quartz-body .center article {

@@ -25,12 +25,17 @@
  *
  * ## What is hidden, and what is not
  *
- * The left rail only. The right rail carries the table of contents and the backlinks --
- * things a reader consults *while* reading -- which is a different moment. (The graph panel
- * that used to sit there is gone: the graph is a control in the top bar now, and it opens as
- * a modal.)
- * Reader mode is the gesture that takes *everything* away at once: it fades both rails and
- * the top bar with them, on hover-to-restore, and that is deliberately not this control.
+ * The left rail, which is now the only rail there is. The right one is retired: its graph
+ * became a control in the top bar that opens a modal, its backlinks panel joined the other
+ * rails at the foot of the article, and its table of contents is a sticky element in the
+ * margin, placed by `prepper/reading` rather than by a column
+ * ([ADR 0004](../../docs/adr/0004-a-persistent-top-bar-and-the-retired-right-column.md)).
+ * Nothing here hides that list, and nothing here should: it is consulted *while* reading,
+ * which is a different moment from choosing what to read.
+ *
+ * Reader mode is the gesture that takes *everything* away at once: it fades the rail, the
+ * margin and the top bar together, on hover-to-restore, and that is deliberately not this
+ * control.
  *
  * ## Below 800px the same control opens a drawer
  *

@@ -117,6 +117,30 @@ table of contents, which is one narrow list and does not need a column.
 The alternative was keeping a narrower right column. Rejected: the complaint was *unused space*,
 and redistributing an empty column is not the same as not having one.
 
+Three consequences, recorded because each is a place the decision could be undone by accident.
+
+**The grid's third track is `minmax(0, 1fr)`, not a width.** Upstream ends the desktop grid in a
+fixed `320px`; ours ends in a track that is guaranteed nothing and takes only what is left over.
+That is the difference between removing a column and narrowing one, and it is what makes the
+reclaimed space *margin* on a prose page and available as *columns* on an index page. The
+measure comes through the change unchanged -- 608px at 1280px, 1600px and 1920px -- and is
+evaluated off the emitted stylesheet rather than assumed, because jsdom lays nothing out and a
+measurement taken there would be invented.
+
+**The table of contents is placed from the `footer` layout position**, which is not a statement
+about the foot of the page: `DefaultFrame` renders `left`, `right` and `footer` as children of
+the grid and everything else inside `.center`, so `footer` is the only position from which a
+component can *be* a grid item. It is sticky against `var(--prepper-topbar-height)`, bounded by
+`--prepper-toc`, and not rendered below 1200px -- which is what upstream already did with it
+inside the rail. `beforeBody` was rejected for the reason `prepper/sidebar` is not in it either:
+it sits inside the `.popover-hint` the search preview clones, and every search result would have
+carried a table of contents.
+
+**`layout.byPageType` no longer clears `right` for 404, folder and tag pages.** Those clears were
+correct while something was configured into the position; with the position empty everywhere they
+were config describing a layout the build does not have, which is the kind of line a later reader
+trusts.
+
 ## The measure survives, and the boundary moved from page to body
 
 The source document asked for the central content to be "substantially wider" and not

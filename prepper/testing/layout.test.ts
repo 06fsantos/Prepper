@@ -55,7 +55,7 @@ import { buildFixture, type EmittedSite } from "./build-fixture.ts"
  * than the ones above them -- `layout.byPageType` gives 404 and the generated folder index
  * their own overrides -- and it is that pass the duplicating fallback runs in. Every one of
  * them carries exactly one `.graph`, and now that the graph is a control in the bar rather
- * than a panel in a rail, that is true of the two pages whose `right` is cleared as well.
+ * than a panel in a rail, that is true of the two overridden layouts as well.
  */
 const pageTypes: Record<string, { slug: string }> = {
   home: { slug: "index" },
@@ -132,6 +132,34 @@ describe("the chrome the configuration resolves to", () => {
     assert.ok(typeof name === "string" && name.trim().length > 0, "the control is nameless")
   })
 
+  test("nothing is placed in the right column, on any page", () => {
+    // The column is retired (ticket 06). Nothing is configured into the position at all, so
+    // the frame still renders its empty box and `prepper/reading` hides it -- and this is the
+    // assertion that keeps the *config* honest, per page type, rather than trusting a
+    // `display`. It is stated as an emptiness because the way it comes back is a new plugin
+    // entry defaulting into `right` without anybody meaning it to.
+    for (const { slug } of Object.values(pageTypes)) {
+      const page = site.page(slug)
+      assert.deepEqual(page.selectAll(".right.sidebar > *", page.tree), [], slug)
+    }
+  })
+
+  test("the table of contents is a child of the grid, and is in no rail", () => {
+    // Where the column's one survivor went. `footer` is the only layout position whose
+    // components are rendered as direct children of `#quartz-body`, which is what lets
+    // `prepper/reading` place the list in the grid's leftover third track as a sticky margin
+    // element. A Problem is the page type in this fixture with headings, so it is the page
+    // with a table of contents.
+    const page = site.page("problems/two-sum")
+    assert.equal(page.selectAll("#quartz-body > .toc", page.tree).length, 1)
+    assert.deepEqual(page.selectAll(".sidebar .toc", page.tree), [], "it is back in a rail")
+    assert.deepEqual(
+      page.selectAll(".center .toc", page.tree),
+      [],
+      "it is inside the prose column, which is the one thing it must not take width from",
+    )
+  })
+
   test("the link graph is still emitted by the plugin that was renamed", () => {
     // `./prepper/graph` carries its own `name` now, which is the key Quartz installs and
     // loads it by. If that rename had cost the plugin its entry point, the build would
@@ -177,15 +205,15 @@ describe("the top bar", () => {
   test("404 is a laid-out page, and it is laid out for a reader who is lost", () => {
     // Upstream's 404 page type declares `frame: "minimal"`, which renders the message and
     // nothing else -- no way to search, no way home. `layout.byPageType` overrides the frame
-    // so the bar is there; the rails stay cleared, because a missing page has nothing to put
-    // in them.
+    // so the bar is there; the left rail stays cleared, because a missing page has nothing to
+    // put in it. The right rail is not cleared any more -- there is no longer a `right` to
+    // clear, and the config that said so was describing a layout the build no longer has.
     const page = site.page("404")
     assert.ok(page.select(".page-header > header .search", page.tree), "no search on 404")
     // The rail toggle comes with the bar, and it is harmless on a page whose rails are
     // cleared: there is nothing in the rail to hide, and pressing it hides nothing.
     assert.ok(page.select(".page-header > header button.prepper-sidebar-toggle", page.tree))
     assert.deepEqual(page.selectAll(".left.sidebar > *", page.tree), [])
-    assert.deepEqual(page.selectAll(".right.sidebar > *", page.tree), [])
   })
 
   test("the bar holds the app's controls, and the rail no longer does", () => {

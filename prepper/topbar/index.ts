@@ -54,7 +54,7 @@
  * ## Why `position: fixed`, and what may never sit above it
  *
  * Quartz's grid (`quartz/styles/variables.scss`) has **no full-width row**: `grid-header` is
- * the centre column's top cell, between the two rails. A bar drawn in that cell would be a
+ * the centre column's top cell, with the rail beside it. A bar drawn in that cell would be a
  * banner over the article and nothing else. So the bar is taken out of flow -- which also
  * means the empty header cell contributes no height -- and the page is offset instead by
  * `--prepper-topbar-height`, published in `:root` here and consumed by everything that has

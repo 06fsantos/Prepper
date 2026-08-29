@@ -179,6 +179,11 @@ function entry(graph: LinkGraph, from: FullSlug, target: string): ComponentChild
  *
  * A rail is flat: it sits on the page rather than over it, so it has no elevation. Shadow is
  * spent only on surfaces that genuinely float and occlude.
+ *
+ * All four wear the same hairline, which they did not always: the backlinks panel used to be
+ * chrome in the right column and was styled as chrome, unruled. That column is retired and the
+ * panel is now the last rail at the foot of the article, beside the three typed ones -- so it
+ * reads like them, because it is one.
  */
 const styles = `
 .prepper-edges {
@@ -186,7 +191,8 @@ const styles = `
 }
 .prepper-edges-read-first,
 .prepper-edges-unlocks,
-.prepper-edges-practices {
+.prepper-edges-practices,
+.prepper-edges-backlinks {
   border-left: 2px solid var(--md-sys-color-outline-variant);
   padding-left: 1rem;
   margin: 1.5rem 0;

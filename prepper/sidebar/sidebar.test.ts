@@ -27,9 +27,11 @@
  * both states and the article's box is identical -- not approximately, and not by arithmetic
  * that happens to come out level, but because the browser is reading the same rules.
  *
- * That is what `active` computes: the emitted CSS, parsed into rules with their enclosing
- * media conditions, evaluated at a width. A condition this file cannot decide counts as
- * applying, so an exotic query hides nothing from the assertion.
+ * That is what `active` computes, in `prepper/testing/stylesheets.ts`: the emitted CSS, parsed
+ * into rules with their enclosing media conditions, evaluated at a width. A condition that
+ * cannot be decided counts as applying, so an exotic query hides nothing from the assertion.
+ * The scanner lives there rather than here because `prepper/reading/reading.test.ts` proves the
+ * measure the same way -- one reading of the emitted stylesheet, two facts asserted off it.
  *
  * The old collapse fails this test loudly, which is the point: it restated
  * `grid-template-columns` with the left track reduced to a gutter, and that rule's subject was
@@ -49,6 +51,14 @@ import test, { describe, before } from "node:test"
 import assert from "node:assert"
 
 import { buildFixture, type EmittedSite, type Page } from "../testing/build-fixture.ts"
+import {
+  active,
+  declaration,
+  rules,
+  stylesheets,
+  subjects,
+  type Rule,
+} from "../testing/stylesheets.ts"
 
 /**
  * The widths the article is proved not to move at.
@@ -69,13 +79,6 @@ const widths = [360, 1280, 1600, 1920]
  * for that reason.
  */
 const centre = ["#quartz-body", ".center", "article", ".page", "body", "html", ":root"]
-
-/** One rule of the emitted stylesheet, with the media conditions it is nested inside. */
-interface Rule {
-  media: string[]
-  selector: string
-  body: string
-}
 
 describe("the hideable left rail", () => {
   let site: EmittedSite
@@ -239,8 +242,8 @@ describe("the hideable left rail", () => {
       // `grid-template-columns` the centre column resolves against is declared by
       // `prepper/reading` alone, unconditionally, and is byte-identical whether or not the
       // rail is hidden. This is the assertion the old collapse broke.
-      const shown = tracks(active(rules(css), width), false)
-      const hidden = tracks(active(rules(css), width), true)
+      const shown = gridDeclarations(active(rules(css), width), false)
+      const hidden = gridDeclarations(active(rules(css), width), true)
 
       assert.ok(shown.length >= 1, `no grid declared at ${width}px`)
       assert.deepEqual(hidden, shown, `the grid at ${width}px changes when the rail is hidden`)
@@ -257,9 +260,11 @@ describe("the hideable left rail", () => {
     assert.ok(grids.every((rule) => !conditional(rule)))
   })
 
-  test("nothing about the right rail changes", () => {
-    // The table of contents, the graph and the backlinks are consulted while reading. This
-    // control is about the rail you use before you start.
+  test("the collapse is not what retired the right rail", () => {
+    // The right rail is gone -- `prepper/reading` hides it and the column it stood in is
+    // margin now (ticket 06). It went unconditionally, in the module that owns the page's
+    // layout, and it must never come to depend on this control: a rail that appeared when the
+    // left one was put away would be a second grid wearing a `display`.
     assert.ok(!/data-prepper-sidebar[^{]*\.sidebar\.right/.test(css))
   })
 
@@ -275,142 +280,6 @@ describe("the hideable left rail", () => {
     assert.doesNotMatch(sheets[0], /transition|animation/)
   })
 })
-
-/**
- * Every stylesheet the page links, **in the order it links them**.
- *
- * Order is not a detail here: two rules of equal specificity are settled by which came last,
- * and that is exactly how the drawer's default beats upstream's own mobile `display: flex` on
- * `.sidebar.left`. Reading the emitted files in whatever order the site happens to list them
- * would answer "what does the rail resolve to" with a coin toss. The page is the authority on
- * link order, so the page is what is read.
- *
- * Anything served from another origin is skipped: it is not ours, and it is not on disk.
- */
-function stylesheets(site: EmittedSite, page: Page): string {
-  const links = [...page.html.matchAll(/<link[^>]+href="([^"]+\.css)"[^>]*rel="stylesheet"/g)]
-  return links
-    .map(([, href]) => href)
-    .filter((href) => !href.startsWith("http"))
-    .map((href) => site.file(href.replace(/^(\.\.\/)+/, "")))
-    .join("\n")
-}
-
-/**
- * The emitted stylesheet, flattened into rules that each carry the media queries they sit
- * inside.
- *
- * A hand-rolled scanner rather than a CSS parser, for the same reason the rest of this repo's
- * stylesheet assertions are regexes over the emitted file: the input is lightningcss's output,
- * which is one line of minified text, and the questions asked of it are about *which* rules
- * exist rather than about their semantics. Quotes are tracked because a minified declaration
- * may legitimately contain a brace inside a `content:` string; `@layer` and `@supports` are
- * transparent because they wrap rules without conditioning them on a width; `@keyframes` and
- * `@font-face` are skipped whole because what is inside them is not a style rule.
- */
-function rules(css: string): Rule[] {
-  const out: Rule[] = []
-  const media: string[] = []
-  const stack: ("media" | "transparent")[] = []
-  let prelude = ""
-  let index = 0
-
-  while (index < css.length) {
-    const character = css[index]
-
-    if (character === '"' || character === "'") {
-      const end = closingQuote(css, index)
-      prelude += css.slice(index, end + 1)
-      index = end + 1
-      continue
-    }
-
-    if (character === "}") {
-      if (stack.pop() === "media") media.pop()
-      prelude = ""
-      index++
-      continue
-    }
-
-    if (character !== "{") {
-      prelude += character
-      index++
-      continue
-    }
-
-    const head = prelude.trim()
-    prelude = ""
-
-    if (head.startsWith("@media")) {
-      media.push(head.slice("@media".length).trim())
-      stack.push("media")
-      index++
-      continue
-    }
-
-    if (head.startsWith("@")) {
-      if (/^@(layer|supports|container|scope)\b/.test(head)) {
-        stack.push("transparent")
-        index++
-        continue
-      }
-      index = closingBrace(css, index) + 1
-      continue
-    }
-
-    const end = closingBrace(css, index)
-    out.push({ media: [...media], selector: head, body: css.slice(index + 1, end) })
-    index = end + 1
-  }
-
-  return out
-}
-
-/** The index of the `}` that closes the `{` at `open`, braces and quotes counted. */
-function closingBrace(css: string, open: number): number {
-  let depth = 0
-  for (let index = open; index < css.length; index++) {
-    const character = css[index]
-    if (character === '"' || character === "'") {
-      index = closingQuote(css, index)
-      continue
-    }
-    if (character === "{") depth++
-    else if (character === "}" && --depth === 0) return index
-  }
-  return css.length - 1
-}
-
-/** The index of the quote that closes the one at `open`, escapes honoured. */
-function closingQuote(css: string, open: number): number {
-  const quote = css[open]
-  for (let index = open + 1; index < css.length; index++) {
-    if (css[index] === "\\") index++
-    else if (css[index] === quote) return index
-  }
-  return css.length - 1
-}
-
-/**
- * The rules that apply at a viewport width.
- *
- * Only `min-width` and `max-width` are decided, because they are the only conditions the
- * layout is written in. Anything else -- a colour scheme, a pointer type, an exotic range
- * query -- is treated as **applying**, which is the conservative direction: this file is
- * looking for rules that could move the article, so one it cannot rule out is one it keeps.
- */
-function active(all: Rule[], width: number): Rule[] {
-  return all.filter((rule) => rule.media.every((query) => holds(query, width)))
-}
-
-function holds(query: string, width: number): boolean {
-  for (const [, bound, value, unit] of query.matchAll(/\((min|max)-width:\s*([\d.]+)(px|rem)\)/g)) {
-    const pixels = unit === "rem" ? Number(value) * 16 : Number(value)
-    if (bound === "min" && width < pixels) return false
-    if (bound === "max" && width > pixels) return false
-  }
-  return true
-}
 
 /** Whether a rule only applies while the attribute holds some particular value. */
 function conditional(rule: Rule): boolean {
@@ -457,38 +326,6 @@ function valued(rule: Rule, state: string | null): boolean {
     : new RegExp(`data-prepper-sidebar=["']?${state}["']?\\]`).test(rule.selector)
 }
 
-/** One declaration of a rule, or `undefined` if it does not make it. */
-function declaration(rule: Rule, property: string): string | undefined {
-  const match = rule.body.match(new RegExp(`(?:^|[;{\\s])${property}:([^;}]+)`))
-  return match?.[1].trim()
-}
-
-/**
- * What a rule is *about*: the last compound selector of each of its selectors, which is the
- * element the declarations land on.
- *
- * `:root[data-prepper-sidebar=hidden] .page>#quartz-body .sidebar.left` is a rule about the
- * rail, however many of the article's ancestors it names on the way there. Asking for the
- * subject rather than for the presence of a string is what lets this file say "and nothing
- * else": a rule whose subject is anything in `centre` is a rule that can move the article.
- */
-function subjects(rule: Rule): string[] {
-  return [
-    ...new Set(
-      rule.selector
-        .split(",")
-        .map(
-          (selector) =>
-            selector
-              .trim()
-              .split(/[\s>+~]+/)
-              .at(-1) ?? "",
-        )
-        .map((compound) => compound.replace(/::?[\w-]+(\([^)]*\))?/g, "")),
-    ),
-  ].sort()
-}
-
 /**
  * Every `grid-template-columns` that applies to the page's own grid, in the state named.
  *
@@ -496,7 +333,7 @@ function subjects(rule: Rule): string[] {
  * the ones the attribute switches on. `hidden: false` is everybody else. The two lists being
  * equal is the article not moving.
  */
-function tracks(all: Rule[], hidden: boolean): string[] {
+function gridDeclarations(all: Rule[], hidden: boolean): string[] {
   return all
     .filter((rule) => hidden || !conditional(rule))
     .filter((rule) => subjects(rule).some((subject) => centre.includes(subject)))

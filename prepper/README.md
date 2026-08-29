@@ -61,7 +61,7 @@ prepper/
     topics.test.ts          one index, three renderings, through seam 1
   reading/                  the reading surface: the measure, the serif, the chips
     index.ts                the component manifest; one config entry, at `beforeBody`
-    components/index.ts     the topic chips, and the page styles that ride on them
+    components/index.ts     the topic chips, the grid, and the page styles on them
     reading.test.ts         the chips, the absent chrome, the measure, through seam 1
   tokens/                   the chrome's design tokens: Material 3, from one seed
     tokens.ts               the roles, derived; and Quartz's nine, aliased onto them
@@ -118,6 +118,7 @@ prepper/
                             validate(fixtureVault) -> violation list
     build-fixture.test.ts   the seam's own test
     browser.ts              seam 2: an emitted page, in a DOM, running our scripts only
+    stylesheets.ts          the emitted CSS, parsed and evaluated at a viewport width
     fixtures/               one small vault per behaviour cluster
     mechanisms.test.ts      the Quartz mechanisms the design rests on, run
     layout.test.ts          the chrome our config resolves to, per page type -- and the bar
@@ -202,6 +203,16 @@ the reader with JavaScript off and is a fixture in its own right rather than a l
 Every way a page has of storing something or sending it anywhere is replaced with a tripwire,
 collected on `screen.recorded`, because Prepper keeps no per-user state and has no server:
 "this records nothing" is a fact about the app that any screen can be asked to confirm.
+
+Some facts are about neither markup nor behaviour. The prose column's ~38rem measure, that
+collapsing the rail moves nothing, and that the retired right column takes no width from the
+page are all facts about **which CSS rules a browser resolves at a given viewport width** —
+and jsdom lays nothing out, so a pixel measurement taken at seam 2 would be a number the
+harness invented. [`testing/stylesheets.ts`](testing/stylesheets.ts) reads the emitted
+stylesheet instead: the rules a page links, in link order, with the media conditions they sit
+inside, the rules that apply at a width, and a length expression evaluated to pixels with its
+custom properties resolved. That is an **evaluation of the declaration**, not a measurement,
+and every caller says so where it makes its claim.
 
 The exception is [`testing/mechanisms.test.ts`](testing/mechanisms.test.ts), which asserts
 on Quartz's behaviour rather than on ours, on purpose: it pins the three mechanisms
