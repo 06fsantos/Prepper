@@ -8,7 +8,7 @@
  * states the result, so nothing but an emitted page can be asked whether the result is
  * what the config said.
  *
- * The first thing asked here is that the graph panel is placed **once**. It was placed
+ * The first thing asked here is that the graph is placed **once**. It was placed
  * twice for as long as `prepper/graph` was configured as the bare path `./prepper/graph`,
  * and the mechanism is worth stating because it is general rather than about the graph:
  *
@@ -33,6 +33,13 @@
  * Asserted per page type, on one build, because the fallback runs once per layout Quartz
  * resolves and `layout.byPageType` resolves several of them -- 404 and the generated
  * folder index among them.
+ *
+ * The second thing is what the graph now *is*. It is no longer a panel in the right rail: it
+ * is a control in the top bar, and pressing it opens the modal `@quartz-community/graph`
+ * already ships. Reusing that modal rather than building a second one is the whole design, so
+ * what is asserted here is the markup the reuse depends on -- the plugin's own
+ * `.global-graph-icon` and `.global-graph-outer`, in the bar, with a name on the button --
+ * and the absence the ticket is actually about, which is any `.graph` inside a rail.
  */
 import test, { before, describe } from "node:test"
 import assert from "node:assert"
@@ -42,22 +49,21 @@ import type { Element } from "hast"
 import { buildFixture, type EmittedSite } from "./build-fixture.ts"
 
 /**
- * A page of each kind the site emits, named by what it is rather than by its slug, and
- * how many graph panels it is supposed to carry.
+ * A page of each kind the site emits, named by what it is rather than by its slug.
  *
- * Zero is the right answer twice, and neither is an accident: `layout.byPageType` clears
- * `right` outright for `404` and for a generated folder index, so those two pages are the
- * ones on which "the config places the graph once" cannot be read off a rendered panel.
- * They are here because they are resolved through a *different* pass of the loader than
- * the pages above them, and it is that pass the fallback runs in.
+ * The last two are here because they are resolved through a *different* pass of the loader
+ * than the ones above them -- `layout.byPageType` gives 404 and the generated folder index
+ * their own overrides -- and it is that pass the duplicating fallback runs in. Every one of
+ * them carries exactly one `.graph`, and now that the graph is a control in the bar rather
+ * than a panel in a rail, that is true of the two pages whose `right` is cleared as well.
  */
-const pageTypes: Record<string, { slug: string; panels: number }> = {
-  home: { slug: "index", panels: 1 },
-  lesson: { slug: "lessons/hash-map-lookup-cost", panels: 1 },
-  term: { slug: "terms/hash-maps", panels: 1 },
-  problem: { slug: "problems/two-sum", panels: 1 },
-  "folder index": { slug: "lessons/index", panels: 0 },
-  "404": { slug: "404", panels: 0 },
+const pageTypes: Record<string, { slug: string }> = {
+  home: { slug: "index" },
+  lesson: { slug: "lessons/hash-map-lookup-cost" },
+  term: { slug: "terms/hash-maps" },
+  problem: { slug: "problems/two-sum" },
+  "folder index": { slug: "lessons/index" },
+  "404": { slug: "404" },
 }
 
 describe("the chrome the configuration resolves to", () => {
@@ -76,24 +82,54 @@ describe("the chrome the configuration resolves to", () => {
     assert.equal(site.exitCode, 0, site.log)
   })
 
-  for (const [kind, { slug, panels: expected }] of Object.entries(pageTypes)) {
-    test(`a ${kind} page renders the graph panel ${expected} time(s)`, () => {
+  for (const [kind, { slug }] of Object.entries(pageTypes)) {
+    test(`a ${kind} page places the graph exactly once`, () => {
       const page = site.page(slug)
-      // Scoped to the whole document rather than to `.center`: the panel is chrome, and
+      // Scoped to the whole document rather than to `.center`: the graph is chrome, and
       // the question is how many of it the layout placed anywhere on the page.
-      const panels = page.selectAll(".graph", page.tree)
-      assert.equal(panels.length, expected, `${slug} rendered ${panels.length}`)
+      const placed = page.selectAll(".graph", page.tree)
+      assert.equal(placed.length, 1, `${slug} rendered ${placed.length}`)
     })
   }
 
-  test("the panel the config placed is the one in the right rail", () => {
-    // The duplicate was a second copy in the same rail, so counting alone would pass if
+  test("the graph the config placed is the one in the bar", () => {
+    // The duplicate was a second copy in the same position, so counting alone would pass if
     // the surviving copy were the one the fallback conjured rather than the one
-    // `quartz.config.yaml` asks for. It is in `right` because that is what the config
-    // says; the fallback's default position happens to be `right` too, which is exactly
-    // why the duplicate was invisible until it was counted.
+    // `quartz.config.yaml` asks for. The fallback's default position is `right`, which is
+    // exactly why the duplicate was invisible until it was counted -- and is now what tells
+    // the two copies apart, because the configured one is in `header`.
     const page = site.page("lessons/hash-map-lookup-cost")
-    assert.equal(page.selectAll(".right.sidebar > .graph", page.tree).length, 1)
+    assert.equal(page.selectAll(".page-header > header > .graph", page.tree).length, 1)
+  })
+
+  test("no graph renders in either rail, on any page", () => {
+    // The panel is what this ticket removed: a 250px box at the edge of the page drawing
+    // four nodes. Asserted as an absence from the rails rather than as a presence in the
+    // bar, because the absence is the thing a later edit restores without noticing -- and
+    // asserted on every page type, since a rail is resolved per layout.
+    for (const { slug } of Object.values(pageTypes)) {
+      const page = site.page(slug)
+      assert.deepEqual(page.selectAll(".sidebar .graph", page.tree), [], slug)
+    }
+  })
+
+  test("the modal the bar's control opens is the plugin's own", () => {
+    // The whole of this ticket's mechanism, stated as markup. The plugin's client wires
+    // every `.global-graph-icon` in the document by a document-wide query and collects every
+    // `.global-graph-outer` the same way, so a `.graph` rendered in the header is a working
+    // graph control with no code of ours in the path. If either of these two ever stopped
+    // being emitted, the control would still be in the bar and would do nothing at all.
+    const page = site.page("lessons/hash-map-lookup-cost")
+    const bar = page.require(".page-header > header", page.tree)
+    assert.equal(page.selectAll(".global-graph-icon", bar).length, 1)
+    assert.equal(page.selectAll(".global-graph-outer", bar).length, 1)
+  })
+
+  test("the bar's graph control has an accessible name", () => {
+    const page = site.page("lessons/hash-map-lookup-cost")
+    const control = page.require(".page-header > header .global-graph-icon", page.tree)
+    const name = control.properties["ariaLabel"]
+    assert.ok(typeof name === "string" && name.trim().length > 0, "the control is nameless")
   })
 
   test("the link graph is still emitted by the plugin that was renamed", () => {
@@ -162,6 +198,7 @@ describe("the top bar", () => {
       ".search",
       ".darkmode",
       ".readermode",
+      ".graph",
     ]) {
       assert.equal(page.selectAll(control, bar).length, 1, `${control} is not in the bar`)
       assert.equal(
@@ -176,9 +213,9 @@ describe("the top bar", () => {
     // This is the whole slot mechanism: one CSS rule gives `.search` an automatic inline
     // margin, so everything ordered before it is pushed to the left edge of the bar and
     // everything after it to the right. A control lands in a slot by taking a priority either
-    // side of search's 20 -- the rail toggle arrived at 5 that way, and the graph will at 40,
+    // side of search's 20 -- the rail toggle arrived at 5 that way, and and the graph did at 40,
     // with no re-layout. If this order ever stops being toggle, title, search, theme, reader,
-    // the slots have silently changed sides.
+    // graph, the slots have silently changed sides.
     const page = site.page("lessons/hash-map-lookup-cost")
     const bar = page.require(".page-header > header", page.tree)
     const order = bar.children
@@ -191,6 +228,7 @@ describe("the top bar", () => {
       "search",
       "darkmode",
       "readermode",
+      "graph",
     ])
   })
 

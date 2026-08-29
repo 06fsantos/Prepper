@@ -87,6 +87,8 @@ prepper/
   topbar/                   the persistent bar across the top of every page
     index.ts                the component manifest; one config entry, at `header`
     components/index.ts     a component that renders nothing and carries the bar's stylesheet
+    graph.js                the graph plugin's local panel, taken out of the document
+    graph.test.ts           the panel gone, the button and the modal left, through seam 2
   sidebar/                  the left rail, hideable -- and the one preference we remember
     index.ts                the component manifest; one config entry, at `header` priority 5
     components/index.ts     the control; the rule that hides the rail above 800px, and the
@@ -155,8 +157,8 @@ PascalCase form, for any entry that declares **no `layout:` block**; if somethin
 that component is placed at _its own_ manifest's `defaultPosition`. The registry is flat and
 global: `@quartz-community/graph` registers its panel under the unqualified key `Graph`
 beside its fully-qualified one. So `./prepper/graph`, an emitter that renders nothing,
-adopted the community graph panel and asked for a second copy of it in the rail the config
-had already placed it in — silently, with the plugin named once in the file.
+adopted the community graph panel and asked for a second copy of it in the position the
+config had already placed it in — silently, with the plugin named once in the file.
 
 The remedy is the object source form, which lets an entry carry its own `name`:
 
@@ -170,7 +172,7 @@ The remedy is the object source form, which lets an entry carry its own `name`:
 entries of one module need distinct names, since `name` is the key Quartz installs and looks
 a plugin up by. Give a new local plugin a `prepper-`-prefixed name whenever its directory
 could collide, and [`testing/layout.test.ts`](testing/layout.test.ts) is the tripwire that
-catches the next one: it counts the graph panel on a page of every type. `prepper/topbar`
+catches the next one: it counts the `.graph` a page of every type resolves to. `prepper/topbar`
 carries an explicit `name` for exactly this reason -- as `./prepper/topbar` it would be the
 plugin named `topbar`, one PascalCase away from any package that ever registers a `Topbar`.
 

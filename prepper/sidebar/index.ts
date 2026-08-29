@@ -25,8 +25,10 @@
  *
  * ## What is hidden, and what is not
  *
- * The left rail only. The right rail carries the table of contents, the graph and the
- * backlinks -- things a reader consults *while* reading -- which is a different moment.
+ * The left rail only. The right rail carries the table of contents and the backlinks --
+ * things a reader consults *while* reading -- which is a different moment. (The graph panel
+ * that used to sit there is gone: the graph is a control in the top bar now, and it opens as
+ * a modal.)
  * Reader mode is the gesture that takes *everything* away at once: it fades both rails and
  * the top bar with them, on hover-to-restore, and that is deliberately not this control.
  *

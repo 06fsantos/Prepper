@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+
 import type {
   QuartzComponent,
   QuartzComponentConstructor,
@@ -18,7 +20,22 @@ import type {
 const PrepperTopbar: QuartzComponentConstructor = () => {
   const Topbar: QuartzComponent = () => null
   Topbar.css = styles
+  // The bar's one piece of behaviour, and it is a removal rather than a control: the graph
+  // plugin's local panel comes out of the document so that what is left of its `.graph`
+  // element in the bar is the button that opens the modal. See `prepper/topbar/graph.js` for
+  // why CSS cannot do this part.
+  Topbar.afterDOMLoaded = script("graph.js")
   return Topbar
+}
+
+/**
+ * The browser half, read off disk rather than written here as a string.
+ *
+ * The same arrangement `prepper/sidebar` and `prepper/quiz` use: what is in the `.js` file is
+ * what reaches the page, with no build step of ours between the two.
+ */
+function script(name: string): string {
+  return readFileSync(new URL(name, new URL("../", import.meta.url)), "utf8")
 }
 
 /**
@@ -65,6 +82,30 @@ const PrepperTopbar: QuartzComponentConstructor = () => {
  * scrolls beneath it, and because the search overlay is a fixed element *inside* the bar's
  * stacking context, the number the bar takes is also the number the overlay ends up with in
  * the root: below 1000 a link popover left open behind the modal would paint over it.
+ *
+ * ## The graph control is the graph plugin's own button
+ *
+ * `@quartz-community/graph` is placed in the bar rather than in the right rail, and what the
+ * bar wants out of it is the modal it already ships -- `80vw` by `80vh`, opened by its
+ * `.global-graph-icon` and by Ctrl/Cmd-G -- rather than the 250px panel that used to sit at
+ * the edge of every page. The plugin renders both inside one `.graph` element and has no
+ * option for the modal alone, and it is a remote that is neither forked nor patched, so what
+ * is left over is styled away from outside: the heading is dropped, the `.graph-outer` box
+ * gives up its border, its height and its positioning, and the button comes out of the corner
+ * it was absolutely placed in and becomes a plain icon control the size of the two beside it.
+ *
+ * These rules key on the **plugin's own class names** and not on anything a script adds,
+ * because a stylesheet that waited for JavaScript would show a 250px panel wedged into a 4rem
+ * bar until the script arrived. The one thing left for `prepper/topbar/graph.js` is taking
+ * the local `.graph-container` out of the document, which CSS cannot do and which matters
+ * because the plugin renders into every one it can find whether or not it is on screen.
+ *
+ * The modal needs nothing from us. Its own `z-index: 9999` sits inside the bar's stacking
+ * context, so it resolves above the bar's 1000 and above the mobile drawer's 999 without a
+ * number of ours; and it is `position: fixed` with no `transform`, `filter` or `contain` on
+ * any ancestor, which is the same prohibition the search overlay already binds this module
+ * to. Its blurred backdrop covers the bar, including the control that opened it, which is
+ * what a modal should do.
  *
  * ## Reader mode
  *
@@ -145,6 +186,50 @@ body {
     top: var(--prepper-topbar-height);
     height: calc(100vh - var(--prepper-topbar-height));
   }
+}
+/* The graph control: the plugin's own button, with the panel it was drawn in the corner of
+   taken away around it. Every selector here is a child chain from the bar, so it outranks the
+   plugin's own rules wherever the two disagree, whichever order the sheets are linked in. */
+.page-header > header > .graph {
+  display: flex;
+  align-items: center;
+}
+.page-header > header > .graph > h3 {
+  display: none;
+}
+.page-header > header > .graph > .graph-outer {
+  position: static;
+  height: auto;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+/* Belt and braces with graph.js, which removes this element outright: a reader whose
+   scripts have not arrived gets a bar rather than a 250px box wedged into it. */
+.page-header > header > .graph > .graph-outer > .graph-container {
+  display: none;
+}
+.page-header > header > .graph > .graph-outer > .global-graph-icon {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0.4rem;
+  opacity: 1;
+  border-radius: var(--md-sys-shape-corner-full);
+  color: var(--md-sys-color-on-surface-variant);
+}
+.page-header > header > .graph > .graph-outer > .global-graph-icon > svg {
+  width: 20px;
+  height: 20px;
+}
+.page-header > header > .graph > .graph-outer > .global-graph-icon:hover {
+  color: var(--md-sys-color-on-surface);
+  background-color: var(--md-sys-color-surface-container-high);
 }
 :root[reader-mode="on"] .page-header > header {
   opacity: 0;

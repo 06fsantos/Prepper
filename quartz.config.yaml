@@ -232,11 +232,33 @@ plugins:
     layout:
       position: left
       priority: 50
+  # Prepper: in the **top bar**, at priority 40 -- the right-hand slot, after the theme
+  # switch and reader mode -- and no longer a panel in the right rail.
+  #
+  # A 250px box at the edge of every page, drawing four nodes, is a large container for tiny
+  # content; the answer is to open the graph deliberately and at size rather than to enlarge
+  # the box. This plugin already ships exactly that: a global-graph modal, `80vw` by `80vh`,
+  # opened from its own `.global-graph-icon` button or by Ctrl/Cmd-G. So the modal is promoted
+  # to the bar's graph control and the panel is what goes away.
+  #
+  # **The plugin is reused, not forked, vendored or patched.** Its client wires *every*
+  # `.global-graph-icon` in the document and collects *every* `.global-graph-outer`, both by a
+  # document-wide query and neither scoped to the rail -- so a `.graph` rendered in the header
+  # is a working graph control with no code of ours in the path, and the keyboard shortcut,
+  # which is a `keydown` listener on `document`, never knew where the panel was. The vendoring
+  # line in this repo is drawn at `prepper/search` and core Quartz stays a remote.
+  #
+  # The component renders the local panel and the modal in one element and offers no option
+  # for the modal alone, so `prepper/topbar` reduces what is left to the button: the heading
+  # and the 250px box are styled away, and `prepper/topbar/graph.js` takes the local
+  # `.graph-container` out of the document so the plugin's own render sweep finds nothing to
+  # draw into. Hiding it with CSS would have left a hidden force simulation and its animation
+  # frame running on every page.
   - source: "@quartz-community/graph"
     enabled: true
     layout:
-      position: right
-      priority: 10
+      position: header
+      priority: 40
   # Prepper: ours, and the one place the vendoring line is crossed. Quartz's search is
   # adopted whole in mechanism -- the same build-time `contentIndex.json`, the same three
   # Flexsearch indexes, the same preview pane -- but a result has to carry a type chip and

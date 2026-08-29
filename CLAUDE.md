@@ -152,9 +152,9 @@ already correct without it.
 
 ## The top bar
 
-Every control the app has -- the app's name, search, the theme switch, reader mode, and in
-time the rail toggle and the graph -- sits in **one persistent band across the top of every
-page**, including 404. It is Quartz's `header` position, which `DefaultFrame` renders inside
+Every control the app has -- the rail toggle, the app's name, search, the theme switch,
+reader mode and the graph -- sits in **one persistent band across the top of every page**,
+including 404. It is Quartz's `header` position, which `DefaultFrame` renders inside
 `<header>` and, decisively, **outside the `.popover-hint` the search preview clones** -- the
 hazard that forced `prepper/sidebar` into `left` does not reach here.
 
@@ -181,6 +181,16 @@ Reader mode fades the bar with the rails, on the same attribute and by the same 
 because a control that hides the chrome while the chrome's most prominent element stays on
 screen does not do what it says. Nothing in the bar animates.
 
+The **graph control is `@quartz-community/graph` itself**, placed at `header`/40 instead of in
+the right rail. The plugin already ships a global-graph modal opened from its own
+`.global-graph-icon` and by Ctrl/Cmd-G, and its client finds both by a **document-wide query**
+-- so moving the component into the bar promotes the modal with no code of ours in the path,
+and the plugin stays a remote that is neither forked, patched nor vendored. The 250px panel is
+what goes: `prepper/topbar` styles the heading and the box away, and `graph.js` removes the
+local `.graph-container` from the document, because the plugin renders into every one it finds
+whether or not anything is on screen to see it. That removal is the bar's only behaviour, and
+it is the reason `prepper/topbar` carries a script at all.
+
 ## The hideable rail
 
 The **left** rail is hidden **whole** -- one `display: none` on the rail itself -- behind one
@@ -193,7 +203,7 @@ what made the prose jump sideways; easing that jump would have been a different 
 thing. The collapsed state is deliberately **not an icon rail** -- the rail's contents are
 author-written topic names, and there is no icon for "Big-O notation".
 
-The right rail is untouched: its table of contents, graph and backlinks are consulted _while_
+The right rail is untouched: its table of contents and backlinks are consulted _while_
 reading, which is a different moment.
 
 Below 800px the rail is not a column, and Quartz's own answer -- a strip across the top of the

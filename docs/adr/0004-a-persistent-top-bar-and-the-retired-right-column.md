@@ -75,6 +75,38 @@ if it is not" and that is a different direction at each width. That is one break
 duplicated between a script and a stylesheet, which is cheaper than the alternative: a script
 that guesses from a measurement jsdom cannot take.
 
+## The graph control is the plugin's own button, moved
+
+`@quartz-community/graph` renders three things in one `.graph` element: a heading, a 250px
+local panel with an expand button in its corner, and the global-graph modal that button opens.
+Prepper wants the modal and not the panel, and the plugin offers no option for the modal alone.
+
+The seam that avoids a fork is in the plugin's **client**, not its markup. It wires *every*
+`.global-graph-icon` in the document and collects *every* `.global-graph-outer`, both by
+document-wide queries and neither scoped to the rail, and its Ctrl/Cmd-G handler is a `keydown`
+listener on `document` that never knew where the panel was. So the component is simply
+**placed in `header` at priority 40** instead of in `right`, and the button it already renders
+becomes the bar's graph control -- working, keyboard-shortcut and all, with no code of ours
+between the press and the modal. The plugin stays a remote: not forked, not patched, not
+vendored. The vendoring line in this repo is drawn at `prepper/search` and it did not have to
+move.
+
+What is left over is shaped from outside, and the two halves are split on a real distinction.
+The heading and the box are **CSS**, in `prepper/topbar`, because CSS applies before the first
+paint and a bar that showed a 250px panel until a script arrived would be worse than the panel.
+The local `.graph-container` is **removed from the document** by `prepper/topbar/graph.js`,
+because the plugin renders into every one it can find whether or not anything is on screen, so
+hiding it would leave a canvas, a force simulation and a frame loop running on every page for
+nothing. That removal always wins its race with the plugin's own render: the plugin registers
+its `nav` listener only after two CDN libraries have loaded, and ours is registered at module
+evaluation time.
+
+Two smaller facts fall out. The modal needs no z-index of ours -- its own `9999` sits inside
+the bar's stacking context, which resolves it above the bar's `1000` and the mobile drawer's
+`999`. And the graph is now on **every** page type the bar is on, 404 and the generated folder
+index included, because it is a control rather than a panel and those pages clear `right`
+rather than `header`.
+
 ## The right column is gone rather than resized
 
 The graph panel is promoted to the modal Quartz already ships, and the backlinks panel moves to

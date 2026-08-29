@@ -42,10 +42,11 @@
  * | 20       | search, **the centre and the split** |
  * | 30       | the theme switch (`darkmode`)    |
  * | 35       | reader mode                      |
- * | 40       | the graph (ticket 05)            |
+ * | 40       | the graph                        |
  *
  * A control arrives in a slot by being given a number, and nothing here needs re-laying out
- * to accept it. 5 and 40 are left empty on purpose, and Quartz's Flex `group:` mechanism is
+ * to accept it -- the rail toggle and the graph both arrived that way. Quartz's Flex `group:`
+ * mechanism is
  * deliberately not used: a group renders an anonymous `<div class="flex-component">` with no
  * name of its own, so grouping would buy a wrapper nothing can style and cost the ordering
  * that already does the job. The retired `toolbar` group is exactly that lesson.
