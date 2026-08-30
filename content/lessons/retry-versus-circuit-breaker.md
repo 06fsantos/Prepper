@@ -1,6 +1,6 @@
 ---
 id: 01M192KR53MFGQQ02AEG7JXQNE
-title: Retry bets the next call succeeds; a circuit breaker bets it will not
+title: Retry versus circuit breaker
 topic:
   - http-resilience
 prerequisites:

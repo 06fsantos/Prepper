@@ -1,6 +1,6 @@
 ---
 id: 01M192STZ5MBFZ7NF641198HWE
-title: One timeout cannot bound both an attempt and an operation
+title: Total versus per-attempt timeouts
 topic:
   - httpclient
   - http-resilience

@@ -1,6 +1,6 @@
 ---
 id: 01M19J52DBHEPZDMNTGFM9K8CV
-title: ValueTask buys back the synchronous path, and charges a contract for it
+title: ValueTask and when it helps
 topic:
   - async-await
 prerequisites:

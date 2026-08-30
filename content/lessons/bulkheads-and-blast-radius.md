@@ -1,6 +1,6 @@
 ---
 id: 01M1938DF3WJ9A6KTT2JN82JA2
-title: A bulkhead does not make anything faster; it decides who else goes down
+title: Bulkheads and blast radius
 topic:
   - http-resilience
 prerequisites:

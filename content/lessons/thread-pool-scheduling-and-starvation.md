@@ -1,6 +1,6 @@
 ---
 id: 01M19JK11XBC0FJ5XTFS1QA4WN
-title: How the thread pool decides how many threads to run
+title: Thread pool scheduling and starvation
 topic:
   - dotnet-threadpool
 prerequisites:

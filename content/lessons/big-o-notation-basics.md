@@ -1,6 +1,6 @@
 ---
 id: 01M0Z7K6MV5KT6FTA11N33T110
-title: Big-O notation, from first principles
+title: Big-O notation from first principles
 topic:
   - big-o-notation
 ---

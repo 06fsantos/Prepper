@@ -1,6 +1,6 @@
 ---
 id: 01M19J52DFA5P8P87AZ4XH25X4
-title: Composing tasks with WhenAll and WhenAny, and what each one does not do
+title: Composing tasks with WhenAll and WhenAny
 topic:
   - async-await
 prerequisites:

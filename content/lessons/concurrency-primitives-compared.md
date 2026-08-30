@@ -1,6 +1,6 @@
 ---
 id: 01M19JW2EJYBER5PMVNQSZ67AJ
-title: Each concurrency primitive answers a different question
+title: Concurrency primitives compared
 topic:
   - concurrency-primitives
 prerequisites:

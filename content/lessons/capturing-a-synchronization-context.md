@@ -1,6 +1,6 @@
 ---
 id: 01M195XCR2G9YHTBB59GZW9DPF
-title: What a suspension captures, and what ConfigureAwait(false) skips
+title: Synchronization context and ConfigureAwait(false)
 topic:
   - async-await
 prerequisites:

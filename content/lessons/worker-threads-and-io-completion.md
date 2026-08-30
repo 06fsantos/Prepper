@@ -1,6 +1,6 @@
 ---
 id: 01M19JK11ZQSWY187KQNGGC65A
-title: Worker threads, I/O completions, and how work reaches a thread
+title: Worker threads and I/O completions
 topic:
   - dotnet-threadpool
 prerequisites:

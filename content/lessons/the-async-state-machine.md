@@ -1,6 +1,6 @@
 ---
 id: 01M195XCR1HAYE28DQMD0YZETR
-title: A suspension is the moment an async method allocates
+title: The async state machine
 topic:
   - async-await
 ---

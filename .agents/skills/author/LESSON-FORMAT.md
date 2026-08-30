@@ -9,7 +9,7 @@ note type that carries quiz blocks.
 ```yaml
 ---
 id: <mint with `npm run ulid` — never typed, never copied from here>
-title: What a hash map lookup actually costs
+title: The cost of a hash map lookup
 topic:
   - hash-maps
 prerequisites:
@@ -20,7 +20,7 @@ prerequisites:
 | field           | required | shape                                                             |
 | --------------- | -------- | ----------------------------------------------------------------- |
 | `id`            | yes      | ULID, immutable, minted by running `npm run ulid`                 |
-| `title`         | yes      | A sentence-shaped title. Never used for link resolution.          |
+| `title`         | yes      | A noun phrase naming the subject. Never used for link resolution. |
 | `topic`         | yes      | **List.** Every value is the filename stem of an existing `term`. |
 | `prerequisites` | no       | List of filename stems of notes **that already exist**.           |
 | `draft`         | never    | The dev's flag. This skill does not set it.                       |
@@ -28,8 +28,11 @@ prerequisites:
 - `topic` and `prerequisites` are **checked, not merely resolved** — a value naming nothing,
   or naming the wrong class of note, is a build error. `topic` must name a `term`;
   `prerequisites` must name Library content.
-- `title` is prose for the reader. Links resolve against the **filename**, so
-  `[[hash-map-lookup-cost]]` and never `[[What a hash map lookup actually costs]]`.
+- `title` names the subject the way a reader would say it — the shape a Term or a
+  Reference is titled in, not a claim about the subject. The Lesson's thesis goes in the
+  opening paragraph, because a bare `[[wikilink]]` renders the title as link text
+  mid-sentence and a sentence does not read there. Links resolve against the **filename**,
+  so `[[hash-map-lookup-cost]]` and never `[[The cost of a hash map lookup]]`.
 
 ## Body
 

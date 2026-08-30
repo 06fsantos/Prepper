@@ -1,6 +1,6 @@
 ---
 id: 01M0Z7K6MVF280WCYA4RX0JP85
-title: What a hash map lookup actually costs
+title: The cost of a hash map lookup
 topic:
   - hash-maps
 prerequisites:

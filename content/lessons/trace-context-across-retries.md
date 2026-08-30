@@ -1,6 +1,6 @@
 ---
 id: 01M193KFSAQ56AW7NZE2XMYPST
-title: A retry is one trace with two attempts, not two traces
+title: Trace context across retries
 topic:
   - distributed-tracing
 prerequisites:

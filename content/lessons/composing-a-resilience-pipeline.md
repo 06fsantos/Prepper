@@ -1,6 +1,6 @@
 ---
 id: 01M193YW103W1G91FFE71HCDBZ
-title: A resilience pipeline nests, and every position in it is forced
+title: Ordering a resilience pipeline
 topic:
   - http-resilience
 prerequisites:

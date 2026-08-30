@@ -1,6 +1,6 @@
 ---
 id: 01M192ZP7FPS3QEKS49335MAA9
-title: Hedging spends bandwidth to buy back the latency tail
+title: Hedging against tail latency
 topic:
   - http-resilience
 prerequisites:

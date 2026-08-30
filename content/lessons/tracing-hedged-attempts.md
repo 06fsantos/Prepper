@@ -1,6 +1,6 @@
 ---
 id: 01M193RHBHTJ8TBFJMHA5V7GVW
-title: What a hedged attempt does to a trace is an open question
+title: Tracing hedged attempts
 topic:
   - distributed-tracing
 prerequisites:

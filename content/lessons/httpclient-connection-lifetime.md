@@ -1,6 +1,6 @@
 ---
 id: 01M1924ABTVEFCTPW32SZWDQ5N
-title: The handler owns the connection pool, not the client
+title: HttpClient handlers and connection lifetime
 topic:
   - httpclient
 ---

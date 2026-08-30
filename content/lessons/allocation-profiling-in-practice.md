@@ -1,6 +1,6 @@
 ---
 id: 01M19K50PKQMVVSMX6H1D8Q478
-title: Measuring allocation instead of arguing about it
+title: Measuring allocation with BenchmarkDotNet and dotnet-trace
 topic:
   - dotnet-memory-allocation
 prerequisites:

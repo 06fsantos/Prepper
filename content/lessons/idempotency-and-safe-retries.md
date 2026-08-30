@@ -1,6 +1,6 @@
 ---
 id: 01M193DZM48MB18GW0HEPVQK6E
-title: Idempotency is what makes a retry safe, and the method only tells you half of it
+title: Idempotency and safe retries
 topic:
   - http-resilience
 prerequisites:
