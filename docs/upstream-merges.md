@@ -20,6 +20,13 @@ where our code goes and which five files outside `prepper/` we do edit.
   `docs/adr/`, `docs/agents/`, and this file; everything else under `docs/` is upstream's
   and is left alone. It is a little untidy, and it is untidy _on purpose_ — moving
   upstream's docs out of the way would be a divergence that conflicts on every merge.
+- **One upstream file is deleted, not edited: `.github/dependabot.yml`.** Quartz schedules
+  weekly npm and github-actions version updates with it. On our fork that is a PR against a
+  dependency tree we do not own and did not choose, so the file is removed rather than
+  emptied. It is the one deliberate deletion from upstream's tree, and it is the one place a
+  merge can quietly undo our decision: a merge that restores it will do so silently, because
+  a delete-versus-modify conflict only surfaces if upstream touched the file that cycle.
+  **After every merge, check it is still gone.**
 
 ## The procedure
 
