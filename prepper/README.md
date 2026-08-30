@@ -90,6 +90,10 @@ prepper/
     components/index.ts     a component that renders nothing and carries the bar's stylesheet
     graph.js                the graph plugin's local panel, taken out of the document
     graph.test.ts           the panel gone, the button and the modal left, through seam 2
+    controls.test.ts        every control in the bar audited as a set -- a name each, the
+                            tab order, one focus ring, and contrast computed in both
+                            themes -- through seam 1
+    keyboard.test.ts        focus landing, and a control a key press can work, through seam 2
   sidebar/                  the left rail, hideable -- and the one preference we remember
     index.ts                the component manifest; one config entry, at `header` priority 5
     components/index.ts     the control; the rule that hides the rail above 800px, and the

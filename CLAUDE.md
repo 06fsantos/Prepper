@@ -233,6 +233,27 @@ local `.graph-container` from the document, because the plugin renders into ever
 whether or not anything is on screen to see it. That removal is the bar's only behaviour, and
 it is the reason `prepper/topbar` carries a script at all.
 
+Because every control is here, the bar is also where the app's **keyboard legibility** is
+settled -- once, for the set, rather than control by control as each arrived. Three rules do
+it and all three take the _bar_ as their subject, so they are true of the seventh control as
+well as of these six: one `:focus-visible` outline (`primary` at 2px, offset onto the bar's own
+surface, and **not** eased -- the vocabulary exists and a ring is not what it is for); the
+search field's label and border repainted off the token roles, the two Quartz names they
+arrived in resolving to 3.84:1 and 1.46:1 against the bar in light mode; and reader mode's fade
+undone by `:focus-within` as well as by `:hover`, because a keyboard has no hover and a faded
+bar is still six focusable controls. `prepper/sidebar` does the same for the rail, which
+upstream fades by the same rule and fills with links.
+
+Three of the six controls are a community plugin's or upstream's and are not ours to
+re-render, so an audit holds them to what they emit and to what the sheet does to them. All
+six emit an accessible name; all six are a native `button` or `a` with no `tabindex`, which is
+what makes the tab order the DOM order and the DOM order the slot order. **No control says its
+state in colour** -- the two that have one, the rail toggle and the theme switch, each swap a
+glyph with `display`. `prepper/topbar/controls.test.ts` enumerates the controls off the page
+rather than from a list, so a seventh joins the audit by existing, and it **computes** the
+contrast ratios from the emitted `--md-sys-color-*` values in both schemes rather than
+eyeballing one, which is what makes a re-seed of `prepper/tokens` re-check them.
+
 ## The hideable rail
 
 The **left** rail is hidden **whole** -- one `display: none` on the rail itself -- behind one
@@ -244,6 +265,11 @@ collapse that redeclared `grid-template-columns` with the left track reduced to 
 what made the prose jump sideways; easing that jump would have been a different and lesser
 thing. The collapsed state is deliberately **not an icon rail** -- the rail's contents are
 author-written topic names, and there is no icon for "Big-O notation".
+
+The control carries **two glyphs** and shows one: a cross while the rail is on the page, three
+lines while it is not. The swap is `display`, keyed on the control's own `aria-pressed` -- so
+what a reader sees and what a screen reader is told are one fact written once by `toggle.js`,
+and neither states the rail's condition in colour.
 
 The rail **fades**, and that is the build's only motion: `opacity` over
 `--md-sys-motion-duration-short4` on `--md-sys-motion-easing-standard`, with the `display` flip

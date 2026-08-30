@@ -44,7 +44,17 @@ const PrepperSidebarToggle: QuartzComponentConstructor = () => {
         "aria-label": "Hide the sidebar",
         title: "Hide the sidebar",
       },
-      [icon()],
+      [
+        icon("away", [
+          [6, 6, 18, 18],
+          [18, 6, 6, 18],
+        ]),
+        icon("back", [
+          [4, 7, 20, 7],
+          [4, 12, 20, 12],
+          [4, 17, 20, 17],
+        ]),
+      ],
     )
 
   Toggle.css = styles
@@ -54,21 +64,32 @@ const PrepperSidebarToggle: QuartzComponentConstructor = () => {
 }
 
 /**
- * Three lines: the gesture every reader already knows means *the menu goes away, and comes
- * back*.
+ * Two glyphs, one on screen at a time: the gesture every reader already knows means *the menu
+ * goes away, and comes back*.
  *
- * It was a panel-and-column diagram, which described the rail accurately and asked the reader
- * to work out what pressing it would do. The hamburger says nothing about the rail and is
- * understood on sight, which is the trade a navigation control should take.
+ * It was one panel-and-column diagram, which described the rail accurately and asked the
+ * reader to work out what pressing it would do. Three lines say nothing about the rail and
+ * are understood on sight, which is the trade a navigation control should take -- and a cross
+ * is the other half of the pair the same reader already knows.
  *
- * `aria-hidden`, because the button already says what it does in words -- an icon that
- * repeated the label to a screen reader would say it twice.
+ * There are two because the control has a **state**, and a control whose state is legible
+ * only in colour is not legible at all (ticket 10). The one it shows is chosen by
+ * `aria-pressed` and by `display`, which is the same mechanism the theme switch three slots
+ * along the bar already uses for the same reason -- and keying it off `aria-pressed` rather
+ * than off a class of our own means the glyph a reader sees and the state a screen reader is
+ * told are **one fact**, written once by `toggle.js`, incapable of disagreeing.
+ *
+ * - `away`, a cross, is shown while the rail is on the page: pressing puts it away.
+ * - `back`, three lines, is shown while it is not: pressing calls it up.
+ *
+ * `aria-hidden` on both, because the button already says what it does in words -- an icon
+ * that repeated the label to a screen reader would say it twice.
  */
-function icon() {
+function icon(state: "away" | "back", strokes: [number, number, number, number][]) {
   return h(
     "svg",
     {
-      class: "prepper-sidebar-toggle-icon",
+      class: `prepper-sidebar-toggle-icon prepper-sidebar-toggle-${state}`,
       viewBox: "0 0 24 24",
       width: "20",
       height: "20",
@@ -78,11 +99,9 @@ function icon() {
       "stroke-linecap": "round",
       "aria-hidden": "true",
     },
-    [
-      h("line", { x1: "4", y1: "7", x2: "20", y2: "7" }),
-      h("line", { x1: "4", y1: "12", x2: "20", y2: "12" }),
-      h("line", { x1: "4", y1: "17", x2: "20", y2: "17" }),
-    ],
+    strokes.map(([x1, y1, x2, y2]) =>
+      h("line", { x1: String(x1), y1: String(y1), x2: String(x2), y2: String(y2) }),
+    ),
   )
 }
 
@@ -180,6 +199,27 @@ const styles = `
 .prepper-sidebar-toggle:hover {
   color: var(--md-sys-color-on-surface);
   background-color: var(--md-sys-color-surface-container-high);
+}
+/* The state, as a glyph rather than as a tint. One of the two is on screen at a time and the
+   attribute that picks it is the same one a screen reader is given, so the control cannot
+   look like one state and announce the other. display, not colour: a reader who cannot
+   tell the two tints apart can still tell a cross from three lines. */
+.prepper-sidebar-toggle > .prepper-sidebar-toggle-icon {
+  display: none;
+}
+.prepper-sidebar-toggle[aria-pressed="false"] > .prepper-sidebar-toggle-away {
+  display: block;
+}
+.prepper-sidebar-toggle[aria-pressed="true"] > .prepper-sidebar-toggle-back {
+  display: block;
+}
+/* Reader mode fades the rail to nothing and brings it back on hover -- upstream's own rule,
+   and a rule a keyboard has no gesture for. The rail is still full of links while it is
+   invisible, so a reader tabbing into the topic tree would be moving focus around a column
+   they cannot see. It comes back for focus exactly as it comes back for the pointer; the bar
+   does the same in prepper/topbar. */
+:root[reader-mode="on"] .page > #quartz-body .sidebar.left:focus-within {
+  opacity: 1;
 }
 /* The only motion in the build, and it is on the rail rather than on anything the rail
    shares a grid with. The display flip rides along, discrete, so the rail is still rendered

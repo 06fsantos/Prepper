@@ -83,10 +83,32 @@
  *
  * Reader mode fades the rails and restores them on hover. A control that hides the chrome
  * while the chrome's most prominent element stays nailed to the top of the window does not do
- * what it says, so the bar fades with them, by the same gesture and on the same attribute.
- * Nothing here animates: motion is `prepper/tokens`' subject and its own ticket, and an
- * ad-hoc `transition` in a module that has no motion vocabulary is how a design system
- * becomes a suggestion.
+ * what it says, so the bar fades with them, by the same gesture and on the same attribute --
+ * and back for `:focus-within` as well as for `:hover`, because a keyboard has no hover and a
+ * faded bar is still six focusable controls. Nothing here animates: there is a motion
+ * vocabulary in the build now (`prepper/tokens`), and neither a bar under a reader's pointer
+ * nor a focus ring under their Tab key is what it is for.
+ *
+ * ## Every control in it, from the keyboard
+ *
+ * The bar is where every control in the app is, so it is where the app's keyboard legibility
+ * is settled -- once, for the set, rather than control by control as each arrived. Three rules
+ * do it and all three take the **bar** as their subject, which is what makes them true of the
+ * seventh control as well as of these six: one `:focus-visible` outline; the search field's
+ * label and border repainted off the token roles, the two names they arrived in resolving to
+ * 3.84:1 and 1.46:1 against the bar in light mode; and reader mode's fade undone by focus.
+ *
+ * Three of the six are a community plugin's or upstream's and are not ours to re-render, so
+ * what an audit can hold them to is what they emit and what the sheet does to them. All six
+ * turn out to emit an accessible name, and all six are a native `button` or `a` with no
+ * `tabindex` on them -- which is what makes the tab order the DOM order, and the DOM order the
+ * slot order. `prepper/topbar/controls.test.ts` enumerates them off the page rather than from
+ * a list, so a seventh control joins the audit by existing; the contrast ratios in it are
+ * **computed** from the emitted `--md-sys-color-*` values in both schemes rather than
+ * eyeballed in one, which is what makes a re-seed of `prepper/tokens` re-check them.
+ *
+ * No control says its state in colour. Two of them have one to say -- the rail toggle and the
+ * theme switch -- and both swap a glyph with `display`.
  */
 export const manifest = {
   name: "prepper-topbar",

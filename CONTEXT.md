@@ -97,7 +97,7 @@ Everything the app puts around a note that is not the note: the top bar and the 
 _Avoid_: UI, shell, navigation, furniture
 
 **Top bar**:
-The one persistent band across the top of every page, carrying every control the app has: the rail toggle and the app's name, search, and the theme, reader-mode and graph controls. Fixed rather than scrolling, and the only Chrome element present on every page whatever the body is. It holds controls and never content — a thing that would go in it because it is important, rather than because it is operated, belongs on the page.
+The one persistent band across the top of every page, carrying every control the app has: the rail toggle and the app's name, search, and the theme, reader-mode and graph controls. Fixed rather than scrolling, and the only Chrome element present on every page whatever the body is. It holds controls and never content — a thing that would go in it because it is important, rather than because it is operated, belongs on the page. Because it holds all of them, it is also where the app's keyboard legibility is settled once rather than control by control: one focus ring whose subject is the bar, an accessible name on every icon, a tab order that is the slot order because nothing rewrites it, and no control that says its state in colour alone — the two that have a state swap a glyph.
 _Avoid_: header, navbar, app bar, banner
 
 **Rail**:

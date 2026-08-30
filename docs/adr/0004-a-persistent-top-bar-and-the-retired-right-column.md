@@ -241,6 +241,62 @@ the rule the frame draws under the article, and a 38rem rule floating in the mid
 full-width column reads as a second page beginning. The shared left edge is what makes a Term's
 definition and its index one page, so the cap now pins as well as caps.
 
+## One bar means one place to settle the keyboard
+
+Putting every control in one band has a second consequence, and it is the reason the
+accessibility ticket was written against the bar rather than against six modules: the app's
+keyboard legibility becomes decidable in one place, once, instead of being re-argued each time
+a control moves. Three rules do it, and every one of them takes the **bar** as its subject
+rather than any control in it -- one `:focus-visible` outline, the search field's ink, and
+reader mode's fade undone by focus -- so the seventh control is legible the day it takes a slot
+number, with nothing to remember.
+
+**Three of the six controls are not ours to re-render.** The theme switch, reader mode and the
+graph are a community plugin's markup, and the vendoring line drawn at `prepper/search` did not
+move for this. What an audit can hold them to is therefore what they emit and what the
+stylesheet does to them from outside -- which turned out to be enough: all six already carry an
+accessible name, and all six are a native `button` or `a` with no `tabindex` on them, so the
+tab order is the DOM order and the DOM order is the slot order. Nothing had to be wrapped,
+re-labelled or replaced.
+
+**The contrast is computed, not eyeballed, and in both schemes.** Every rule in the bar names a
+Material role and every role is derived from one seed, so the ratios are arithmetic over the
+emitted `--md-sys-color-*` values rather than a number somebody read off a screenshot -- which
+means a re-seed of `prepper/tokens` re-checks them, and a seed that put a control under the
+threshold fails a test instead of shipping. It found one control genuinely wrong: search is the
+only thing in the bar upstream draws as a *field*, and it arrived painted in Quartz's old names
+-- its label in `--gray` and its border in `--lightgray`, which alias onto `outline` and
+`outline-variant` and come out at 3.84:1 and 1.46:1 against the bar in light mode. Both are
+repainted from `prepper/topbar`. The source document that started this effort only ever
+inspected the dark theme, where both would have passed.
+
+**A focus ring is not motion.** The vocabulary exists now and this is not what it is for: an
+indicator that eases in is an indicator that is absent for the first frames of every keystroke,
+and a reader tabbing across six controls would be chasing it. `outline` rather than a border,
+a shadow or a background, so nothing in the bar changes size or moves when focus lands.
+
+**Reader mode had to give the chrome back to a keyboard.** Fading the bar and the rail to
+`opacity: 0` and restoring them on `:hover` is a gesture a pointer has and a keyboard does not,
+so a reader in reader mode was tabbing through six controls and a topic tree that were all on
+the page and none of them on screen. `:focus-within` restores both, by the same rule that
+restores them for a pointer.
+
+**The state of a control is never a tint.** Two controls in the bar have a state to report. The
+theme switch already swapped its icon on `display`, which is upstream's own doing; the rail
+toggle reported its state only in words, so it gained a second glyph -- a cross while the rail
+is on the page, three lines while it is not. The swap keys on the control's own `aria-pressed`
+rather than on a class of ours, which makes the glyph a reader sees and the state a screen
+reader is told **one fact**, written once, incapable of drifting apart.
+
+**Where the audit stops, said out loud.** At the bar. The search *overlay* is a DOM descendant
+of it -- `.search-container` is nested inside `.search` -- but it is `display: none` until the
+bar's search button opens it, so nothing in it is in the page's tab order at rest, and it is
+`prepper/search`'s vendored sheet, which this effort's spec puts out of scope. Two things in it
+are known to be weaker than the bar now is: the search field's own focus outline is removed by
+that sheet, and a result card indicates the arrow-key cursor with a background colour alone.
+Both are recorded here rather than quietly excluded, because the exclusion is a decision
+somebody may want to reverse.
+
 ## Consequences
 
 - **Motion tokens now exist, and ADR 0003 is amended.** The rail's collapse is eased, which
@@ -273,6 +329,13 @@ definition and its index one page, so the cap now pins as well as caps.
   upstream's YAML schema, so an editor reading the schema flags the line.
 - **The graph is reached deliberately or not at all.** No ambient panel means no glanceable
   graph. Accepted: it was not legible at 250px anyway.
+- **The rail is focusable for the length of its own fade.** `transition-behavior:
+  allow-discrete` keeps the rail rendered while its opacity runs down, so for
+  `--md-sys-motion-duration-short4` after a dismissal its links are still in the tab order.
+  Left alone deliberately: 200ms is shorter than any press a reader can aim, and the
+  alternatives -- dropping the discrete flip, or hiding the rail with `visibility` -- either
+  reinstate the jump ticket 03 abolished or abolish the fade ticket 09 added. Recorded because
+  it is the kind of thing an audit should be able to say it looked at.
 - **`prepper/topics` renders one index in views that differ in density, not just in
   position.** The rail stays a bare foldable name list; the entry page and a Term's index get
   cards and columns. The index itself stays single -- that is what stops the rail and the home

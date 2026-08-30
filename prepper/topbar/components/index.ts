@@ -110,11 +110,35 @@ function script(name: string): string {
  * to. Its blurred backdrop covers the bar, including the control that opened it, which is
  * what a modal should do.
  *
+ * ## The keyboard
+ *
+ * Six controls sit here and five of them are icon-only, so the bar is where this app's
+ * keyboard legibility is decided. Three rules do it, and all three have the **bar** as their
+ * subject rather than any control in it, which is what makes them true of the next control
+ * as well as of these six:
+ *
+ * - one `:focus-visible` outline, reaching every focusable thing in the bar;
+ * - the search field's label and border, repainted off the token roles because the two names
+ *   they arrived in resolve to 3.84:1 and 1.46:1 against the bar in light mode;
+ * - and reader mode's fade, undone by `:focus-within` as well as by `:hover`.
+ *
+ * That last one is not a nicety. Fading the chrome to `opacity: 0` leaves every control in it
+ * focusable and invisible, and a pointer has a gesture for bringing it back where a keyboard
+ * has none -- so a reader tabbing across a page in reader mode would be moving focus through
+ * six controls that are not on screen. `prepper/sidebar` does the same for the rail, which
+ * upstream fades by the same rule and fills with links.
+ *
+ * What is **not** here is any rule that says a control's state in colour. The rail toggle
+ * swaps its glyph (`prepper/sidebar`) and the theme switch swaps its icon (upstream's own
+ * `display` rules), both on `display`; a tint would have been cheaper and would have said
+ * nothing to a reader who cannot see the difference between two tints.
+ *
  * ## Reader mode
  *
  * Upstream's reader mode fades the rails to nothing and brings them back on hover. The
  * bar joins them, on the same attribute and with the same gesture -- and with no transition
- * of its own, because motion is `prepper/tokens`' vocabulary and it does not have one yet.
+ * of its own: there is a motion vocabulary in the build now, and a bar that faded in and out
+ * from under a reader's pointer is exactly what it is not for.
  * `opacity` is the right tool here and is safe: unlike `transform` and `filter`, it makes a
  * stacking context without making a containing block, so the search overlay still resolves
  * against the viewport.
@@ -167,6 +191,39 @@ body {
 .page-header > header > .page-title > a {
   color: var(--md-sys-color-on-surface);
   background-color: transparent;
+}
+/* One ring, every control, and the bar is its subject rather than any one thing in it -- so a
+   control that arrives in a new slot is focusable-visibly the day it arrives, with nothing to
+   remember. :focus-visible rather than :focus, so a pointer press does not leave a ring
+   behind it.
+
+   outline rather than a border, a shadow or a background: it is drawn outside the border
+   box, so nothing in the bar changes size or moves when focus lands on it, and it follows the
+   rounded corners of whatever it lands on. The offset puts it on the bar's own surface, which
+   is what its contrast is measured against -- primary on surface-container is 5.53:1 in
+   light and 9.64:1 in dark, against the 3:1 a non-text indicator needs, and it clears 3:1
+   against the hover surface underneath it as well. prepper/topbar/controls.test.ts computes
+   both from the emitted tokens rather than taking this comment's word for it.
+
+   And it does not ease. There is a motion vocabulary now and a ring is not what it is for: an
+   indicator that arrives over 200ms is an indicator that is not there for the first 200ms of
+   every keystroke, and a reader tabbing through six controls would be chasing it. */
+.page-header > header :focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+/* Search is the one control in the bar that upstream draws as a field rather than as an icon,
+   and it arrived painted in Quartz's old names: its label in --gray and its border in
+   --lightgray, which resolve onto outline and outline-variant and come out at 3.84:1 and
+   1.46:1 against the bar in light mode -- a label under the 4.5:1 text minimum and a boundary
+   all but invisible. Both are repainted here, from the bar rather than in prepper/search's
+   vendored sheet, which stays outside the token system by ADR 0003. */
+.page-header > header > .search > .search-button {
+  border-color: var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-small);
+}
+.page-header > header > .search > .search-button > p {
+  color: var(--md-sys-color-on-surface-variant);
 }
 /* Upstream keeps 6rem of air above the page and above each rail, which existed because
    nothing else did. The bar is that now, so what is left here is the gap *below* the bar --
@@ -231,7 +288,8 @@ body {
 :root[reader-mode="on"] .page-header > header {
   opacity: 0;
 }
-:root[reader-mode="on"] .page-header > header:hover {
+:root[reader-mode="on"] .page-header > header:hover,
+:root[reader-mode="on"] .page-header > header:focus-within {
   opacity: 1;
 }
 `
