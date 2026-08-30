@@ -250,7 +250,13 @@ definition and its index one page, so the cap now pins as well as caps.
   not a heading fold, not a topic-tree fold. Those elements are shut by the HTML specification
   before a stylesheet loads, before a script runs, and inside the search preview pane, and all
   three properties are load-bearing. An eased `<details>` is a script-dependent seal wearing a
-  costume.
+  costume. What the rail actually got is a **fade**: `opacity` over Material's `short4` on the
+  `standard` curve, with the display flip carried along as a discrete step so the rail is still
+  drawn while it goes. Nothing geometric is interpolated, so the non-movement proof above is
+  untouched -- and a drawer that *slid* was refused for the same reason a fold that eased is,
+  a rail whose position a reader can catch mid-flight is a rail that is somewhere other than
+  where it says. Under `prefers-reduced-motion: reduce` there is no fade at all: disabled
+  outright, build-wide, not shortened.
 - **Collapsed means gone, not an icon rail.** The board that prompted this work drew a
   collapsed strip of icons. There is no icon for "Big-O notation": the rail's contents are
   author-written topic names, and an icon rail would be a column of identical generic glyphs.

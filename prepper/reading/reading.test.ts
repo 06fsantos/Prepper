@@ -32,6 +32,7 @@ import {
   pixels,
   rules,
   stylesheets,
+  subjects,
   tracks,
 } from "../testing/stylesheets.ts"
 
@@ -316,7 +317,16 @@ describe("the reading surface", () => {
     // It cannot be left to the rail to make the page tall, which is what was happening before:
     // the rail is `display: none` when collapsed and below 800px, and a footer that moved when
     // the furniture did would be furniture deciding the shape of the page.
-    assert.match(css, /\.sidebar\.left\{display:none/)
+    // Read as a rule rather than as a string: since the rail learned to fade, the collapsed
+    // state declares an `opacity` beside its `display` and the minifier is free to emit them
+    // in either order.
+    assert.ok(
+      all.some(
+        (rule) =>
+          subjects(rule).includes(".sidebar.left") && declaration(rule, "display") === "none",
+      ),
+      "no rule takes the rail off the page",
+    )
 
     const placed = all.filter((rule) => rule.selector === `${body}>footer`)
     assert.equal(placed.length, 1, `${placed.length} rules place the footer`)

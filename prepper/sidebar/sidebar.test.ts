@@ -304,16 +304,42 @@ describe("the hideable left rail", () => {
     assert.ok(!/data-prepper-sidebar[^{]*\.sidebar\.right/.test(css))
   })
 
-  test("nothing in the collapse moves", () => {
-    // Motion is `prepper/tokens`' vocabulary and its own ticket. A rail that eased its way out
-    // would be a rail whose state a reader can catch mid-flight.
+  test("the rail fades, and nothing about it moves", () => {
+    // This used to assert that the sheet carrying the collapse held no `transition` at all,
+    // which was true while nothing in the build had a motion vocabulary to be written in.
+    // Ticket 09 gave the rail one, so the claim becomes the narrower and more useful one:
+    // *what* is interpolated, and in what.
+    //
+    // Only `opacity` and `display` -- a fade, and the discrete flip carried along with it so
+    // the rail stays rendered while it fades. Nothing geometric, because the whole point of
+    // ticket 03 is that neither state changes any box on the page; an eased width would be
+    // the jump again, arriving slowly.
     const sheets = site.files
       .filter((file) => file.endsWith(".css"))
       .map((file) => site.file(file))
       .filter((sheet) => sheet.includes("data-prepper-sidebar"))
 
     assert.equal(sheets.length, 1, `${sheets.length} stylesheets carry the collapse`)
-    assert.doesNotMatch(sheets[0], /transition|animation/)
+    const moving = rules(sheets[0]).filter((rule) => declaration(rule, "transition"))
+    assert.equal(moving.length, 1, `${moving.length} rules in the rail's sheet animate`)
+    assert.deepEqual(subjects(moving[0]), [".sidebar.left"])
+    assert.ok(!conditional(moving[0]), "the fade is declared by the state it fades out of")
+
+    const eased = declaration(moving[0], "transition") ?? ""
+    assert.deepEqual(
+      [...eased.matchAll(/(?:^|,)\s*([a-z-]+)/g)].map((match) => match[1]),
+      ["opacity", "display"],
+      `the rail interpolates something other than its own opacity: ${eased}`,
+    )
+
+    // In the vocabulary, not in numbers. A literal duration here would be the sixth module to
+    // pick its own, which is the drift `prepper/tokens` exists to end.
+    assert.match(eased, /var\(--md-sys-motion-duration-/)
+    assert.match(eased, /var\(--md-sys-motion-easing-/)
+
+    // And no keyframe animation anywhere near the rail: a fade is a state changing, an
+    // animation is a thing performing.
+    assert.doesNotMatch(sheets[0], /animation/)
   })
 })
 

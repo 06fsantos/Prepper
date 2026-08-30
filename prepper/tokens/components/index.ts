@@ -27,7 +27,7 @@ import { tokens } from "../tokens.ts"
  */
 const PrepperTokens: QuartzComponentConstructor = () => {
   const Tokens: QuartzComponent = () => null
-  Tokens.css = `${tokens}\n${floatingSurfaces}`
+  Tokens.css = `${tokens}\n${floatingSurfaces}\n${stillness}`
   return Tokens
 }
 
@@ -52,6 +52,34 @@ const floatingSurfaces = `
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--md-sys-shape-corner-medium);
   box-shadow: var(--md-sys-elevation-level2);
+}
+`
+
+/**
+ * A reader who asked for no motion gets none.
+ *
+ * **Disabled, not shortened.** The usual formulation of this block sets every duration to
+ * `0.01ms`, which is a trick for keeping `transitionend` firing in scripts that wait on it;
+ * nothing in this build waits on one, so there is no reason to leave a hundredth of a
+ * millisecond of animation running rather than saying what is meant.
+ *
+ * It is the whole build's rule rather than ours alone, and it is `!important` for the same
+ * reason: `prefers-reduced-motion` is a statement about the reader, not about which module
+ * wrote a declaration. Quartz's base stylesheet fades links, popovers and callouts, and every
+ * community plugin brings its own; a rule scoped to our own classes would leave a reader who
+ * asked for stillness with most of the page still moving.
+ *
+ * It lives here, beside the token layer, because `prepper/tokens` is what published the
+ * vocabulary that made motion possible in this build at all. `motion.test.ts` asserts it.
+ */
+const stillness = `
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 `
 

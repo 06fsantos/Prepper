@@ -221,7 +221,7 @@ surface rather than frosted glass, and an auto margin rather than a translated c
 
 Reader mode fades the bar with the rails, on the same attribute and by the same gesture,
 because a control that hides the chrome while the chrome's most prominent element stays on
-screen does not do what it says. Nothing in the bar animates.
+screen does not do what it says. Nothing in the bar itself animates.
 
 The **graph control is `@quartz-community/graph` itself**, placed at `header`/40 instead of in
 the right rail it used to panel. The plugin already ships a global-graph modal opened from its own
@@ -244,6 +244,16 @@ collapse that redeclared `grid-template-columns` with the left track reduced to 
 what made the prose jump sideways; easing that jump would have been a different and lesser
 thing. The collapsed state is deliberately **not an icon rail** -- the rail's contents are
 author-written topic names, and there is no icon for "Big-O notation".
+
+The rail **fades**, and that is the build's only motion: `opacity` over
+`--md-sys-motion-duration-short4` on `--md-sys-motion-easing-standard`, with the `display` flip
+carried along as a discrete step so the rail is still drawn while it goes. Nothing geometric is
+interpolated, so the non-movement proof is untouched -- and it is safe only because `.center` is
+_placed_ on `grid-center`; an auto-placed article would move at the end of the fade, when the
+rail stops being a grid item. The hidden state and the closed drawer are both `opacity: 0` as
+well as `display: none`, because that is the style the open one fades up from. A drawer that
+**slid** was refused: a rail whose position a reader can catch mid-flight is a rail that is
+somewhere other than where it says.
 
 There is no right rail to hide. It is retired ([ADR
 0004](docs/adr/0004-a-persistent-top-bar-and-the-retired-right-column.md)): the graph became a
@@ -342,14 +352,26 @@ above 16px and no serif ([ADR 0003](docs/adr/0003-material-3-as-the-chromes-toke
 [`prepper/tokens`](prepper/tokens/index.ts) computes the full `--md-sys-color-*` role set light
 and dark with Google's own `material-color-utilities`, adds the 15-role type scale (both
 reference typefaces mapped to Schibsted Grotesk), the seven-step shape scale and the elevation
-ladder, and **defines no motion token at all** — nothing of ours animates, and the seal is
-markup. It rides the same seam the measure does: a component that renders `null` and carries
+ladder, and — since the rail learned to fade — the sixteen duration and ten easing roles of the
+motion scale, durations computed from Google's four base-and-step families rather than retyped.
+It rides the same seam the measure does: a component that renders `null` and carries
 `.css`, which Quartz collects from the configured component list and links after the base
 styles, so a `:root` block in it redefines Quartz's own nine colour names as **aliases onto
 roles**. The palette in `quartz.config.yaml` is therefore **inert** — the only thing still
 reading it is `@quartz-community/og-image`, which composes an image rather than a page.
 Hierarchy comes from `surface-container-*`; shadow is spent only where something floats and
-occludes. `prepper/search`'s vendored CSS and `prepper/report`'s self-contained document are
+occludes.
+
+Motion has **one consumer and one prohibition**. The consumer is the rail's collapse, which
+fades on `short4`/`standard`; the prohibition is that **a `<details>` never animates** — not the
+Problem seal, not a heading fold, not a topic-tree fold, because all three rest on being shut by
+the HTML specification before a stylesheet loads, before a script runs, and inside the search
+preview pane. An eased disclosure is a script-dependent seal wearing a costume.
+[`prepper/tokens/motion.test.ts`](prepper/tokens/motion.test.ts) asserts it over every stylesheet
+the build emits, upstream's included, reading which elements are disclosures off real emitted
+pages; "or anything inside one" is asserted for our own sheets, because Quartz's base stylesheet
+fades links and a fold nearly always holds one. `prefers-reduced-motion: reduce` **disables**
+every animation in the build outright — not `0.01ms`, and not scoped to our modules. `prepper/search`'s vendored CSS and `prepper/report`'s self-contained document are
 outside the system and stay that way.
 
 ## Search

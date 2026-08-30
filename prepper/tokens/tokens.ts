@@ -7,12 +7,26 @@
  * rethemed. This file is the vocabulary that replaces them:
  * [ADR 0003](../../docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md).
  *
- * Four of Material's subsystems are adopted -- colour, elevation, typography, shape -- and
- * one is refused. **There is no motion subsystem here, deliberately.** Nothing of ours
- * animates on purpose, and the one place motion would tempt (revealing a quiz answer,
- * unsealing a solution) is exactly where the architecture insists the seal is markup and
- * the browser's own default does the work. A token vocabulary with no consumer is an
- * invitation to find one.
+ * **Five** of Material's subsystems are adopted: colour, elevation, typography, shape and --
+ * since the rail learned to fade rather than blink out -- motion. This file used to say there
+ * was no motion subsystem here and that the absence was a decision; that is no longer true,
+ * and ADR 0003 carries the amendment rather than being quietly contradicted.
+ *
+ * What did **not** change is the reason the refusal was written down. Motion arrives with one
+ * prohibition attached and it is the load-bearing half of the decision:
+ *
+ * > **A `<details>` never animates.** Not the Problem seal, not a heading fold, not a
+ * > topic-tree fold. Every one of them rests on being shut by the HTML specification before a
+ * > stylesheet loads, before a script runs, and inside Quartz's search preview pane, which
+ * > injects a result's real HTML and runs none of its scripts. An eased disclosure is a
+ * > script-dependent seal wearing a costume.
+ *
+ * `prepper/tokens/motion.test.ts` is that prohibition, asserted over every stylesheet the
+ * build emits rather than only over ours -- upstream is a remote this repo merges, and a
+ * transition landing on a `<details>` in a merge is exactly the failure worth catching. The
+ * one consumer of the vocabulary is `prepper/sidebar`, which fades the rail; a token set with
+ * no consumer would still be an invitation to find one, which is why the set arrived with a
+ * use rather than before it.
  *
  * ## The reading surface is not a consumer
  *
@@ -262,6 +276,67 @@ const shapeTokens = [
 ]
 
 /**
+ * Material's duration roles, as four families of four steps.
+ *
+ * Stated as the arithmetic Google's table *is* rather than as sixteen literals: each family
+ * has a base and a step, and the four steps are the base plus zero to three of them. That is
+ * the same reason the colours are computed from the seed -- a table that was retyped could
+ * only be re-checked by retyping it, and a wrong digit in the middle of sixteen numbers is
+ * exactly the kind of thing nobody reads.
+ *
+ * Nothing here says which duration a thing should take; that is the consumer's business.
+ * `short4` is what the rail fades in, because Material's short family is the band for a
+ * surface that is already on screen changing state.
+ */
+const durationFamilies = [
+  { name: "short", base: 50, step: 50 },
+  { name: "medium", base: 250, step: 50 },
+  { name: "long", base: 450, step: 50 },
+  { name: "extra-long", base: 700, step: 100 },
+]
+
+function durationTokens(): string[] {
+  return durationFamilies.flatMap((family) =>
+    [0, 1, 2, 3].map(
+      (index) =>
+        `--md-sys-motion-duration-${family.name}${index + 1}: ${family.base + index * family.step}ms;`,
+    ),
+  )
+}
+
+/**
+ * Material's easing roles, at their reference curves.
+ *
+ * A table for the same reason the type scale is one: ten roles whose four control points line
+ * up in columns is how a curve set is read, and how a wrong one is seen. The values are
+ * Google's own; the *emphasized* role is the one worth knowing about, because Material
+ * specifies it as a two-part spring for authors who can express one and publishes this single
+ * bezier as the token, which is what a stylesheet can actually hold.
+ *
+ * `legacy` is Material 2's curve, kept because Google keeps it: a vocabulary that dropped the
+ * roles it disagreed with would stop being the vocabulary and start being a selection.
+ */
+// prettier-ignore
+const easings: [name: string, curve: [number, number, number, number]][] = [
+  ["linear",                [0,    0,    1,   1]],
+  ["standard",              [0.2,  0,    0,   1]],
+  ["standard-accelerate",   [0.3,  0,    1,   1]],
+  ["standard-decelerate",   [0,    0,    0,   1]],
+  ["emphasized",            [0.2,  0,    0,   1]],
+  ["emphasized-accelerate", [0.3,  0,    0.8, 0.15]],
+  ["emphasized-decelerate", [0.05, 0.7,  0.1, 1]],
+  ["legacy",                [0.4,  0,    0.2, 1]],
+  ["legacy-accelerate",     [0.4,  0,    1,   1]],
+  ["legacy-decelerate",     [0,    0,    0.2, 1]],
+]
+
+function easingTokens(): string[] {
+  return easings.map(
+    ([name, curve]) => `--md-sys-motion-easing-${name}: cubic-bezier(${curve.join(", ")});`,
+  )
+}
+
+/**
  * Material's shadow ladder, for the surfaces that genuinely float and occlude and no others.
  *
  * Hierarchy between *flat* surfaces comes from the `surface-container-*` roles instead.
@@ -303,6 +378,8 @@ export const tokens = [
     ...typescaleTokens(),
     ...shapeTokens,
     ...elevationTokens,
+    ...durationTokens(),
+    ...easingTokens(),
     ...quartzAliases,
   ]),
   block(':root[saved-theme="dark"]', [...colorTokens(true), ...quartzAliases]),

@@ -68,6 +68,7 @@ prepper/
     index.ts                the component manifest; one config entry, at `beforeBody`
     components/index.ts     a component that renders nothing and carries the stylesheet
     tokens.test.ts          that a page links the token layer at all, through seam 1
+    motion.test.ts          that a `<details>` never animates, and reduced motion stops all
   home/                     the app's entry point: a generated `index.html`
     index.ts                a pageType rendering `topics`' card view, not the rail's tree
   graph/                    the link graph: four typed edge kinds, computed once

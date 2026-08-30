@@ -177,7 +177,22 @@ describe("the topic index", () => {
     assert.equal(styles.length, 1, `${styles.length} stylesheets carry the topic tree`)
     assert.doesNotMatch(styles[0], /900px/)
     assert.doesNotMatch(styles[0], /prepper-sidebar/)
-    assert.doesNotMatch(styles[0], /transition|animation/)
+
+    // And the fold does not animate. This used to be `doesNotMatch(/transition|animation/)`
+    // over the whole sheet, which was a true statement of a build that had no motion
+    // vocabulary at all; since `prepper/tokens` published one it is narrowed to what it was
+    // always about -- the disclosure. A topic's fold is a `<details>` for the same reason the
+    // Problem seal is, and an eased one would be a seal that needs a script. The build-wide
+    // form of this claim is `prepper/tokens/motion.test.ts`; this is the tree's own copy,
+    // here so that the failure names the tree.
+    const eased = rules(styles[0])
+      .filter((rule) => /(?:^|[;{\s])(transition|animation)/.test(rule.body))
+      .filter((rule) => /details|summary|-fold/.test(rule.selector))
+    assert.deepEqual(
+      eased.map((rule) => rule.selector),
+      [],
+      "a topic fold animates",
+    )
   })
 
   test("every item of the sidebar tree is a fold, and it arrives open", () => {

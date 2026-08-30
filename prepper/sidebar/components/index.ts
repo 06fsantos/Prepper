@@ -140,9 +140,29 @@ function script(name: string): string {
  * dimmed sheet that cannot be tapped to close is a control that looks like one and is not,
  * and the toggle is on screen throughout.
  *
- * Nothing here animates -- not the collapse, not the drawer. Motion is `prepper/tokens`'
- * vocabulary and its own ticket, and a drawer that slid would be a rail whose state a reader
- * can catch mid-flight.
+ * ## The one thing that moves, and the one way it is allowed to
+ *
+ * The rail **fades**, in both presentations, over `--md-sys-motion-duration-short4` on
+ * `--md-sys-motion-easing-standard` -- `prepper/tokens`' vocabulary, never a literal, so the
+ * one motion in the build is spelled in the same roles everything else is painted from.
+ *
+ * It fades and it does not *move*. Only `opacity` is interpolated; nothing geometric is, and
+ * the fade is declared on the rail itself, so the proof of ticket 03 is untouched -- the grid
+ * still resolves to the same track list in both states and `.center` is still placed on
+ * `grid-center` rather than left to fall into whichever cell is free. That placement is what
+ * makes the fade safe: `display` is carried along with `transition-behavior: allow-discrete`
+ * so the rail stays rendered while it fades out, and an article that auto-placed would have
+ * moved when the rail stopped being a grid item at the end of it.
+ *
+ * The hidden state therefore sets `opacity: 0` as well as `display: none`, and the drawer's
+ * closed state does the same. That is not decoration: with `allow-discrete`, an element
+ * arriving from `display: none` transitions from the computed style it had while hidden, so
+ * the closed state has to *be* transparent for the open one to fade in rather than appear.
+ *
+ * A drawer that **slid** was considered and refused: a rail whose position a reader can catch
+ * mid-flight is a rail that is somewhere other than where it says. A fade changes nothing
+ * about where anything is. And under `prefers-reduced-motion: reduce` there is no fade at all
+ * -- `prepper/tokens` disables it outright, so the rail goes as it always did.
  */
 const styles = `
 .prepper-sidebar-toggle {
@@ -161,16 +181,28 @@ const styles = `
   color: var(--md-sys-color-on-surface);
   background-color: var(--md-sys-color-surface-container-high);
 }
+/* The only motion in the build, and it is on the rail rather than on anything the rail
+   shares a grid with. The display flip rides along, discrete, so the rail is still rendered
+   while it fades; nothing geometric is interpolated, so nothing can be caught part-way to
+   somewhere. */
+.page > #quartz-body .sidebar.left {
+  transition:
+    opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+    display var(--md-sys-motion-duration-short4) allow-discrete;
+}
 @media all and (min-width: 800px) {
   :root[data-prepper-sidebar="hidden"] .page > #quartz-body .sidebar.left {
     display: none;
+    opacity: 0;
   }
 }
 @media all and (max-width: 800px) {
   /* Not a strip above the article: the rail is off the page until it is asked for, and it is
-     off the page in the markup's own default state rather than by a script's intervention. */
+     off the page in the markup's own default state rather than by a script's intervention.
+     Transparent as well as absent, because that is the style the drawer fades up from. */
   .page > #quartz-body .sidebar.left {
     display: none;
+    opacity: 0;
   }
   /* The drawer. Fixed, so the article underneath it is not re-laid-out when it opens, and
      bounded by the viewport rather than by a fixed width, so nothing can scroll sideways. */
@@ -184,6 +216,7 @@ const styles = `
     bottom: 0;
     left: 0;
     z-index: 999;
+    opacity: 1;
     box-sizing: border-box;
     width: min(20rem, 85vw);
     padding: 1rem;

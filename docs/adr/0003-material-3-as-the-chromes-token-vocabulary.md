@@ -71,8 +71,29 @@ surface** does not -- is a scope boundary, and both terms are defined in
   a stylesheet loads, before a script runs, and inside the search preview pane that injects a
   result's real HTML and runs none of its scripts, and every one of those three properties is
   relied upon somewhere in this codebase. An eased `<details>` is a script-dependent seal
-  wearing a costume. A test asserts that no emitted stylesheet puts a `transition` or
-  `animation` on a `details` element or on anything inside one.
+  wearing a costume. `prepper/tokens/motion.test.ts` asserts it over **every** stylesheet the
+  build emits, upstream's included -- a transition landing on a `<details>` in a merge is the
+  failure worth catching -- and reads the disclosure elements off real emitted pages, because
+  `details.prepper-topic-fold` and `summary.prepper-topic-fold-row` are class selectors and
+  only the markup knows what a fold is wearing.
+
+  "Or on anything inside one" is asserted for **our** stylesheets, and the boundary is drawn
+  deliberately rather than fudged: Quartz's base stylesheet fades a link's colour, a
+  blockquote's border and a heading's permalink anchor, and a folded section nearly always
+  holds a link. Fading a link inside a fold is not an eased disclosure, and this repo does not
+  fork upstream to stop it. What our own sheets may not do is animate anything a fold contains,
+  because a "just the chevron" transition is precisely where the prohibition would be lost.
+
+  Two further decisions came with the role set. **`prefers-reduced-motion: reduce` disables
+  motion outright** -- `animation: none !important; transition: none !important` on everything,
+  not the customary `0.01ms`, which is a trick for keeping `transitionend` firing in scripts
+  that wait on one and nothing here does. It is the whole build's rule, ours and upstream's,
+  because the preference is a statement about the reader rather than about module boundaries.
+  And the **one consumer arrived with the vocabulary**: `prepper/sidebar` fades the rail on
+  `--md-sys-motion-duration-short4` and `--md-sys-motion-easing-standard`. Only `opacity` is
+  interpolated, with `display` carried along as a discrete step so the rail stays rendered
+  while it fades; nothing geometric moves, which is what keeps ticket 03's proof -- that the
+  article column does not shift by a pixel -- intact.
 - **Three surfaces are outside the system and stay that way.** `prepper/search`'s CSS is vendored and
   pinned by the sha256 of the pristine original, and the pin exists so the diff from upstream stays
   legible. `prepper/report` is a whole self-contained HTML document rather than a page through
