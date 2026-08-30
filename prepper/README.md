@@ -55,21 +55,21 @@ prepper/
     components/index.ts     the component itself, sliced by `options.section`
     edges.test.ts           the rails and the backlinks panel, through seam 1
   topics/                   the generated topic index: `topic`, inverted on the Term note
-    topic-index.ts          the pure inversion, read by both views and by the entry page
-    index.ts                the component manifest; two config entries, one per view
-    components/index.ts     the rail's tree and the Term page's index, one component
-    topics.test.ts          one index, three renderings, through seam 1
+    topic-index.ts          the pure inversion, read by all three views
+    index.ts                the component manifest; two config entries, one per placement
+    components/index.ts     the rail's tree, the entry page's cards, a Term's one card
+    topics.test.ts          one index, three views, and the density of two of them
   reading/                  the reading surface: the measure, the serif, the chips
     index.ts                the component manifest; one config entry, at `beforeBody`
     components/index.ts     the chips, the grid, the measure, and where it gives way
-    reading.test.ts         the chips, the measure, and the wide index, through seam 1
+    reading.test.ts         the chips, the measure, the wide index and the footer
   tokens/                   the chrome's design tokens: Material 3, from one seed
     tokens.ts               the roles, derived; and Quartz's nine, aliased onto them
     index.ts                the component manifest; one config entry, at `beforeBody`
     components/index.ts     a component that renders nothing and carries the stylesheet
     tokens.test.ts          that a page links the token layer at all, through seam 1
   home/                     the app's entry point: a generated `index.html`
-    index.ts                a pageType, so the page comes out through Quartz's own layout
+    index.ts                a pageType rendering `topics`' card view, not the rail's tree
   graph/                    the link graph: four typed edge kinds, computed once
     graph.ts                the pure index, read by the emitter and by the components
     index.ts                the emitter, which writes static/linkGraph.json
@@ -223,6 +223,14 @@ matches is a fact about markup, so the caller **runs the selector against the em
 and hands in the answer. That composition — the markup says which rules reach this page, the
 stylesheet says what they declare — is what "a Lesson holds 38rem and the home page does not"
 is asserted with.
+
+It reads what a rule _declares_ as well as which ones apply, which is what ticket 08's density
+and footer assertions are made of: `repeat(auto-fit, …)` is the claim "the column count follows
+the container", and a rule that placed the count at a breakpoint or behind the rail's attribute
+would fail the same test. There is still no measurement anywhere in it, and the one thing it
+cannot see is what a _missing_ rule does — `.center` auto-placing into the rail's track when the
+rail stopped being a grid item was found in a browser, not here, and is now pinned by a rule
+that this file can read.
 
 The exception is [`testing/mechanisms.test.ts`](testing/mechanisms.test.ts), which asserts
 on Quartz's behaviour rather than on ours, on purpose: it pins the three mechanisms

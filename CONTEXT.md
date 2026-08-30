@@ -108,6 +108,10 @@ _Avoid_: sidebar, panel; and _drawer_ as a name for the rail — the drawer is i
 `topic` inverted: for each topic, every note filed under it, grouped by note type. Computed once from the Link graph and rendered in three **views** that share one source and differ only in density — a bare foldable name list in the Rail, and a wide multi-column landing on the app's entry page and beneath a Term's own prose. One source is what stops two views disagreeing about what is filed where; identical markup was never what it meant.
 _Avoid_: explorer, topic tree (that is one view of it), navigation tree
 
+**Topic card**:
+One topic, drawn as a surface with everything filed under it on show and the note-type groups as columns across it. The unit the two landing views of the Topic index are built from — the entry page renders one per topic, a Term page renders the one for its own topic, and that card *is* the "In this topic" section rather than a box inside it. Does not fold: a card is looked at, whereas the Rail's view is jumped from and has to stay short. How many fit across is asked of the container it is in, never of the viewport.
+_Avoid_: tile, panel, topic box
+
 **Wikilink**:
 An `[[filename]]` reference in a note body, optionally aliased `[[filename|display text]]` (Obsidian's pipe, never a colon) and optionally anchored `[[filename#Heading]]`. Resolves against link identity, case-insensitively. `![[…]]` is an **embed**, which renders the target in place rather than linking to it — an attachment or another note.
 _Avoid_: internal link, cross-reference

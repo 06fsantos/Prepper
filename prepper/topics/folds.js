@@ -31,6 +31,15 @@
  * The state is read back rather than predicted: flipping `open` is this event's default
  * action, so it has not happened yet when the listener runs, and a timeout is the wait for the
  * browser to do its half.
+ *
+ * ## One tree per page
+ *
+ * There used to be a second loop in here, propagating a worked fold to every other element
+ * carrying the same `data-fold` id. It existed for exactly one page: the entry point, which
+ * rendered the rail's own view as its body as well as in the rail, so collapsing a topic in
+ * one had to collapse it in the other or the page contradicted itself. Ticket 08 gave the
+ * entry page its own view -- cards, which do not fold and carry no fold id -- so the rail is
+ * the only foldable tree in the app and there is nothing left to keep in step.
  */
 ;(() => {
   const key = "prepper-topic-folds"
@@ -85,13 +94,6 @@
           if (fold.open) ids.delete(id)
           else ids.add(id)
           write(ids)
-
-          // The entry point renders the tree twice -- once as the page's body and once in the
-          // rail beside it -- and they are one index, so an item shut in either is shut in
-          // both. Everywhere else this loop finds only the fold that was just worked.
-          for (const other of folds()) {
-            if (other !== fold && other.dataset.fold === id) other.open = fold.open
-          }
         }, 0)
       })
     }

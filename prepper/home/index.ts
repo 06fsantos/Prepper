@@ -27,12 +27,20 @@
  * for one file, and the vault should always be able to say something the build cannot
  * overrule.
  *
- * ## Why it renders the same tree as the sidebar
+ * ## Why it renders the same index as the sidebar, and not the same markup
  *
- * `TopicTree` is imported from `prepper/topics` rather than reproduced. One index, and the
+ * `TopicCards` is imported from `prepper/topics` rather than reproduced. One index, and the
  * entry page is a third view of it -- if it built its own markup, the day the grouping rule
  * changed would be the day the home page and the sidebar started disagreeing about what is
  * filed where.
+ *
+ * Up to ticket 08 it imported `TopicTree`, the rail's own view, and rendered the rail's
+ * markup as the page's body: a folded column of names, 38rem wide, in a 1500px window. Same
+ * index, wrong density. `TopicCards` is the landing -- a card per topic, everything filed
+ * under each on show, note types as columns -- and it is a sibling of `TopicTree` in the same
+ * module, over the same `topicIndex()` and the same group markup below the heading. The
+ * divergence is the wrapper and nothing under it, which is the only place two views of one
+ * index are allowed to differ.
  *
  * ## Why the body says it is an index
  *
@@ -56,7 +64,7 @@ import type { ProcessedContent } from "../../quartz/plugins/vfile.ts"
 
 import { graphOf } from "../graph/graph.ts"
 import { topicIndex } from "../topics/topic-index.ts"
-import { TopicTree } from "../topics/components/index.ts"
+import { TopicCards } from "../topics/components/index.ts"
 
 export const manifest = {
   name: "prepper-home",
@@ -80,7 +88,7 @@ const HomeBody: QuartzComponentConstructor = () => {
   const Home: QuartzComponent = ({ fileData, allFiles }: QuartzComponentProps) => {
     const slug = fileData.slug ?? homeSlug
     return h("div", { class: "prepper-home prepper-generated-index popover-hint" }, [
-      TopicTree(topicIndex(graphOf(allFiles)), slug),
+      TopicCards(topicIndex(graphOf(allFiles)), slug),
     ])
   }
 
@@ -107,7 +115,7 @@ const PrepperHome = (): QuartzPageTypePluginInstance => ({
  * Room to breathe around a page that is nothing but navigation.
  *
  * There is no colour and no type here, and that is the point: the entry page renders
- * `TopicTree` imported from `prepper/topics`, so it is painted from the chrome's Material
+ * `TopicCards` imported from `prepper/topics`, so it is painted from the chrome's Material
  * token layer by the module that builds the markup
  * ([ADR 0003](../../docs/adr/0003-material-3-as-the-chromes-token-vocabulary.md)). A
  * home-page copy of the tree's type and colour is exactly the drift that made the sidebar and

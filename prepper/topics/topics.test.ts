@@ -17,7 +17,8 @@ import assert from "node:assert"
 
 import type { Element, Root } from "hast"
 
-import { buildFixture, type EmittedSite, type Page } from "../testing/build-fixture.ts"
+import { buildFixture, classesOf, type EmittedSite, type Page } from "../testing/build-fixture.ts"
+import { active, declaration, rules, stylesheets } from "../testing/stylesheets.ts"
 
 /** Every topic named in one rendering of the tree, in the order it offers them. */
 function topics(page: Page, scope: Element | Root = page.main): string[] {
@@ -252,3 +253,263 @@ describe("the topic index", () => {
     )
   })
 })
+
+/**
+ * One index, three views -- seam 1, on the density each of them is drawn at.
+ *
+ * The claim this suite exists to hold down is that the **data path is one** and only the
+ * wrapper differs. So almost every test in it is a comparison rather than a snapshot: what a
+ * card holds is asserted by reading the same topic out of the rail on another page and
+ * demanding the two be equal. A test that pinned the card's contents on their own would still
+ * pass the day the two views started disagreeing, which is the only failure that matters here.
+ *
+ * The three views and what each is for:
+ *
+ * | View          | Rendered by                | Shape                                    |
+ * | ------------- | -------------------------- | ---------------------------------------- |
+ * | `sidebar`     | `TopicTree`, in the rail   | a bare foldable name list                |
+ * | entry page    | `TopicCards`, in the body  | a card per topic, note types as columns  |
+ * | `term-index`  | `TermIndex`, in the footer | the one card for the page's own topic    |
+ *
+ * The stylesheet half is here rather than in `prepper/reading` because the density is this
+ * module's: `prepper/reading` owns how wide the *column* is and this owns what is laid out in
+ * it. It is an evaluation of declared rules, never a measurement -- nothing in this repo lays
+ * a page out. See `prepper/testing/stylesheets.ts`.
+ */
+describe("the topic index gets its density", () => {
+  let site: EmittedSite
+  let home: Page
+  let term: Page
+  let lesson: Page
+  let css: string
+
+  before(
+    async () => {
+      site = await buildFixture("topic-index")
+      home = site.page("index")
+      term = site.page("terms/hash-maps")
+      lesson = site.page("lessons/array-indexing")
+      css = stylesheets(site, lesson)
+    },
+    { timeout: 300_000 },
+  )
+
+  /** Every card on a page, wherever on it they are. */
+  function cards(page: Page): Element[] {
+    return page.selectAll(".prepper-topic-card", page.tree)
+  }
+
+  test("the entry page is a card per topic, and every topic has one", () => {
+    // Not a summary and not a sample: the landing shows every topic there is, in the order
+    // the index computes, which is the same order the rail offers them in.
+    assert.deepEqual(
+      cards(home).map((card) => home.text(".prepper-topic-card-heading", card)),
+      ["Complexity", "Éviction policies", "Hash maps", "System design"],
+    )
+    assert.deepEqual(topics(home), [
+      "Complexity",
+      "Éviction policies",
+      "Hash maps",
+      "System design",
+    ])
+  })
+
+  test("a card holds exactly what the rail holds under the same topic", () => {
+    // The one assertion that makes "one index, three views" a fact rather than a caption.
+    // Read off a Problem, three directories from either, so what is being compared is
+    // genuinely the rail's copy and not the page's own.
+    const problem = site.page("problems/two-sum")
+    const card = topicNode(home, "Hash maps")
+
+    assert.deepEqual(
+      groups(home, card),
+      groups(problem, topicNode(problem, "Hash maps", problem.tree)),
+    )
+    assert.deepEqual(hrefs(home, card), [
+      "./terms/hash-maps",
+      "./cheat-sheets/hash-map-quick-reference",
+      "./lessons/array-indexing",
+      "./lessons/hash-map-lookup-cost",
+      "./references/hash-map-internals",
+      "./problems/two-sum",
+    ])
+  })
+
+  test("the note-type groups are the columns, and all four of them are there", () => {
+    // "Note-type groups as columns within the card" is a fact about markup before it is one
+    // about CSS: the group list is what the column rule is written against, and each group
+    // still says which note type it is, so the layout never has to know the order.
+    const card = topicNode(home, "Hash maps")
+    assert.deepEqual(
+      home
+        .selectAll(".prepper-topic-groups > .prepper-topic-group", card)
+        .map((group) => String(group.properties.dataNoteType)),
+      ["cheat-sheet", "lesson", "reference", "problem"],
+    )
+  })
+
+  test("a topic nothing is filed under still gets a card, saying so", () => {
+    // The rail drops the disclosure and leaves a row. A landing cannot do that -- a card with
+    // nothing in it would read as a card that failed to render -- so it says the thing the
+    // Term page has always said in the same words, from the same function.
+    const empty = topicNode(home, "System design")
+    assert.deepEqual(groups(home, empty), [])
+    assert.equal(
+      home.text(".prepper-topic-index-empty", empty),
+      "Nothing has been written under this topic yet.",
+    )
+  })
+
+  test("a Term page's index is the one card for its own topic", () => {
+    // One card per topic, and a Term page has exactly one. The section *is* the card rather
+    // than containing one, so the app has one card design and not two.
+    const index = term.require(".prepper-generated-index", term.tree)
+    assert.ok(classesOf(index).includes("prepper-topic-card"))
+    assert.deepEqual(cards(term), [index])
+    assert.equal(term.text(".prepper-topic-index-heading", index), "In this topic")
+  })
+
+  test("the marker class the wide layout keys off is still on both index views", () => {
+    // `prepper-generated-index` is `prepper/reading`'s contract for how wide the column is,
+    // and the card markup is inside it rather than instead of it. Losing it would silently
+    // put the landing back into a 38rem column.
+    for (const page of [home, term]) {
+      const index = page.require(".prepper-generated-index", page.tree)
+      assert.ok(cards(page).length > 0, `${page.slug} renders no card`)
+      assert.ok(
+        cards(page).every((card) => card === index || contains(index, card)),
+        `${page.slug} renders a card outside the marked index`,
+      )
+    }
+  })
+
+  test("the rail is untouched: still a bare foldable name list, on every page", () => {
+    // The density belongs to a view. Written into `TopicTree` it would have landed here too,
+    // and the rail is a jump list beside an article -- the one place in the app where showing
+    // everything under every topic is wrong.
+    for (const page of [home, term, lesson, site.page("problems/two-sum")]) {
+      const rail = page.require(".left.sidebar", page.tree)
+      assert.deepEqual(
+        page.selectAll(".prepper-topic-card", rail),
+        [],
+        `${page.slug}: cards in the rail`,
+      )
+      assert.deepEqual(
+        page.selectAll(".prepper-topic-cards", rail),
+        [],
+        `${page.slug}: cards in the rail`,
+      )
+      assert.equal(
+        page.selectAll("details.prepper-topic-fold", rail).length,
+        3,
+        `${page.slug}: the rail's folds`,
+      )
+    }
+  })
+
+  test("a page whose body is prose renders no card at all", () => {
+    // Including in its rail, which is the whole page. The four prose page types are the app's
+    // reading surface and a card there would be the topic index dominating a Lesson.
+    for (const slug of [
+      "lessons/array-indexing",
+      "references/hash-map-internals",
+      "cheat-sheets/hash-map-quick-reference",
+      "problems/two-sum",
+    ]) {
+      assert.deepEqual(cards(site.page(slug)), [], `${slug} renders a card`)
+    }
+  })
+
+  test("the entry page's cards do not fold, and carry no fold id", () => {
+    // A jump list folds because it has to stay short beside an article; a landing exists to
+    // be looked at. And the ids matter beyond the markup: while the entry page rendered the
+    // rail's view, its copy and the rail's shared a `data-fold`, so collapsing a topic in one
+    // collapsed it in the other. `folds.js` now finds one tree per page.
+    assert.deepEqual(home.selectAll("details.prepper-topic-fold", home.main), [])
+    assert.deepEqual(term.selectAll("details.prepper-topic-fold", term.main), [])
+    assert.equal(home.selectAll("details.prepper-topic-fold", home.tree).length, 3)
+  })
+
+  test("column count is asked of the container, not of the viewport", () => {
+    // The ticket's criterion, and the reason it is written as `auto-fit` over a floor: the
+    // grid is told the narrowest a column may be and works out how many fit in whatever it
+    // has been given. So the count follows *available width* -- the window, the page's own
+    // cap, the rail's track, and the collapse if it ever gave width back -- rather than
+    // following a list of breakpoints that would have to be kept in step with all of them.
+    //
+    // Both levels, because both are columns the ticket asks for: the cards across the index,
+    // and the note-type groups across a card.
+    const grids = rules(css).filter(
+      (rule) =>
+        /prepper-topic-card/.test(rule.selector) && declaration(rule, "grid-template-columns"),
+    )
+    assert.equal(grids.length, 2, `${grids.length} rules lay the cards out`)
+    for (const rule of grids) {
+      assert.match(
+        declaration(rule, "grid-template-columns") ?? "",
+        /^repeat\(auto-fit,\s*minmax\(/,
+        `a fixed column count: ${rule.selector}`,
+      )
+      // And the floor is bounded by the container, so a window narrower than one column
+      // shrinks the column rather than pushing the page sideways.
+      assert.match(
+        declaration(rule, "grid-template-columns") ?? "",
+        /minmax\(min\([\d.]+rem,\s*100%\)/,
+        `the column floor can overflow a narrow container: ${rule.selector}`,
+      )
+      assert.deepEqual(rule.media, [], `the count is switched at a breakpoint: ${rule.selector}`)
+      assert.ok(
+        !rule.selector.includes("data-prepper-sidebar"),
+        `the count is conditioned on the rail: ${rule.selector}`,
+      )
+    }
+
+    // And they apply at every width, which is the same statement said from the cascade's
+    // side: there is no band in which the density is something else.
+    for (const width of [360, 800, 1280, 1920]) {
+      assert.equal(active(grids, width).length, 2, `the cards are not laid out at ${width}px`)
+    }
+  })
+
+  test("nothing about the density restates the page's own grid", () => {
+    // `prepper/reading` owns how wide the column is and this module owns what is laid out in
+    // it. The card rules are reached through the card's own classes and never through
+    // `prepper-generated-index`, so they cannot be mistaken for a fourth index grid -- which
+    // is a fact two other suites count on, literally.
+    const ours = rules(css).filter((rule) => /prepper-topic-card/.test(rule.selector))
+    assert.ok(ours.length > 0)
+    for (const rule of ours) {
+      assert.ok(
+        !/prepper-generated-index|#quartz-body/.test(rule.selector),
+        `a card rule reaches the page's layout: ${rule.selector}`,
+      )
+    }
+  })
+
+  test("the cards are painted from Material roles and float above nothing", () => {
+    // They are chrome, so every colour, radius and type step is a role
+    // (ADR 0003) -- no hex anywhere in the module's own rules. And no shadow: hierarchy on
+    // this page comes from `surface-container-*`, and elevation is spent where something
+    // occludes, which a region of the page does not.
+    const ours = rules(css).filter((rule) => /prepper-topic-card/.test(rule.selector))
+    const bodies = ours.map((rule) => rule.body).join(";")
+
+    assert.match(bodies, /background-color:\s*var\(--md-sys-color-surface-container-low\)/)
+    assert.match(bodies, /border[^;]*var\(--md-sys-color-outline-variant\)/)
+    assert.match(bodies, /border-radius:\s*var\(--md-sys-shape-corner-large\)/)
+    assert.match(bodies, /var\(--md-sys-typescale-title-large-size\)/)
+    // `#0000` is what lightningcss makes of `transparent`, which is the absence of a colour
+    // rather than one somebody typed.
+    assert.ok(!/#(?!0000\b)[0-9a-f]{3,8}\b/i.test(bodies), `a raw colour in the cards: ${bodies}`)
+    assert.ok(!/box-shadow|elevation/.test(bodies), `the cards float: ${bodies}`)
+  })
+})
+
+/** Whether `descendant` is anywhere inside `ancestor`. */
+function contains(ancestor: Element, descendant: Element): boolean {
+  for (const child of ancestor.children) {
+    if (child === descendant) return true
+    if (child.type === "element" && contains(child, descendant)) return true
+  }
+  return false
+}

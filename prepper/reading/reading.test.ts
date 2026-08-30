@@ -287,6 +287,54 @@ describe("the reading surface", () => {
     assert.equal(term.selectAll(`${indexBody}>.toc`, term.tree).length, 1)
   })
 
+  test("the footer sits at the foot of the window, and nothing manufactures the space", () => {
+    // The defect: on a page shorter than the window the footer was stranded partway up the
+    // empty space rather than at the bottom of it. Upstream's grid was doing what it was told
+    // -- the left rail is 100vh and spans every row, so its height was distributed across the
+    // rows it spanned, the footer's own included, and the footer sat at the top of a row that
+    // had been stretched under it.
+    //
+    // Two declarations replace it, and what is asserted is that they are those two and
+    // nothing else. **This is not a measurement**: nothing in this repo lays a page out. What
+    // is checked is that the page is a windowful tall in its own right, that the footer is
+    // placed at the end of its row, and that no third rule invents the space -- which is the
+    // failure mode the ticket names, and the one a spacer or a `min-height` on the footer
+    // would have been.
+    const all = rules(css)
+
+    const tall = all.filter(
+      (rule) => rule.selector === body && declaration(rule, "min-height") !== undefined,
+    )
+    assert.equal(tall.length, 1, `${tall.length} rules give the page a minimum height`)
+    assert.equal(declaration(tall[0], "min-height"), "calc(100vh - var(--prepper-topbar-height))")
+    assert.deepEqual(tall[0].media, [], "the page is only a windowful tall at some widths")
+    assert.ok(
+      !tall[0].selector.includes("data-prepper-sidebar"),
+      "the page's height depends on whether the rail is drawn",
+    )
+
+    // It cannot be left to the rail to make the page tall, which is what was happening before:
+    // the rail is `display: none` when collapsed and below 800px, and a footer that moved when
+    // the furniture did would be furniture deciding the shape of the page.
+    assert.match(css, /\.sidebar\.left\{display:none/)
+
+    const placed = all.filter((rule) => rule.selector === `${body}>footer`)
+    assert.equal(placed.length, 1, `${placed.length} rules place the footer`)
+    assert.equal(declaration(placed[0], "align-self"), "end")
+    assert.deepEqual(placed[0].media, [])
+
+    // And no gap: what the footer gets is the window's own leftover, not a box, a margin or a
+    // height somebody added to push it down.
+    assert.ok(
+      !/(?:^|[;{\s])(margin|padding|height|min-height|top)[-:]/.test(placed[0].body),
+      `the footer's placement manufactures space: ${placed[0].body}`,
+    )
+    assert.ok(
+      !/\bfooter\b[^{]*\{[^}]*(?:min-height|margin-top:\s*auto)/.test(css),
+      "something else is pushing the footer down",
+    )
+  })
+
   test("body prose is serif, all the way down its fallbacks", () => {
     // A serif whose fallback stack is sans is a serif only while the webfont is arriving.
     const stack = css.match(/--prepper-prose:([^;}]+)/)?.[1]

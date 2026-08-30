@@ -180,6 +180,67 @@ index it is the index; a Term's headings are a sentence or two of definition. Th
 never had one (no headings, so upstream's component renders nothing), so only the Term case
 was ever real.
 
+## The density belongs to a view, and the views are three
+
+"One index, two views" was always about the *data*, never about the markup. Ticket 08 made the
+distinction real: the rail's view is a bare foldable name list, and the entry page and a Term's
+index are a **card per topic** with the note-type groups as columns across it.
+
+The seam is the wrapper and only the wrapper. All three views reach the same inversion of
+`topic` over the link graph, and below each heading they render the same group markup from the
+same function; what differs is what is wrapped round it -- a `<details>` in the rail, a card on
+the entry page, a card that *is* the section on a Term. A card layout written into the shared
+tree instead would have landed on the rail as well, which is the one place in the app where
+showing everything under every topic is wrong.
+
+The card is the **topic**, which is what makes a Term page's single-topic index a card rather
+than a container for one, and what makes the entry page's count follow the vault. Cards do not
+fold, unlike the rail's items: a jump list beside an article has to stay short, and a landing
+exists to be looked at. That also ended a coupling nobody wanted -- while the entry page
+rendered the rail's view, its copy and the rail's shared a fold id, so collapsing a topic in one
+collapsed it in the other.
+
+**Column count is asked of the container, at both levels**:
+`repeat(auto-fit, minmax(min(<floor>, 100%), 1fr))`. No breakpoint, no offset, and nothing
+conditioned on whether the rail is collapsed -- the grid is told the narrowest a column may be
+and works out how many fit in whatever it has been given, so the count follows the window, the
+page's own cap and the rail's track without knowing about any of them. The floor is bounded by
+`100%` so a container narrower than one column shrinks the column instead of pushing the page
+sideways.
+
+The card rules are reached through the cards' own classes and **never** through
+`prepper-generated-index`. That class is this ADR's contract for how wide the *column* is; hanging
+a card layout off it would have made one class mean two unrelated things.
+
+## Two layout defects the ticket-08 work turned up
+
+**The centre column was never placed.** Upstream declares no grid placement on `.center`, so it
+auto-places into the first free cell of the grid -- which is the second column only for as long
+as the left rail is a grid item in the first one. Collapsing the rail is `display: none`, which
+stops it being one, and the article slid into the rail's track and was laid out at that track's
+width, at every viewport width. This is the jump ticket 03 exists to abolish, and no proof about
+the track list could see it, because the track list is not what changed. The fix is one
+declaration -- `grid-column: grid-center`, naming the grid's own line so it is right in all three
+bands without being restated in any -- and `prepper/sidebar/sidebar.test.ts` now asserts the
+placement exists as well as asserting what the collapse may not reach.
+
+**The footer was placed by accident.** It sat a third of the way up the empty space under a
+short page. The left rail is `height: 100vh` and spans every row, so its height was distributed
+across the rows it spanned -- the footer's own included -- and the footer sat at the top of a
+row that had been stretched underneath it. Two declarations replace that: `#quartz-body` is at
+least a windowful tall in its own right, so the page no longer depends on the rail being drawn
+to be one, and the footer is `align-self: end` in its row. Free space stretches the auto rows
+the way the grid always did and the footer rides the bottom of the last one; a page longer than
+the window has no free space and its footer follows the content immediately. Nothing is
+manufactured -- no spacer, no margin, no minimum height on the footer, no `100vh` on anything
+carrying content.
+
+A third, smaller one went with them: a capped box on an index page was **centred** over the wide
+column rather than pinned to its left edge, because the only box with side margins of its own is
+the rule the frame draws under the article, and a 38rem rule floating in the middle of a
+full-width column reads as a second page beginning. The shared left edge is what makes a Term's
+definition and its index one page, so the cap now pins as well as caps.
+
 ## Consequences
 
 - **Motion tokens now exist, and ADR 0003 is amended.** The rail's collapse is eased, which
@@ -206,7 +267,8 @@ was ever real.
   upstream's YAML schema, so an editor reading the schema flags the line.
 - **The graph is reached deliberately or not at all.** No ambient panel means no glanceable
   graph. Accepted: it was not legible at 250px anyway.
-- **`prepper/topics` renders one index in views that now differ in density, not just in
-  position.** The rail stays a bare foldable name list; home and Term indexes get cards and
-  columns. The single `TopicTree` source stays single -- that is what stops the rail and the
-  home page disagreeing about what is filed where.
+- **`prepper/topics` renders one index in views that differ in density, not just in
+  position.** The rail stays a bare foldable name list; the entry page and a Term's index get
+  cards and columns. The index itself stays single -- that is what stops the rail and the home
+  page disagreeing about what is filed where -- and the rail's `TopicTree` gained a sibling,
+  `TopicCards`, rather than being parameterised into serving both jobs badly.

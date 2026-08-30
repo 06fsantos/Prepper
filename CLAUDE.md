@@ -159,6 +159,20 @@ index -- so the definition above stays at the measure and the index below does n
 taken the margin, so the collision is settled by deciding which of the two is that page's
 navigation rather than by squeezing both.
 
+The centre column is **placed**, not left to fall where the other grid items leave room:
+`grid-column: grid-center`, on `.center`, naming the grid's own line so it is right in all three
+bands. Upstream places nothing on it, so it auto-placed into the first free cell -- the second
+column only while the rail was a grid item in the first one. The moment the rail went
+`display: none`, the article slid into the rail's track and was laid out at that track's width.
+That is the collapse moving the prose, and no proof written about the track list could see it.
+
+The **footer** sits under the content on a long page and at the foot of the window on a short
+one, and neither is arranged with a gap. Two declarations: `#quartz-body` is at least
+`calc(100vh - var(--prepper-topbar-height))` tall in its own right -- it used to depend on the
+rail's `100vh`, which is absent whenever the rail is -- and the footer is `align-self: end` in
+its row. Free space stretches the auto rows the way the grid always did, and the footer rides
+the bottom of the last one.
+
 ## Collapsible headings
 
 A note's body is folded on **every heading it was written with**, nested -- an `##` fold
@@ -279,11 +293,29 @@ and records what lands in it, so the carve-out is asserted rather than assumed a
 key still trips. `remember.js` runs in the `<head>`, before the body is parsed, so a reader
 who collapsed the rail never sees it flash.
 
-## The topic tree
+## The topic tree, in three views
 
-The rail's navigation is [`prepper/topics`](prepper/topics/index.ts), and every item of it
-**folds**: a topic's note-type groups and the flat Cheat sheets list each sit behind a
-`<details>` whose `<summary>` is the row -- a chevron, and the topic's own name, still a link
+[`prepper/topics`](prepper/topics/index.ts) computes the index once and renders it three ways.
+They share the data path and the markup below each heading -- one `topicIndex()`, one `groups()`
+-- and **diverge only in the wrapper**, because the rail and a landing are not the same job:
+
+| View       | Rendered by  | Where                   | Shape                                   |
+| ---------- | ------------ | ----------------------- | --------------------------------------- |
+| `sidebar`  | `TopicTree`  | the rail, every page    | a bare foldable name list               |
+| entry page | `TopicCards` | `prepper/home`'s body   | a card per topic, note types as columns |
+| term-index | `TermIndex`  | a Term's `.page-footer` | the one card for the page's own topic   |
+
+A card is a **topic**, so the entry page has as many as there are topics and a Term page has one
+-- which is why its "In this topic" section _is_ the card rather than holding one. Cards do not
+fold: a jump list beside an article has to stay short, and a landing exists to be looked at.
+Column count at both levels is `repeat(auto-fit, minmax(min(<floor>, 100%), 1fr))`, so it follows
+the container and there is no breakpoint, no offset and nothing conditioned on the rail anywhere
+in it. The card rules are reached through the cards' own classes and never through
+`prepper-generated-index`, which is the reading surface's contract for how wide the _column_ is
+and not a hook for what goes in it.
+
+Only the rail's view **folds**: a topic's note-type groups and the flat Cheat sheets list each
+sit behind a `<details>` whose `<summary>` is the row -- a chevron, and the topic's own name, still a link
 to its Term page. It is the same element the seal and a note's headings are, for the same
 reason, but with the **opposite default**: navigation arrives **open**, because a tree that
 arrived shut would make the reader open a topic to find out whether it holds anything. So what
@@ -293,7 +325,9 @@ second and last key in the app and the same category as the first.
 Two things in [`folds.js`](prepper/topics/folds.js) are load-bearing. It listens to the
 **click on the row, never to `toggle`**: `toggle` cannot say who moved the fold, and two things
 move it that are not the reader -- applying the remembered state, and following the topic name,
-which is a link inside the row the browser toggles on the way out. And `remember-folds.js` runs
+which is a link inside the row the browser toggles on the way out. Since the entry page stopped
+rendering the rail's view there is **one foldable tree per page**, and the loop that kept two
+copies of an item in step is gone with it. And `remember-folds.js` runs
 in the `<head>` like the rail's, writing a stylesheet that holds the shut items shut until the
 elements exist to say so on; `folds.js` takes it back out.
 

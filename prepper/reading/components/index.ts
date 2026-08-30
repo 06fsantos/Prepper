@@ -180,6 +180,22 @@ const PrepperReading: QuartzComponentConstructor = () => {
  * page's navigation. On a page whose body is an index, it is the index: a Term's headings are
  * a sentence or two of definition, and the list the reader came for is the one below them.
  *
+ * ## The footer, and the space under a short page
+ *
+ * A page shorter than the window used to leave its footer stranded partway up the empty space
+ * rather than at the foot of it. That was upstream's grid doing exactly what it was told: the
+ * left rail is `height: 100vh` and spans every row, so its height is distributed across the
+ * rows it spans -- including the footer's own -- and the footer sat at the top of a row that
+ * had been stretched underneath it.
+ *
+ * The fix is two declarations and no new box: the grid is at least a windowful tall in its own
+ * right, so it no longer depends on the rail being drawn to be one, and the footer is
+ * `align-self: end` in its row. Free space stretches the auto rows the way it always did and
+ * the footer rides the bottom of the last one. A page longer than the window has no free space
+ * and its footer follows the content immediately. There is no spacer, no minimum height on the
+ * footer and no `100vh` on anything that carries content -- the gap under a short page is the
+ * window's own leftover, which is not the same thing as a gap that was invented to fill it.
+ *
  * ## The serif
  *
  * `--bodyFont` is the family named in `quartz.config.yaml`, and it is a serif -- but
@@ -238,6 +254,23 @@ const styles = `
     min(var(--prepper-measure), calc(100% - var(--prepper-sidebar) - 10px))
     minmax(0, 1fr);
 }
+/* The centre column is placed, rather than left to fall where the other grid items leave room.
+
+   Upstream never places it: .center carries no grid-area, so it auto-places into the first
+   free cell -- which is the second column only for as long as the left rail is rendered into
+   the first one. The rail is display:none when it is collapsed and below 800px, and the
+   moment it stops being a grid item the article slides into the rail's own track and is laid
+   out at that track's width. That is a real, visible jump, and it is invisible to a proof
+   written about the track list, because the track list is not what changed.
+
+   grid-column and not grid-area, and a named line rather than a number: the areas template
+   names its own lines, so grid-center is the second column in the wide and tablet bands and
+   the only column in the phone one, without this rule knowing which band it is in. The row
+   is still auto, so the column lands exactly where it always did with the rail present --
+   this pins it there for the case where the rail is absent. */
+.page > #quartz-body > .center {
+  grid-column: grid-center;
+}
 /* The right rail is retired, and Quartz's frame renders its (now empty) box on every page
    regardless. Hidden rather than left to sit there: upstream makes it sticky, 100vh tall and
    padded, so an empty one would still be a full-height box in the margin. */
@@ -294,6 +327,16 @@ const styles = `
 .page > #quartz-body:has(.prepper-generated-index) > .center > .page-footer > *:not(.prepper-generated-index) {
   max-width: var(--prepper-measure);
 }
+/* ...and it is pinned to the index's left edge rather than centred over it. Only one box on
+   the page has side margins of its own -- the rule the frame draws between the article and
+   what follows it, which the browser centres inside whatever width it is given -- and a
+   38rem rule floating in the middle of a full-width column reads as a second page beginning.
+   The shared left edge is what makes the definition and the index below it one page, and this
+   is that decision applied to the last box that was not obeying it. */
+.page > #quartz-body:has(.prepper-generated-index) > .center > *,
+.page > #quartz-body:has(.prepper-generated-index) > .center > .page-footer > * {
+  margin-inline-start: 0;
+}
 @media all and (min-width: 1200px) {
   .page > #quartz-body > .toc {
     grid-area: grid-sidebar-right;
@@ -322,6 +365,33 @@ const styles = `
    page's navigation, rather than by making both of them narrow. */
 .page > #quartz-body:has(.prepper-generated-index) > .toc {
   display: none;
+}
+/* The page is at least a windowful tall, and the site footer sits at the bottom of it.
+
+   Two declarations, and between them they are the whole of what a sticky footer is here. The
+   grid's rows are upstream's -- header, centre, footer, plus a couple more in the narrower
+   bands -- and the left rail spans all of them at 100vh, which is why a short page used to
+   come out with the footer stranded a third of the way up from the bottom: the rail's height
+   was distributed across every row it spanned, so the *footer's own row* was stretched and the
+   footer sat at the top of it.
+
+   The min-height says what the rail used to say by accident, and says it whether or not the
+   rail is drawn -- the rail is display: none when collapsed and below 800px, and a page that
+   was a windowful tall only while the furniture was showing is a page whose footer moves when
+   the furniture does. Free space then stretches the auto rows, as it always did, and
+   align-self: end puts the footer at the bottom of the last of them, which is the bottom of
+   the window. On a page longer than the window there is no free space, no stretch, and the
+   footer follows the content immediately.
+
+   So nothing is manufactured: no spacer, no margin, no minimum height on the footer, no
+   100vh on anything that holds content. The space that appears under a short page is the
+   window's own leftover, which was always there and was previously being handed to the wrong
+   row. */
+.page > #quartz-body {
+  min-height: calc(100vh - var(--prepper-topbar-height));
+}
+.page > #quartz-body > footer {
+  align-self: end;
 }
 .page > #quartz-body .center article {
   font-family: var(--prepper-prose);

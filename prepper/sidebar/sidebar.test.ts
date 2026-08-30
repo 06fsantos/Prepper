@@ -273,6 +273,29 @@ describe("the hideable left rail", () => {
     assert.ok(indexes.every((rule) => !conditional(rule)))
   })
 
+  test("the centre column is placed, so it cannot move when the rail stops being an item", () => {
+    // The hole in the proof above, found in a browser while ticket 08 was widening the index.
+    // Everything in this file reasons about the *track list*, and the track list was never the
+    // problem: upstream places nothing on `.center` at all, so it **auto-places** into the
+    // first free cell of the grid -- which is the second column only for as long as the rail
+    // is a grid item in the first one. `display: none` stops it being one, and the article
+    // slid into the rail's own track and was laid out at that track's width, at every width
+    // above 800px and below it too.
+    //
+    // So the fix is a placement, and what is asserted is that the column has one: a rule whose
+    // subject is `.center`, unconditional, naming the grid's own `grid-center` line rather than
+    // a column number, which is what makes it right in all three bands without being restated
+    // in any of them. It is `prepper/reading`'s, like every other fact about the page's layout.
+    const placed = rules(css).filter(
+      (rule) => subjects(rule).includes(".center") && declaration(rule, "grid-column"),
+    )
+    assert.equal(placed.length, 1, `${placed.length} rules place the centre column`)
+    assert.equal(declaration(placed[0], "grid-column"), "grid-center")
+    assert.deepEqual(placed[0].media, [], "the column is only placed at some widths")
+    assert.ok(!conditional(placed[0]), "the column's placement depends on the rail")
+    assert.equal(placed[0].selector, ".page>#quartz-body>.center")
+  })
+
   test("the collapse is not what retired the right rail", () => {
     // The right rail is gone -- `prepper/reading` hides it and the column it stood in is
     // margin now (ticket 06). It went unconditionally, in the module that owns the page's

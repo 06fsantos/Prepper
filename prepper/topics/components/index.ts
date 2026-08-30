@@ -49,13 +49,17 @@ function viewOf(opts: Options | undefined): View {
 }
 
 /**
- * The whole topic index as a tree, from the page it is being rendered on.
+ * The **rail's** view: the whole topic index as a bare, foldable name list.
  *
- * Exported because three placements render it: the sidebar and a Term page here, and the
- * app's entry point in `prepper/home`. They share this function rather than each building
- * their own markup, which is the rendering half of "one index, two views" -- a tree that
- * disagreed with itself between the sidebar and the home page would be exactly the second
- * index this design exists to not have.
+ * This is a jump list. It stands beside a page the reader is already reading, in a 320px
+ * column, and the question it answers is "where else is there" -- so it is names, folded, one
+ * per line, and nothing about a topic is shown until the reader opens it.
+ *
+ * It is no longer what the entry page renders. That was the arrangement up to ticket 08 and it
+ * made the app open on a 38rem column of the rail's own list in a 1500px window: the same
+ * markup in a place that wanted a landing. What the two views share is the index itself and
+ * `filed()` below it, which is the part that could ever disagree; what they no longer share is
+ * a density that only one of the two places was ever right for. See `TopicCards`.
  */
 export function TopicTree(topics: Topic[], from: FullSlug): ComponentChild {
   return h(
@@ -71,11 +75,56 @@ export function TopicTree(topics: Topic[], from: FullSlug): ComponentChild {
           fold(
             topic.term.slug,
             link(from, topic.term, "prepper-topic-name"),
-            topic.groups.length > 0
-              ? h("ul", { class: "prepper-topic-groups" }, groups(topic, from))
-              : null,
+            topic.groups.length > 0 ? filed(topic, from) : null,
           ),
         ),
+      ),
+    ),
+  )
+}
+
+/**
+ * The **entry page's** view: a card per topic, with what is filed under each on show.
+ *
+ * Exported for `prepper/home`, which is the one placement that renders it. It is a second
+ * *view*, not a second index: the topics come from the same `topicIndex(graphOf(allFiles))`
+ * the rail is built from, each card's body is the same `filed()` the rail folds away and the
+ * Term page prints, and the leaves are the same `link()` labelled by the same `title`. What
+ * differs is the wrapper and nothing else, which is the only kind of divergence "one index,
+ * three views" permits.
+ *
+ * ## Why the cards do not fold
+ *
+ * The rail's items fold because a jump list beside an article has to stay short. A landing has
+ * the opposite job: the whole point of opening the app on the index is to see what there is
+ * without asking. So a card arrives whole, and there is no `data-fold` on it -- which also
+ * ends a coupling nobody wanted, where collapsing "Hash maps" in the rail collapsed the
+ * entry page's copy of it too because the two carried the same fold id. `folds.js` now finds
+ * exactly one tree on every page in the app, the rail's.
+ *
+ * ## Why the heading is an `h2`
+ *
+ * The entry page's body is generated and holds no prose, so the topic names are the page's
+ * only headings and they are genuinely its second level, under the page title. It is also
+ * what makes the landing navigable by heading from a screen reader, which the rail's
+ * `<summary>` rows are not.
+ */
+export function TopicCards(topics: Topic[], from: FullSlug): ComponentChild {
+  return h(
+    "nav",
+    { class: "prepper-topic-cards", "aria-label": "Topics" },
+    h(
+      "ul",
+      { class: "prepper-topic-list" },
+      topics.map((topic) =>
+        h("li", { class: "prepper-topic prepper-topic-card", "data-topic": topic.term.slug }, [
+          h(
+            "h2",
+            { class: "prepper-topic-card-heading" },
+            link(from, topic.term, "prepper-topic-name"),
+          ),
+          filed(topic, from),
+        ]),
       ),
     ),
   )
@@ -161,6 +210,28 @@ function groups(topic: Topic, from: FullSlug): ComponentChild[] {
       ),
     ]),
   )
+}
+
+/**
+ * What is filed under a topic, or a line saying nothing is -- the body **both index views**
+ * render, and the whole of what they share below the heading.
+ *
+ * This is the seam the ticket's "one index, three views" actually turns on. The rail, the entry
+ * page and a Term page reach the same `topicIndex`/`topicOf` computation, then the same
+ * `groups()` markup, and diverge only in what they wrap it in: a `<details>` in the rail, a
+ * card on the entry page, a card that is the section itself on a Term. A view that built its
+ * own group list would be the second index this design exists to not have, whatever it called
+ * itself.
+ */
+function filed(topic: Topic, from: FullSlug): ComponentChild {
+  if (topic.groups.length === 0) {
+    return h(
+      "p",
+      { class: "prepper-topic-index-empty" },
+      "Nothing has been written under this topic yet.",
+    )
+  }
+  return h("ul", { class: "prepper-topic-groups" }, groups(topic, from))
 }
 
 /**
@@ -251,21 +322,31 @@ function Sidebar(topics: Topic[], sheets: GraphNode[], from: FullSlug): Componen
  * **both**, that the note's own definition above is held to the measure while this section is
  * not. `prepper/home` renders the same marker, and nothing in `prepper/reading` knows that
  * either of them is a Term or an entry page. See `prepper/reading/components/index.ts`.
+ *
+ * ## Why the section is itself a card
+ *
+ * The rule the density is written to is **one card per topic**, and a Term page holds exactly
+ * one -- its own. So this section *is* that card rather than containing one: the same surface,
+ * the same border, the same note-type columns as the entry page's, differing only in that its
+ * heading says "In this topic" instead of repeating the page title two lines under itself.
+ * Rendering the card as a box inside the section would have drawn two nested rectangles round
+ * one list, and rendering no card at all would have made the app's two index views two
+ * designs.
+ *
+ * It is wide where the typed-edge rails beside it are held to the measure, and that is the
+ * arrangement rather than an oversight -- `prepper/reading`'s second capping rule is where the
+ * decision lives. The rails are lists of prose links continuing the note's own column, and
+ * they keep the note's left edge and its width; the index is the page's other half and is
+ * marked out as one by the surface it sits on. A shared left edge is what keeps them one page.
  */
 function TermIndex(topic: Topic, from: FullSlug): ComponentChild {
   return h(
     "section",
-    { class: "prepper-topic-index prepper-generated-index", "data-topic": topic.term.slug },
-    [
-      h("h2", { class: "prepper-topic-index-heading" }, "In this topic"),
-      topic.groups.length > 0
-        ? h("ul", { class: "prepper-topic-groups" }, groups(topic, from))
-        : h(
-            "p",
-            { class: "prepper-topic-index-empty" },
-            "Nothing has been written under this topic yet.",
-          ),
-    ],
+    {
+      class: "prepper-topic-index prepper-topic-card prepper-generated-index",
+      "data-topic": topic.term.slug,
+    },
+    [h("h2", { class: "prepper-topic-index-heading" }, "In this topic"), filed(topic, from)],
   )
 }
 
@@ -344,6 +425,7 @@ const styles = `
    so a rule on the tree alone would set two adjacent lists in two typefaces at two sizes. */
 .prepper-topics,
 .prepper-cheat-sheets,
+.prepper-topic-cards,
 .prepper-topic-index {
   font-family: var(--md-sys-typescale-body-medium-font);
   font-size: var(--md-sys-typescale-body-medium-size);
@@ -416,6 +498,7 @@ const styles = `
    the two navigation lists on purpose -- a Term page's own index renders the same markup as
    part of a document, and rows with hover states are furniture. */
 .prepper-topics .prepper-group-list > li > a,
+.prepper-topic-card .prepper-group-list > li > a,
 .prepper-cheat-sheets .prepper-cheat-sheet-list > li > a {
   display: block;
   padding: 0.25rem 0.5rem;
@@ -424,6 +507,7 @@ const styles = `
   background-color: transparent;
 }
 .prepper-topics .prepper-group-list > li > a:hover,
+.prepper-topic-card .prepper-group-list > li > a:hover,
 .prepper-cheat-sheets .prepper-cheat-sheet-list > li > a:hover {
   background-color: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface);
@@ -431,6 +515,7 @@ const styles = `
 /* Where the reader is. Painted from aria-current, which the markup sets for the screen
    reader's sake, so the highlight and the announcement cannot come apart. */
 .prepper-topics a[aria-current="page"],
+.prepper-topic-card a[aria-current="page"],
 .prepper-cheat-sheets a[aria-current="page"] {
   background-color: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
@@ -450,7 +535,8 @@ const styles = `
   display: block;
   margin: 0.4rem 0 0.1rem;
 }
-.prepper-topics .prepper-group-heading {
+.prepper-topics .prepper-group-heading,
+.prepper-topic-card .prepper-group-heading {
   padding-left: 0.5rem;
 }
 .prepper-group-list > li {
@@ -480,6 +566,84 @@ const styles = `
 }
 .prepper-topic-index-empty {
   color: var(--md-sys-color-on-surface-variant);
+}
+/* ---------------------------------------------------------------------------
+   The index views' density: a card per topic, note types as columns inside it.
+
+   Every selector below is reached through prepper-topic-cards or
+   prepper-topic-card, which only the two index views render. That is what keeps the
+   density on a *view* rather than on the index: the rail's tree is the same markup
+   underneath and none of this can reach it, without a single rule of the rail's being
+   restated or overridden.
+
+   It is also deliberately not scoped on prepper-generated-index. That class is the
+   reading surface's contract for how wide the *column* is, and a card layout hung off it
+   would have made one class mean two unrelated things -- and would have started counting
+   as an index grid in the two tests that count those.
+   --------------------------------------------------------------------------- */
+/* Column count is auto-fit over a floor, at both levels, and there is no breakpoint and no
+   offset anywhere in it. The grid is told the narrowest a card may be and works out how many
+   fit; the answer follows the container, whatever made the container that width -- the window,
+   the page's own cap, the rail's track. A fixed count switched at media queries would have had
+   to know all three, and would have been wrong the first time one of them changed.
+
+   The floor is min(<the floor>, 100%) rather than the floor alone, which is what keeps the
+   promise of no sideways scroll at every width rather than at the widths anybody thought to
+   check. A bare minmax floor is a minimum the track takes even when the container is narrower
+   than it, and a container narrower than 18rem is a 288px window -- narrow, but a width the
+   layout has no business overflowing at. */
+.prepper-topic-cards > .prepper-topic-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  gap: 1rem;
+}
+/* Cards in a row share a height, so the surfaces line up into bands rather than into a ragged
+   edge; what is inside them starts at the top of each. */
+.prepper-topic-cards .prepper-topic {
+  margin: 0;
+}
+.prepper-topic-card {
+  box-sizing: border-box;
+  padding: 1rem 1.25rem 1.25rem;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-large);
+  background-color: var(--md-sys-color-surface-container-low);
+}
+/* No shadow. A card is a region of the page, not a thing floating over it -- hierarchy comes
+   from surface-container-* and elevation is spent only where something occludes
+   (ADR 0003). The only shadow in this app is the mobile drawer's, which does occlude. */
+/* title-large, and a rule under it. The size is the hierarchy the source document's item 12
+   asks for on this page and nowhere else -- on a landing the topic is the primary thing, on a
+   Lesson it is navigation -- and the rule is there because size alone does not carry it: an
+   internal link is set at 600 by Quartz's own base, so a topic name at a role weight of 500
+   reads *lighter* than the notes filed under it. A line is the cheap, non-competing way to say
+   "this names the rest of the card" without inventing a weight the type scale does not have. */
+.prepper-topic-card-heading,
+.prepper-topic-card > .prepper-topic-index-heading {
+  margin: 0 0 0.6rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+.prepper-topic-card-heading {
+  font-family: var(--md-sys-typescale-title-large-font);
+  font-size: var(--md-sys-typescale-title-large-size);
+  line-height: var(--md-sys-typescale-title-large-line-height);
+  font-weight: var(--md-sys-typescale-title-large-weight);
+  letter-spacing: var(--md-sys-typescale-title-large-tracking);
+}
+.prepper-topic-card-heading > a {
+  color: var(--md-sys-color-on-surface);
+  background-color: transparent;
+}
+/* The note-type groups, as columns: the same ul.prepper-topic-groups > li[data-note-type]
+   the rail stacks, laid out across instead of down. The rail's 1.4rem indent goes -- it exists
+   to line a subtree up under the name that opens it, and there is no disclosure here. */
+.prepper-topic-card > .prepper-topic-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
+  align-items: start;
+  gap: 0.25rem 1.25rem;
+  margin: 0;
 }
 `
 

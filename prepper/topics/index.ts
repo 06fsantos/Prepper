@@ -3,10 +3,21 @@
  *
  * Navigation here answers *what shall I study today*, and the dev asks that question in
  * **topics, never in directories** -- so this is what replaces the file explorer. There is
- * one index (`../topics/topic-index.ts`), and these are two views of it: the sidebar tree
- * is the Term page's index rendered early, for a reader who has not arrived anywhere yet.
- * A third view, the app's entry point, is `prepper/home`, and it renders from the same
- * function so that it cannot drift from these.
+ * one index (`../topics/topic-index.ts`) and three views of it, two placed from here and one
+ * in `prepper/home`:
+ *
+ * | View       | Function     | Where                   | Shape                                   |
+ * | ---------- | ------------ | ----------------------- | --------------------------------------- |
+ * | `sidebar`  | `TopicTree`  | the rail, every page    | a bare foldable name list               |
+ * | entry page | `TopicCards` | `prepper/home`'s body   | a card per topic, note types as columns |
+ * | term-index | `TermIndex`  | a Term's `.page-footer` | the one card for the page's own topic   |
+ *
+ * They share the inversion and they share `filed()`, the group markup below each heading, so
+ * they cannot disagree about what is filed where. They **do not** share a wrapper, and that is
+ * the point rather than an oversight: the rail is a jump list beside something the reader is
+ * already reading and has to stay short, while the entry page is a landing and exists to be
+ * looked at. Up to ticket 08 the entry page rendered the rail's own view, which is how the app
+ * came to open on a folded 38rem column of names in a 1500px window.
  *
  * ## Why one component and two config entries
  *

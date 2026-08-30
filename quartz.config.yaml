@@ -468,8 +468,8 @@ plugins:
       position: afterBody
       priority: 30
   # Prepper: ours, twice over. The generated topic index -- `topic` inverted on the Term
-  # note -- has two placements, so the plugin is listed once per placement and told which
-  # view it is by `options.view`. Same arrangement as `./prepper/edges` above, and the same
+  # note -- has two placements here (and a third in `./prepper/home` below), so the plugin is
+  # listed once per placement and told which view it is by `options.view`. Same arrangement as `./prepper/edges` above, and the same
   # reason each entry takes its own `name`: `name` is the key Quartz installs and looks a
   # plugin up by, and two entries sharing one would install as one.
   #
@@ -481,7 +481,9 @@ plugins:
   # so a Term with no Lessons reads as an area overview followed by its index, and the
   # typed-edge rails follow both. That view renders `prepper-generated-index` on its section,
   # which is what tells `./prepper/reading` to lay the column out wide while holding the note's
-  # own prose above it to the measure: a Term page is both halves at once.
+  # own prose above it to the measure: a Term page is both halves at once. It is drawn as one
+  # card -- the card is a *topic*, and a Term page has exactly one -- so the section itself is
+  # that card rather than a box containing one, with its note-type groups as columns across it.
   - source:
       repo: "./prepper/topics"
       name: topics-sidebar
@@ -595,7 +597,9 @@ plugins:
       position: beforeBody
       priority: 12
   # Prepper: ours. The app's entry point: a generated `index.html` holding the same topic
-  # index the sidebar renders. A **pageType** rather than an emitter, so the page comes out
+  # index the sidebar renders, in the third and densest of its views -- a card per topic,
+  # with everything filed under each on show. Same computation and same group markup as the
+  # rail's; a different wrapper, because a landing and a jump list are not the same job. A **pageType** rather than an emitter, so the page comes out
   # through Quartz's own layout instead of through a copy of it -- and it yields to a
   # written `content/index.md` if one ever exists. Its body renders
   # `prepper-generated-index`, which is what lays the page out wide rather than at the prose
