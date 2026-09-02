@@ -12,9 +12,17 @@
  * either, the other would have to import a module named for a job it is not doing.
  */
 
-/** The eight note types. */
+/** The nine note types. */
 export type NoteType =
-  "lesson" | "reference" | "problem" | "term" | "cheat-sheet" | "research" | "record" | "mission"
+  | "lesson"
+  | "reference"
+  | "problem"
+  | "term"
+  | "cheat-sheet"
+  | "plan"
+  | "research"
+  | "record"
+  | "mission"
 
 /** Which directory means which type. `MISSION.md` at the vault root is the singleton. */
 const typeByDirectory: Record<string, NoteType> = {
@@ -23,6 +31,7 @@ const typeByDirectory: Record<string, NoteType> = {
   problems: "problem",
   terms: "term",
   "cheat-sheets": "cheat-sheet",
+  plans: "plan",
   research: "research",
   records: "record",
 }
@@ -37,6 +46,7 @@ export const libraryTypes = [
   "problem",
   "term",
   "cheat-sheet",
+  "plan",
 ] as const satisfies readonly NoteType[]
 
 /**
@@ -88,6 +98,7 @@ const articles: Record<NoteType, string> = {
   problem: "a problem",
   term: "a term",
   "cheat-sheet": "a cheat sheet",
+  plan: "a plan",
   research: "a research note",
   record: "a record",
   mission: "the mission",

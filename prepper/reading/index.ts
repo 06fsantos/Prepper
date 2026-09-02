@@ -7,7 +7,7 @@
  * - **Markup**: a note's topics, rendered as chips under its title. A note is filed under
  *   every subject it is about, and the chips say all of them -- the alternative is picking
  *   one arbitrarily and calling it the note's home, which the vault does not believe.
- * - **Style**: the ~38rem measure the prose column holds at every viewport width, the serif
+ * - **Style**: the ~52rem measure the prose column holds at every viewport width, the serif
  *   it is set in, and the blockquote that carries an aside. This is where the page's own
  *   layout is declared rather than a component's -- every other module's CSS is deliberately
  *   in Quartz's theme variables so that it lands here. It is also the **only** module that

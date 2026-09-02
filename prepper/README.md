@@ -45,7 +45,7 @@ Everything else at the repo root that is not ours — `quartz/`, `quartz.ts`,
 
 ```
 prepper/
-  note-type.ts              the eight note types, and the Library/Workshop split on them
+  note-type.ts              the nine note types, and the Library/Workshop split on them
   ulid.ts                   what counts as a ULID, for the two places that ask
   link-targets.ts           what a frontmatter link field names, as written and resolved
   hooks/                    git hooks, available and never installed by the build
@@ -209,7 +209,7 @@ Every way a page has of storing something or sending it anywhere is replaced wit
 collected on `screen.recorded`, because Prepper keeps no per-user state and has no server:
 "this records nothing" is a fact about the app that any screen can be asked to confirm.
 
-Some facts are about neither markup nor behaviour. The prose column's ~38rem measure, that
+Some facts are about neither markup nor behaviour. The prose column's ~52rem measure, that
 collapsing the rail moves nothing, and that the retired right column takes no width from the
 page are all facts about **which CSS rules a browser resolves at a given viewport width** —
 and jsdom lays nothing out, so a pixel measurement taken at seam 2 would be a number the
@@ -226,7 +226,7 @@ are now two: every page matches `.page>#quartz-body`, and a page whose body is a
 index also matches `.page>#quartz-body:has(.prepper-generated-index)`. Which of them a page
 matches is a fact about markup, so the caller **runs the selector against the emitted page**
 and hands in the answer. That composition — the markup says which rules reach this page, the
-stylesheet says what they declare — is what "a Lesson holds 38rem and the home page does not"
+stylesheet says what they declare — is what "a Lesson holds the measure and the home page does not"
 is asserted with.
 
 It reads what a rule _declares_ as well as which ones apply, which is what ticket 08's density

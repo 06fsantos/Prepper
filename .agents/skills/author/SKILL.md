@@ -1,8 +1,8 @@
 ---
 name: author
-description: Author a Lesson, Term, Cheat sheet, or Reference into the Prepper vault as Markdown.
+description: Author a Lesson, Term, Cheat sheet, Reference, or Plan into the Prepper vault as Markdown.
 disable-model-invocation: true
-argument-hint: "[lesson|term|cheat-sheet|reference] <topic, idea, or research note>"
+argument-hint: "[lesson|term|cheat-sheet|reference|plan] <topic, idea, or research note>"
 ---
 
 The dev has asked you to put something into the vault. This is authoring, not exporting:
@@ -25,6 +25,7 @@ vault is the product; the app is a rendering of it.
 /author term <name>                # a Term on its own
 /author cheat-sheet <topic>        # rebuild one topic's cheat sheet
 /author reference <path to a research note>   # promote an investigation
+/author plan <topic, or several>   # a reading order over notes that already exist
 ```
 
 Lesson mode is the main one, and it is the only mode that is not a single note: authoring a
@@ -40,7 +41,7 @@ and nothing in the build can repair either after the fact.
 content/
   lessons/      references/    problems/
   terms/        cheat-sheets/  research/
-  records/      attachments/
+  plans/        records/       attachments/
   MISSION.md
 RESOURCES.md    NOTES.md       (repo root — outside the vault, author-side)
 ```
@@ -48,8 +49,8 @@ RESOURCES.md    NOTES.md       (repo root — outside the vault, author-side)
 **Type is the directory. Topic never is.** There is no `type` field in frontmatter; the path
 is the type, so a note in the wrong directory is a note of the wrong type. Two classes:
 
-- **Library** — `lesson`, `reference`, `problem`, `term`, `cheat-sheet`. A page, a node in
-  the link graph, and a row in search.
+- **Library** — `lesson`, `reference`, `problem`, `term`, `cheat-sheet`, `plan`. A page, a
+  node in the link graph, and a row in search.
 - **Workshop** — `research`, `record`, `mission`. In the vault, open in Obsidian, and never
   rendered. The reader does not see them.
 
@@ -71,6 +72,7 @@ time.
 | `reference`   | `topic`                                 | —                           |
 | `term`        | —                                       | `topic`                     |
 | `cheat-sheet` | `topic` (**scalar**)                    | `draft`                     |
+| `plan`        | `topic` (a list, usually several)       | —                           |
 | `problem`     | `topic`, `kind`, `difficulty`, `practices` | `source`                 |
 | `research`    | `date`, `sources`                       | `topic`                     |
 | `record`      | `date`                                  | `topic`                     |
@@ -103,9 +105,9 @@ order. A note's `id` is **immutable** once written — it is record identity, an
 is link identity ([ADR 0001](../../../docs/adr/0001-split-note-identity.md)). Renaming a
 note is Obsidian's business; the `id` never moves.
 
-## Which of the four you are writing
+## Which of the five you are writing
 
-Upstream `teach` had one reference bucket. This vault splits it three ways, and the build
+Upstream `teach` had one reference bucket. This vault splits it four ways, and the build
 renders and indexes each differently, so the choice is yours to make rather than the build's
 to guess.
 
@@ -116,14 +118,19 @@ to guess.
   one per topic that has Lessons. The 20% that buys 80%.
 - **Reference** — lookup material with no compression story: a syntax table, an API surface,
   an algorithm listing, a comparison. Looked up repeatedly. Unbounded in number.
+- **Plan** — a reading order over notes that **already exist**: where to start, what each
+  step is there for, and where a language-specific stretch begins. Spans several topics, and
+  is the only note type that writes no new material.
 
 The line between Lesson and Reference is **read roughly once** versus **looked up
 repeatedly**. The line between cheat sheet and Reference is that a cheat sheet compresses a
-topic you have taught, and a Reference is a lookup you never compressed.
+topic you have taught, and a Reference is a lookup you never compressed. The line between a
+Plan and either is that a Plan **teaches nothing and compresses nothing**: take every link
+out of it and there is no content left, which is the test.
 
 Full contracts: [LESSON-FORMAT.md](./LESSON-FORMAT.md), [TERM-FORMAT.md](./TERM-FORMAT.md),
 [CHEAT-SHEET-FORMAT.md](./CHEAT-SHEET-FORMAT.md),
-[REFERENCE-FORMAT.md](./REFERENCE-FORMAT.md).
+[REFERENCE-FORMAT.md](./REFERENCE-FORMAT.md), [PLAN-FORMAT.md](./PLAN-FORMAT.md).
 
 ## An authoring run, in order
 
@@ -206,6 +213,10 @@ line. There are no lesson numbers; the ordinal prefix survives only in `records/
   top and *This unlocks* at the bottom.
 
 Nothing is ever gated. A prerequisite is a signal, not a lock.
+
+A **Plan** is the one thing that reads like a sequence, and it is not one: it is a path
+through this graph written in prose, it holds no ordering the graph does not already hold,
+and it says so on its own first line. See [PLAN-FORMAT.md](./PLAN-FORMAT.md).
 
 ## The zone of proximal development, repointed
 

@@ -7,6 +7,7 @@ const PREPPER_TYPE_BY_DIRECTORY = {
   problems: "Problem",
   terms: "Term",
   "cheat-sheets": "Cheat sheet",
+  plans: "Plan",
 }
 /* A result's note type, read off the slug's first segment: type is the directory. A slug
    the vocabulary names no type for -- the home page, a generated folder index -- has none,

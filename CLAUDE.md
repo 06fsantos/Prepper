@@ -117,8 +117,8 @@ and raises a validation **error**.
 ## The reading surface
 
 Long-form reading that reads like a **document, not like documentation**. The prose column
-holds a **~38rem measure at every viewport width** — the sidebar absorbs the remainder,
-rather than the text being stretched to fill it — and body prose is set in a serif. A note's
+holds a **~52rem measure at every viewport width**, centred in the window — the margins absorb
+the remainder, rather than the text being stretched to fill it — and body prose is set in a serif. A note's
 topics render as **chips under its title**, all of them, because a note filed under two
 subjects has two. There is **no** breadcrumb, next/previous, progress bar, review-queue
 badge, or read/unread state: no reading order for chrome to imply, and no per-user state for
@@ -134,10 +134,12 @@ and re-declares no track.
 
 The grid is **two content tracks and two margins**. There is no right column: upstream's third
 track was a fixed 320px and ours is `minmax(0, 1fr)`, which takes nothing when there is nothing
-spare and everything left over when there is. The measure comes through that change
-**unchanged** -- 608px at 1280px, 1600px and 1920px, evaluated off the emitted stylesheet in
-`reading.test.ts` rather than assumed -- and on a prose page the width the column gave up
-becomes margin on both sides. The one thing still laid out in that margin is the **table of
+spare and everything left over when there is. Both flexible tracks are `1fr`, so the leftover is
+split evenly and **the prose is centred in the window**, while the rail is drawn at the left edge
+of a track that starts at the left edge of the page. `.page`'s own 1500px cap is lifted to
+`100%`, because a capped, centred page letterboxes the app before any track list can reach the
+screen. The measure is evaluated off the emitted stylesheet in `reading.test.ts` rather than
+assumed -- 832px at 1280px, 1600px and 1920px. The one thing still laid out in that margin is the **table of
 contents**, a sticky element offset by `var(--prepper-topbar-height)` and bounded by
 `--prepper-toc`, placed from the `footer` layout position because that is the only position
 whose components are direct children of the grid. Below 1200px it is not rendered, which is
@@ -146,7 +148,7 @@ what upstream already did with it.
 **Prose keeps the measure; a generated index does not.** A page whose body is an index -- the
 app's entry point, and the index under a Term's own definition -- takes the whole of the second
 track (`calc(100% - var(--prepper-sidebar) - 10px)`, the prose track's clamp with the measure
-taken out) rather than 38rem, because a topic index is a list scanned in two dimensions. The
+taken out) rather than the measure, because a topic index is a list scanned in two dimensions. The
 distinction is keyed off **what the page's body is**: the index views render themselves with
 `prepper-generated-index` and the stylesheet asks `:has()` whether the page holds one. No slug,
 filename or page type is named, so the next generated index page inherits the layout by
@@ -259,7 +261,7 @@ eyeballing one, which is what makes a re-seed of `prepper/tokens` re-check them.
 The **left** rail is hidden **whole** -- one `display: none` on the rail itself -- behind one
 control in the top bar, and **the article does not move by a pixel**. That is the design and
 not a nicety: `prepper/reading` declares the page's grid once per viewport band and
-`prepper/sidebar` re-declares no track, so the rail's `minmax(320px, 1fr)` column stays exactly
+`prepper/sidebar` re-declares no track, so the rail's `minmax(--prepper-sidebar, 1fr)` column stays exactly
 as wide whether or not anything is drawn in it and the reclaimed width becomes margin. The
 collapse that redeclared `grid-template-columns` with the left track reduced to a gutter is
 what made the prose jump sideways; easing that jump would have been a different and lesser
@@ -341,6 +343,9 @@ They share the data path and the markup below each heading -- one `topicIndex()`
 | entry page | `TopicCards` | `prepper/home`'s body   | a card per topic, note types as columns |
 | term-index | `TermIndex`  | a Term's `.page-footer` | the one card for the page's own topic   |
 
+The **Plans band** above the cards is not a fourth view of this index: it is a flat list keyed
+by type rather than by topic, the way the rail's Cheat sheets list is. See "Plans" below.
+
 A card is a **topic**, so the entry page has as many as there are topics and a Term page has one
 -- which is why its "In this topic" section _is_ the card rather than holding one. Cards do not
 fold: a jump list beside an article has to stay short, and a landing exists to be looked at.
@@ -369,6 +374,35 @@ elements exist to say so on; `folds.js` takes it back out.
 
 A note's own headings are not this: they are [`prepper/folding`](prepper/folding/index.ts), a
 remark transformer over a body, and they arrive closed.
+
+## Plans, and the band the app opens with
+
+A **Plan** is the ninth note type and the sixth Library one: a reading order over notes that
+already exist, in `content/plans/`, named after what it orders. It is a type and not a flagged
+Reference because **type is the directory** -- so nothing in the build names a slug, a filename
+or a frontmatter word to recognise one, and the next Plan is treated as one by being filed there
+([ADR 0005](docs/adr/0005-a-plan-is-a-note-type.md)).
+
+It asserts **no sequence the vault does not already hold**. `prerequisites` is still the only
+ordering claim in the corpus and it is still a graph; a Plan is one path through it, written in
+prose, and each one says so and says the note wins where the two disagree. Nothing is gated,
+nothing is numbered, and no progress through a Plan is stored -- there is nowhere to store it.
+
+A Plan **spans several topics**, which is the whole reason it renders twice. On the entry page
+it is a **band above the cards**, from `plans()` -- the flat, typeless list that is the exact
+sibling of the Cheat sheets list in the rail -- because "where do I start" is asked before a
+topic has been chosen, and a card per topic would list one Plan three times before the reader
+picked one. Inside its topics it is the **first group of the card**, pinned above the Cheat
+sheet in `groupOrder`, because a reader who arrived at a topic from anywhere else still has to
+be told an order exists. Leaving `plan` out of `groupOrder` to avoid the repetition is the one
+thing not to do: those five entries are what `groupsUnder` keeps, so a Plan would then be
+reachable from exactly one page in the app -- the silent disappearance `prepper/note-type.ts`
+spends a compile-time check preventing.
+
+The band is `StartHere` in [`prepper/topics/components/`](prepper/topics/components/index.ts),
+placed by [`prepper/home`](prepper/home/index.ts), and it names the Plan's topics as **text**:
+every one of them is a live link in a card two inches below, and a second copy of the same six
+links would be the entry page disagreeing with itself about what is navigation.
 
 ## Design tokens
 

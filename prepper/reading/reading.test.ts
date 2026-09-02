@@ -126,10 +126,11 @@ describe("the reading surface", () => {
     assert.deepEqual(offenders, [])
   })
 
-  test("the prose column holds a 38rem measure, and the sidebar takes the rest", () => {
-    // One declaration per viewport band: the sidebar column is `1fr` and the prose column
-    // is the measure, so a wider window widens the margin rather than the line.
-    const measures = [...css.matchAll(/--prepper-measure:\s*38rem/g)]
+  test("the prose column holds a 52rem measure, and the margins take the rest", () => {
+    // One declaration per viewport band: the tracks either side of the prose column are
+    // `1fr` and the prose column is the measure, so a wider window widens the margins --
+    // evenly, which is what centres the column -- rather than the line.
+    const measures = [...css.matchAll(/--prepper-measure:\s*52rem/g)]
     assert.equal(measures.length, 1, "the measure is declared once")
 
     // `.page>#quartz-body` and not `.page[data-frame=…]>#quartz-body`: a page that opts
@@ -175,7 +176,7 @@ describe("the reading surface", () => {
   })
 
   for (const width of [1280, 1600, 1920]) {
-    test(`the prose column comes out at 38rem at ${width}px`, () => {
+    test(`the prose column comes out at 52rem at ${width}px`, () => {
       // The ticket's own criterion, and the constraint the right column was retired under.
       //
       // **This is an evaluation, not a measurement.** Nothing in this repo lays a page out:
@@ -201,19 +202,20 @@ describe("the reading surface", () => {
           container: container(applies, width, properties, [body]),
           properties,
         }),
-        38 * 16,
-        `the prose column is not 38rem at ${width}px: ${columns[1]}`,
+        52 * 16,
+        `the prose column is not 52rem at ${width}px: ${columns[1]}`,
       )
     })
   }
 
-  test("the reclaimed width is margin, not a narrower column", () => {
-    // The right column is gone rather than resized. Said as arithmetic on the wide band's
-    // track list: the prose track is the measure, and the two tracks either side of it are
-    // **flexible with nothing guaranteed to them but the rail's own floor**. Where a fixed
-    // 320px column used to stand there is now a track that takes zero when there is nothing
-    // spare and everything left over when there is -- which on a prose page is margin, on both
-    // sides. Ticket 07 is where a page whose body is an index spends it on something else.
+  test("the reclaimed width is margin on both sides, so the prose is centred", () => {
+    // The right column is gone rather than resized, and what is left over is split evenly
+    // with the rail's track. Said as arithmetic on the wide band's track list: the prose
+    // track is the measure, and the two tracks either side of it are **flexible with nothing
+    // guaranteed to them but the rail's own floor** -- one `1fr` each, which is what makes the
+    // two margins equal and the column centred. Where a fixed 320px column used to stand
+    // there is now a track that takes zero when there is nothing spare and everything left
+    // over when there is.
     const all = rules(css)
     const properties = customProperties(all)
     const columns = tracks(grid(active(all, 1920), [body]))
@@ -221,13 +223,26 @@ describe("the reading surface", () => {
     assert.equal(columns.length, 3, `the wide band declares ${columns.length} tracks`)
     assert.ok(
       columns[0].includes("1fr") && columns[2].includes("1fr"),
-      `the margins are not flexible: ${columns.join(" | ")}`,
+      `the margins are not flexible, so the prose is not centred: ${columns.join(" | ")}`,
     )
     assert.deepEqual(
       [columns[0], columns[2]].map((track) => pixels(floor(track), { container: 0, properties })),
       [320, 0],
       `the margins are not free: ${columns.join(" | ")}`,
     )
+  })
+
+  test("the page is not capped below the window", () => {
+    // Upstream caps `.page` at 1500px and centres it, which letterboxes the app on a wide
+    // monitor: the rail floats inside a margin the grid never hears about, so no track list
+    // written here can reach the edge of the screen. The cap is lifted rather than raised,
+    // and this is the rule that says so.
+    const capped = rules(css)
+      .filter((rule) => rule.selector === ".page")
+      .map((rule) => declaration(rule, "max-width"))
+      .filter((value) => value !== undefined)
+
+    assert.equal(capped.at(-1), "100%", `the page is still capped: ${capped.join(" | ")}`)
   })
 
   test("nothing is laid out in the right rail, because there is no right rail", () => {
@@ -421,7 +436,7 @@ describe("prose keeps the measure, and a generated index does not", () => {
   })
 
   for (const width of [1280, 1600, 1920]) {
-    test(`the four prose page types each hold 38rem at ${width}px`, () => {
+    test(`the four prose page types each hold 52rem at ${width}px`, () => {
       const all = rules(css)
       const properties = customProperties(all)
       const applies = active(all, width)
@@ -434,7 +449,7 @@ describe("prose keeps the measure, and a generated index does not", () => {
             properties,
           })
         }),
-        prose.map(() => 38 * 16),
+        prose.map(() => 52 * 16),
       )
     })
 
@@ -452,7 +467,7 @@ describe("prose keeps the measure, and a generated index does not", () => {
       const centre = pixels(columns[1], { container: room, properties })
 
       assert.equal(centre, room - 320 - 10, `the index does not fill ${room}px: ${columns[1]}`)
-      assert.ok(centre > 38 * 16, `the index is no wider than the measure: ${centre}px`)
+      assert.ok(centre > 52 * 16, `the index is no wider than the measure: ${centre}px`)
     })
   }
 

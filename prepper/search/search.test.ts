@@ -62,9 +62,9 @@ describe("search, vendored", () => {
     const scripts = emittedScripts(site)
 
     // Type is the directory, so the chip costs the emitter nothing: `slug` is already in
-    // hand where a result is rendered. All five labels ship, because a query for "binary
+    // hand where a result is rendered. All six labels ship, because a query for "binary
     // search" matches four types at once and a partial chip set is worse than none.
-    for (const label of ["Lesson", "Reference", "Problem", "Term", "Cheat sheet"]) {
+    for (const label of ["Lesson", "Reference", "Problem", "Term", "Cheat sheet", "Plan"]) {
       assert.ok(scripts.includes(`"${label}"`), `no type chip label for ${label}`)
     }
     assert.match(scripts, /prepperTypeChip/)

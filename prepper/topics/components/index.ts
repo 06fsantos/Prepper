@@ -13,7 +13,7 @@ import type {
 import type { GraphNode } from "../../graph/graph.ts"
 import { graphOf } from "../../graph/graph.ts"
 
-import { cheatSheets, topicIndex, topicOf, type Topic } from "../topic-index.ts"
+import { cheatSheets, topicIndex, topicOf, type Plan, type Topic } from "../topic-index.ts"
 
 /** Which view of the one index a placement renders. See `../index.ts` for why it is an option. */
 export type View = "sidebar" | "term-index"
@@ -127,6 +127,59 @@ export function TopicCards(topics: Topic[], from: FullSlug): ComponentChild {
         ]),
       ),
     ),
+  )
+}
+
+/**
+ * The **entry page's** first band: every Plan in the vault, above the topic cards.
+ *
+ * This is the one piece of navigation in the app that answers *where do I start* rather than
+ * *what is there*, and it is a band rather than a card because a Plan is not filed under one
+ * topic: a reading order for API requests spans the client, the resilience patterns and the
+ * tracing, and a card per topic would list it three times before the reader has chosen a
+ * topic at all. So it sits above the cards, in the order a Plan is read -- which is the same
+ * relationship the Cheat sheets list has to the rail's tree, and is rendered the same way:
+ * a flat list off the graph, keyed by type rather than by topic.
+ *
+ * It does **not** replace the Plan's row inside its topics' cards. A reader who arrived at
+ * "HTTP resilience" from anywhere else still has to be told a reading order exists, and the
+ * card's `Start here` group is where they are told. See `groupOrder`.
+ *
+ * Nothing here is a summary of the Plan and nothing counts its steps: the topics are named
+ * because they are what a reader picks between, and the rest of the answer is the page.
+ * Renders nothing at all in a vault with no Plans, rather than a heading over an empty list.
+ */
+export function StartHere(list: Plan[], from: FullSlug): ComponentChild {
+  if (list.length === 0) return null
+  return h("nav", { class: "prepper-start-here", "aria-label": "Reading orders" }, [
+    h("h2", { class: "prepper-start-here-heading" }, "Start here"),
+    h(
+      "ul",
+      { class: "prepper-plan-list" },
+      list.map((plan) =>
+        h("li", { class: "prepper-plan", "data-plan": plan.note.slug }, [
+          link(from, plan.note, "prepper-plan-name"),
+          topicNames(plan),
+        ]),
+      ),
+    ),
+  ])
+}
+
+/**
+ * What a Plan covers, as its Terms' own titles.
+ *
+ * Text rather than links, and that is the point of the band's density: the topics are here
+ * to tell a reader which of two Plans is theirs, and every one of them is a live link in the
+ * card two inches below. A second copy of the same six links above the first would be the
+ * entry page disagreeing with itself about what is navigation.
+ */
+function topicNames(plan: Plan): ComponentChild {
+  if (plan.topics.length === 0) return null
+  return h(
+    "span",
+    { class: "prepper-plan-topics" },
+    plan.topics.map((topic) => topic.title).join(" · "),
   )
 }
 
@@ -425,6 +478,7 @@ const styles = `
    so a rule on the tree alone would set two adjacent lists in two typefaces at two sizes. */
 .prepper-topics,
 .prepper-cheat-sheets,
+.prepper-start-here,
 .prepper-topic-cards,
 .prepper-topic-index {
   font-family: var(--md-sys-typescale-body-medium-font);
@@ -434,6 +488,7 @@ const styles = `
 .prepper-topic-list,
 .prepper-topic-groups,
 .prepper-group-list,
+.prepper-plan-list,
 .prepper-cheat-sheet-list {
   list-style: none;
   padding: 0;
@@ -522,6 +577,7 @@ const styles = `
 }
 .prepper-group-heading,
 .prepper-cheat-sheets-heading,
+.prepper-start-here-heading,
 .prepper-topic-index-heading {
   font-family: var(--md-sys-typescale-label-medium-font);
   font-size: var(--md-sys-typescale-label-medium-size);
@@ -644,6 +700,67 @@ const styles = `
   align-items: start;
   gap: 0.25rem 1.25rem;
   margin: 0;
+}
+/* ---------------------------------------------------------------------------
+   The entry page's opening band: every Plan, above the cards.
+
+   It is the card surface rather than a design of its own -- same border, same radius, same
+   surface-container-low -- because the landing has one card design and this is the first of
+   them. What it does not take is the card heading: a topic name is title-large because on a
+   landing the topic is the primary thing, and a band that shouted louder than the topics it
+   sits above would make "Start here" the page's subject instead of its first row. So the
+   heading is the same label-medium every micro-heading in the index is, and the Plan names
+   under it are title-small -- one step up from a leaf, one step down from a topic.
+   --------------------------------------------------------------------------- */
+.prepper-start-here {
+  box-sizing: border-box;
+  margin: 0 0 1rem;
+  padding: 1rem 1.25rem 1.25rem;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-large);
+  background-color: var(--md-sys-color-surface-container-low);
+}
+.prepper-start-here-heading {
+  margin: 0 0 0.6rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+/* Auto-fit over a floor, like everything else on this page: two Plans sit side by side in a
+   window with room for them and stack when there is not, with no breakpoint deciding which. */
+.prepper-plan-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  gap: 0.25rem 1.25rem;
+}
+.prepper-plan {
+  margin: 0;
+}
+/* The whole row is the target, the way a leaf of the tree is, so the pointer never has to
+   find the words -- and the topics under the name are inside it rather than beside it. */
+.prepper-start-here .prepper-plan-name {
+  display: block;
+  padding: 0.35rem 0.5rem 0.1rem;
+  border-radius: var(--md-sys-shape-corner-medium) var(--md-sys-shape-corner-medium) 0 0;
+  color: var(--md-sys-color-on-surface);
+  background-color: transparent;
+  font-size: var(--md-sys-typescale-title-small-size);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+}
+.prepper-plan-topics {
+  display: block;
+  padding: 0 0.5rem 0.35rem;
+  border-radius: 0 0 var(--md-sys-shape-corner-medium) var(--md-sys-shape-corner-medium);
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+  color: var(--md-sys-color-on-surface-variant);
+}
+.prepper-plan:hover > .prepper-plan-name,
+.prepper-plan:hover > .prepper-plan-topics {
+  background-color: var(--md-sys-color-surface-container-high);
 }
 `
 

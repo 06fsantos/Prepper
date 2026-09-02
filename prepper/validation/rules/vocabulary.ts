@@ -34,6 +34,7 @@ const article: Record<NoteType, string> = {
   problem: "a problem",
   term: "a term",
   "cheat-sheet": "a cheat sheet",
+  plan: "a plan",
   research: "a research note",
   record: "a record",
   mission: "the mission",

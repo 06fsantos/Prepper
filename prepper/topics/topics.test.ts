@@ -84,12 +84,14 @@ describe("the topic index", () => {
   test("a Term page carries the generated index of every Library note about that topic", () => {
     const index = hashMaps.require(".prepper-topic-index")
     assert.deepEqual(groups(hashMaps, index), [
+      ["Start here", ["Where to start on hash maps"]],
       ["Cheat sheet", ["Hash maps at a glance"]],
       ["Lessons", ["How array indexing works", "What a hash map lookup costs"]],
       ["References", ["Hash map internals"]],
       ["Problems", ["Two sum"]],
     ])
     assert.deepEqual(hrefs(hashMaps, index), [
+      "../plans/where-to-start-on-hash-maps",
       "../cheat-sheets/hash-map-quick-reference",
       "../lessons/array-indexing",
       "../lessons/hash-map-lookup-cost",
@@ -118,12 +120,12 @@ describe("the topic index", () => {
     assert.ok(under("Complexity").includes("What a hash map lookup costs"))
   })
 
-  test("a topic's leaves are grouped by note type, with the Cheat sheet first", () => {
-    // Cheat sheet first because it is the quick-catchup document: the first thing seen
-    // under a topic is the one that catches you up on it.
+  test("a topic's leaves are grouped by note type, the Plan first and the Cheat sheet next", () => {
+    // The two pinned groups are the two questions somebody arriving at a topic cold has, in
+    // the order they have them: where do I start, and catch me up. The rest is reading order.
     assert.deepEqual(
       groups(home, topicNode(home, "Hash maps")).map(([heading]) => heading),
-      ["Cheat sheet", "Lessons", "References", "Problems"],
+      ["Start here", "Cheat sheet", "Lessons", "References", "Problems"],
     )
   })
 
@@ -291,6 +293,71 @@ describe("the topic index", () => {
  * it. It is an evaluation of declared rules, never a measurement -- nothing in this repo lays
  * a page out. See `prepper/testing/stylesheets.ts`.
  */
+describe("where to start", () => {
+  let site: EmittedSite
+  let home: Page
+
+  before(
+    async () => {
+      site = await buildFixture("topic-index")
+      home = site.page("index")
+    },
+    { timeout: 300_000 },
+  )
+
+  /** The Plan names the band offers, in the order it offers them. */
+  function banded(page: Page): string[] {
+    const band = page.require(".prepper-start-here", page.tree)
+    return page.selectAll(".prepper-plan-name", band).map((name) => page.text(undefined, name))
+  }
+
+  test("the entry page opens with the Plans, above every card", () => {
+    // The landing's first question is *where do I start*, and the cards answer the later
+    // one. Document order is the whole of how that is said, so it is what is asserted:
+    // the band is the first thing in the body, not merely somewhere on the page.
+    const body = home.require(".prepper-home", home.tree)
+    const sections = home
+      .selectAll(".prepper-start-here, .prepper-topic-cards", body)
+      .map((node) => classesOf(node)[0])
+    assert.deepEqual(sections, ["prepper-start-here", "prepper-topic-cards"])
+    assert.deepEqual(banded(home), ["Where to start on hash maps"])
+  })
+
+  test("a Plan in the band is a link to the Plan, and the Plan is a page", () => {
+    const band = home.require(".prepper-start-here", home.tree)
+    assert.deepEqual(
+      home.links({ scope: band }).map((link) => link.href),
+      ["./plans/where-to-start-on-hash-maps"],
+    )
+    assert.ok(site.hasPage("plans/where-to-start-on-hash-maps"))
+  })
+
+  test("the band names the topics a Plan spans, in the order the Plan wrote them", () => {
+    // A Plan covers several topics -- that is why it is a band and not a card -- so the
+    // band says which, in the note's own `topic` order rather than re-sorted: the reader
+    // picks between Plans by what they cover.
+    const band = home.require(".prepper-start-here", home.tree)
+    assert.equal(home.text(".prepper-plan-topics", band), "Hash maps · Complexity")
+  })
+
+  test("a Plan is also filed under each of its topics, pinned to the top of the card", () => {
+    // The band is not a substitute for the index. A reader who arrived at a topic from
+    // anywhere else still has to be told a reading order exists, so the Plan is in both --
+    // the arrangement a Cheat sheet is already in, and the reason `plan` is in `groupOrder`.
+    const under = (title: string) => groups(home, topicNode(home, title))[0]
+    assert.deepEqual(under("Hash maps"), ["Start here", ["Where to start on hash maps"]])
+    assert.deepEqual(under("Complexity"), ["Start here", ["Where to start on hash maps"]])
+  })
+
+  test("the band is the entry page's, and the rail carries no copy of it", () => {
+    // The rail is a jump list beside something the reader is already reading; a second
+    // "where do I start" in it would be the third view of a list with two.
+    const lesson = site.page("lessons/array-indexing")
+    assert.equal(lesson.select(".prepper-start-here", lesson.tree), undefined)
+    assert.ok(lesson.select(".prepper-topics", lesson.tree), "no rail on the page at all")
+  })
+})
+
 describe("the topic index gets its density", () => {
   let site: EmittedSite
   let home: Page
@@ -342,6 +409,7 @@ describe("the topic index gets its density", () => {
     )
     assert.deepEqual(hrefs(home, card), [
       "./terms/hash-maps",
+      "./plans/where-to-start-on-hash-maps",
       "./cheat-sheets/hash-map-quick-reference",
       "./lessons/array-indexing",
       "./lessons/hash-map-lookup-cost",
@@ -350,7 +418,7 @@ describe("the topic index gets its density", () => {
     ])
   })
 
-  test("the note-type groups are the columns, and all four of them are there", () => {
+  test("the note-type groups are the columns, and all five of them are there", () => {
     // "Note-type groups as columns within the card" is a fact about markup before it is one
     // about CSS: the group list is what the column rule is written against, and each group
     // still says which note type it is, so the layout never has to know the order.
@@ -359,7 +427,7 @@ describe("the topic index gets its density", () => {
       home
         .selectAll(".prepper-topic-groups > .prepper-topic-group", card)
         .map((group) => String(group.properties.dataNoteType)),
-      ["cheat-sheet", "lesson", "reference", "problem"],
+      ["plan", "cheat-sheet", "lesson", "reference", "problem"],
     )
   })
 

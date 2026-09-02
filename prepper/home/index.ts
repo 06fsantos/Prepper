@@ -63,8 +63,8 @@ import type { QuartzPageTypePluginInstance, VirtualPage } from "../../quartz/plu
 import type { ProcessedContent } from "../../quartz/plugins/vfile.ts"
 
 import { graphOf } from "../graph/graph.ts"
-import { topicIndex } from "../topics/topic-index.ts"
-import { TopicCards } from "../topics/components/index.ts"
+import { plans, topicIndex } from "../topics/topic-index.ts"
+import { StartHere, TopicCards } from "../topics/components/index.ts"
 
 export const manifest = {
   name: "prepper-home",
@@ -78,17 +78,32 @@ export const manifest = {
 const homeSlug = "index" as FullSlug
 
 /**
- * The entry page's body: every topic, and everything filed under each.
+ * The entry page's body: the Plans, and then every topic with everything filed under each.
  *
  * It is the whole index rather than a summary of it. A dev opening the app is choosing
  * what to study, and a list of topic names with the notes hidden one click away would make
  * them click into a topic to find out whether it holds anything worth an evening.
+ *
+ * ## Why the Plans come first, and why they are a band and not a card
+ *
+ * The cards answer *what is there*; a Plan answers *where do I start*, which is the earlier
+ * question and the one this page is opened with. It is a band across the top rather than a
+ * card in the grid because a Plan is not filed under one topic -- a reading order for API
+ * requests covers the client, the resilience patterns and the tracing at once -- so a card
+ * per topic would have listed it three times before the reader had picked a topic at all.
+ *
+ * Both come from `prepper/topics` over one `graphOf(allFiles)`, and neither is markup this
+ * module writes: the same rule that made the cards an import rather than a copy makes the
+ * band one. `StartHere` is the type's flat view the way `cheatSheets` is -- see
+ * `../topics/topic-index.ts`.
  */
 const HomeBody: QuartzComponentConstructor = () => {
   const Home: QuartzComponent = ({ fileData, allFiles }: QuartzComponentProps) => {
     const slug = fileData.slug ?? homeSlug
+    const graph = graphOf(allFiles)
     return h("div", { class: "prepper-home prepper-generated-index popover-hint" }, [
-      TopicCards(topicIndex(graphOf(allFiles)), slug),
+      StartHere(plans(graph), slug),
+      TopicCards(topicIndex(graph), slug),
     ])
   }
 

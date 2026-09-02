@@ -31,7 +31,7 @@
  * would be the design deciding, silently and wrongly, which of the two the reader meant.
  * Whichever topic they came in through, the note is there.
  */
-import { incoming, nodeAt, type GraphNode, type LinkGraph } from "../graph/graph.ts"
+import { incoming, nodeAt, outgoing, type GraphNode, type LinkGraph } from "../graph/graph.ts"
 import type { LibraryType } from "../note-type.ts"
 
 /** One note type's worth of a topic's leaves, under the heading that names it. */
@@ -51,16 +51,34 @@ export interface Topic {
   groups: TopicGroup[]
 }
 
+/** One Plan, and the topics it says where to start in. */
+export interface Plan {
+  /** The Plan note. */
+  note: GraphNode
+  /** The Terms its `topic` names, in the order it wrote them -- never re-sorted. */
+  topics: GraphNode[]
+}
+
 /**
  * The note types a topic's leaves are grouped into, in the order a reader meets them.
  *
- * **Cheat sheet is pinned first** and is not there by alphabet: it is the quick-catchup
- * document, so it is the first thing seen under a topic. The rest run in reading order
- * rather than alphabetically -- the Lessons that teach the topic, the References that go
- * deeper, the Problems that drill it, and last the other Terms it touches -- which is the
- * order somebody arriving at a topic cold would want them in.
+ * **A Plan is pinned above everything**, and the Cheat sheet above the rest. Neither is
+ * there by alphabet: the Plan says where to start, the Cheat sheet catches you up, and
+ * those are the first two questions somebody arriving at a topic cold has. The rest run in
+ * reading order rather than alphabetically -- the Lessons that teach the topic, the
+ * References that go deeper, the Problems that drill it, and last the other Terms it
+ * touches.
+ *
+ * A Plan is listed here **as well as** in the entry page's own band, which is the
+ * arrangement Cheat sheets are already in: pinned inside the topic, and reachable from a
+ * flat list that is not keyed by topic at all. The alternative -- leaving `plan` out of
+ * this list so that it renders only in the band -- would make every Plan vanish from the
+ * rail and from its own Term page, because these five entries are what `groupsUnder` keeps
+ * and everything else is dropped. A Library type reachable from exactly one page in the app
+ * is the silent disappearance `note-type.ts` spends a compile-time check preventing.
  */
 const groupOrder: readonly [type: LibraryType, heading: string][] = [
+  ["plan", "Start here"],
   ["cheat-sheet", "Cheat sheet"],
   ["lesson", "Lessons"],
   ["reference", "References"],
@@ -114,6 +132,28 @@ export function topicOf(graph: LinkGraph, slug: string): Topic | undefined {
  * have to navigate into that topic to reach it, and a Cheat sheet filed under two topics
  * appears once here rather than twice.
  */
+/**
+ * Every Plan in the vault, in title order and under no topic at all.
+ *
+ * The list the entry page opens with. A Plan claims several topics -- a reading order for
+ * API requests is about the client, the resilience patterns and the tracing at once -- so
+ * the flat list is the only place one appears once rather than once per topic it covers,
+ * and "where do I start" is a question asked before a topic has been chosen. Its sibling
+ * is `cheatSheets` below, for the same reason and with the same shape: a list off the
+ * graph, keyed by type rather than by topic.
+ */
+export function plans(graph: LinkGraph): Plan[] {
+  return graph.nodes
+    .filter((node) => node.type === "plan")
+    .sort((a, b) => byTitle(a.title, b.title))
+    .map((note) => ({
+      note,
+      topics: outgoing(graph, note.slug, "about")
+        .map((edge) => nodeAt(graph, edge.target))
+        .filter((node): node is GraphNode => node !== undefined),
+    }))
+}
+
 export function cheatSheets(graph: LinkGraph): GraphNode[] {
   return graph.nodes
     .filter((node) => node.type === "cheat-sheet")

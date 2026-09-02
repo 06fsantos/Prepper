@@ -21,6 +21,7 @@ const requiredByType: Record<NoteType, readonly string[]> = {
   problem: ["topic", "kind", "difficulty", "practices"],
   term: [],
   "cheat-sheet": ["topic"],
+  plan: ["topic"],
   research: ["date", "sources"],
   record: ["date"],
   mission: [],

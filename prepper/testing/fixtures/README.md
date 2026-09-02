@@ -146,14 +146,17 @@ anything.
   and a body link so that "neither a node nor the source of an edge" is a fact about a note
   that would otherwise have contributed two edges.
 
-- **`topic-index/`** — four Terms and six notes filed under two of them: a Cheat sheet, two
-  Lessons, a Reference and a Problem under *Hash maps*, and a Cheat sheet plus one of those
-  Lessons under *Complexity*. Its cluster is *the topic index*, so every detail is a fact
+- **`topic-index/`** — four Terms and seven notes filed under two of them: a Plan, a Cheat
+  sheet, two Lessons, a Reference and a Problem under *Hash maps*, and a Cheat sheet, that
+  same Plan and one of those Lessons under *Complexity*. Its cluster is *the topic index*, so every detail is a fact
   about navigation rather than about links. `lessons/hash-map-lookup-cost` names both topics
-  and is the note that has to appear under **both**, not deduped to one. The four note types
-  under *Hash maps* are what make "grouped by note type, Cheat sheet first" statable — a
-  Cheat sheet that sorts first against the alphabet's advice, and a Reference before a
-  Problem, which no alphabet would give. `terms/system-design` has nothing filed under it and
+  and is the note that has to appear under **both**, not deduped to one. The five note types
+  under *Hash maps* are what make "grouped by note type, the Plan first and the Cheat sheet
+  next" statable — two groups that sort first against the alphabet's advice, and a Reference
+  before a Problem, which no alphabet would give. `plans/where-to-start-on-hash-maps` names
+  both topics for a second reason: the entry page's Plans band is the one list in the app
+  where a note spanning two topics appears **once**, so a Plan under a single topic could
+  not tell the band and the cards apart. `terms/system-design` has nothing filed under it and
   a body that explains the area, which is the **area overview** a topic with no Lessons and
   therefore no Cheat sheet has to fall back on; `terms/eviction` is empty too and titled
   *Éviction policies*, which is what makes the tree's alphabetical ordering mean what a

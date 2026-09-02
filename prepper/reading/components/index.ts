@@ -83,11 +83,23 @@ const PrepperReading: QuartzComponentConstructor = () => {
  *
  * ## The measure
  *
- * The prose column holds **~38rem whatever the window is doing**, and the left sidebar
- * absorbs the difference. Quartz's own grid is the other way round -- a fixed 320px
- * sidebar and a centre column of `auto` -- which sets the line length from the viewport,
- * so a wide window buys longer lines rather than a wider margin. 38rem is about 75
- * characters at the body size, and 75 characters is the measure this is all for.
+ * The prose column holds **~52rem whatever the window is doing**, and the margin absorbs the
+ * difference. Quartz's own grid sets the line length from the viewport -- a fixed 320px
+ * sidebar and a centre column of `auto` -- so a wide window buys longer lines rather than a
+ * wider margin, and a line is as long as the reader's monitor. 52rem is about 100 characters
+ * at the body size: longer than the 75 this started at, which is a deliberate trade of
+ * typographic orthodoxy for a page that uses the screen it is on.
+ *
+ * The prose is **centred in the window**: the tracks either side of it are both `1fr`, so the
+ * width the measure does not want is split evenly between them and the column sits in the
+ * middle of the page at every width. The rail is drawn at the **left edge** of its track and
+ * the track begins at the left edge of the page, so centring the prose does not inset the
+ * furniture -- the rail's track has a floor of `--prepper-sidebar` and no ceiling, and what it
+ * takes beyond the floor is empty margin beside the topic tree.
+ *
+ * And `.page`'s own cap is lifted, because none of the above reaches a window wider than
+ * upstream's 1500px otherwise: a page capped at 1500px and centred is a letterboxed app, with
+ * a margin outside the grid that no track list here can see or spend.
  *
  * The selectors match upstream's exactly, and the breakpoints are upstream's own 800px and
  * 1200px, because that is what makes these overrides rather than a second layout: a
@@ -101,13 +113,11 @@ const PrepperReading: QuartzComponentConstructor = () => {
  * out of what the window has left over. That is the difference between removing a column and
  * making one narrower, and it is the whole of what ticket 06 did to the layout.
  *
- * The measure comes through it **unchanged**, and that is the constraint the change was made
- * under rather than a happy result. The centre track's clamp lost one sidebar --
- * `calc(100% - var(--prepper-sidebar) - 10px)`, one rail and two 5px gaps, which is now the
- * same shape the tablet band already had -- and at every width the page is laid out at, that
- * clamp is far larger than 38rem, so `min()` still answers with the measure. It is evaluated
- * rather than assumed: `reading.test.ts` computes the declared track list at 1280px, 1600px and
- * 1920px and asserts 608px.
+ * The centre track's clamp is `calc(100% - var(--prepper-sidebar) - 10px)` -- one rail and two
+ * 5px gaps -- and at every width the page is laid out at, that clamp is larger than the
+ * measure, so `min()` answers with the measure. It is evaluated rather than assumed:
+ * `reading.test.ts` computes the declared track list at 1280px, 1600px and 1920px and asserts
+ * 832px.
  *
  * What the reclaimed width becomes on a prose page is **margin on both sides** -- the two
  * flexible tracks split it, so the prose is centred in the window instead of pushed off it.
@@ -116,7 +126,7 @@ const PrepperReading: QuartzComponentConstructor = () => {
  *
  * A page whose body is a **generated index** -- the app's entry point, and the index under a
  * Term's own definition -- wants that reclaimed width as *content*. A topic index is a list
- * scanned in two dimensions, and 38rem of it in a 1500px window is the complaint this whole
+ * scanned in two dimensions, and a measure's worth of it in a wide window is the complaint this
  * effort started from. So such a page takes the whole of the second track:
  * `calc(100% - var(--prepper-sidebar) - 10px)`, which is the prose track's own clamp with the
  * measure taken out of it. A prose page takes the smaller of the measure and what is
@@ -237,8 +247,8 @@ const PrepperReading: QuartzComponentConstructor = () => {
  */
 const styles = `
 :root {
-  --prepper-measure: 38rem;
-  /* The rail's track, and it is minmax(..., 1fr) below whether or not a rail is drawn in
+  --prepper-measure: 52rem;
+  /* The rail's floor, and it is minmax(..., 1fr) below whether or not a rail is drawn in
      it: prepper/sidebar hides the rail outright and re-declares no track here, so the width
      the rail gives up becomes margin and the prose column does not move. There is no second,
      collapsed grid anywhere. */
@@ -247,6 +257,16 @@ const styles = `
      not a track in the grid. The margin itself is whatever the window has left over. */
   --prepper-toc: 16rem;
   --prepper-prose: "Source Serif 4", Charter, "Iowan Old Style", Georgia, serif;
+}
+/* The window is the page. Upstream caps .page at the desktop breakpoint plus 300px --
+   1500px -- and centres what is left, which on a wide monitor is a letterboxed app with the
+   rail floating somewhere inside the left margin rather than against the edge of the screen.
+   The cap is lifted here rather than raised to a bigger number: the grid below already says
+   what each track is owed, so the width the cap was withholding goes to the tracks that are
+   written to take it -- the prose column up to the measure, and the margin the table of
+   contents floats in after that. */
+.page {
+  max-width: 100%;
 }
 .page > #quartz-body {
   grid-template-columns:
@@ -330,7 +350,8 @@ const styles = `
 /* ...and it is pinned to the index's left edge rather than centred over it. Only one box on
    the page has side margins of its own -- the rule the frame draws between the article and
    what follows it, which the browser centres inside whatever width it is given -- and a
-   38rem rule floating in the middle of a full-width column reads as a second page beginning.
+   measure-wide rule floating in the middle of a full-width column reads as a second page
+   beginning.
    The shared left edge is what makes the definition and the index below it one page, and this
    is that decision applied to the last box that was not obeying it. */
 .page > #quartz-body:has(.prepper-generated-index) > .center > *,
