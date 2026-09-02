@@ -99,6 +99,32 @@ primary its lessons were written against.
   EventPipe collection from a live process: GC, thread-pool and JIT events. Use for: the field
   half — a running process with a symptom and no hypothesis yet.
 
+### Relational databases and SQL Server
+
+- [Database normalization description — Microsoft Learn](https://learn.microsoft.com/en-us/office/troubleshoot/access/database-normalization-description)
+  1NF, 2NF and 3NF worked on one example, with a paragraph on BCNF and 4NF. Use for:
+  justifying a decomposition from the dependency it removes rather than from the rule's number.
+- [SQL Server and Azure SQL index architecture and design guide — Microsoft Learn](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-index-design-guide)
+  Clustered and nonclustered B+ tree architecture, row locators, included columns, filtered
+  indexes, and the column-order guidelines. Use for: any "why did the optimiser not use my
+  index" question, and for what an index costs a write.
+- [SQL Server Transaction Locking and Row Versioning Guide — Microsoft Learn](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-locking-and-row-versioning-guide)
+  ACID, lock modes and granularity, escalation, the row-versioning levels, the version store in
+  `tempdb`, and how a deadlock is detected and chosen. Use for: everything about two sessions
+  touching the same rows.
+- [SET TRANSACTION ISOLATION LEVEL (Transact-SQL) — Microsoft Learn](https://learn.microsoft.com/en-us/sql/t-sql/statements/set-transaction-isolation-level-transact-sql)
+  The exact semantics of each level and the syntax for setting it. Use for: a precise
+  isolation-level definition, in preference to any prose summary of one.
+- [Execution Plan Overview — Microsoft Learn](https://learn.microsoft.com/en-us/sql/relational-databases/performance/execution-plans)
+  What a plan is, estimated versus actual, and how to capture one. Use for: the vocabulary
+  before reading a real plan in SSMS.
+- [Statistics — Microsoft Learn](https://learn.microsoft.com/en-us/sql/relational-databases/statistics/statistics)
+  How statistics are created and updated, what a histogram holds, `DBCC SHOW_STATISTICS`, and
+  the auto-update threshold. Use for: why a plan that used to be right stopped being right.
+- [Monitor and Tune for Performance — Microsoft Learn](https://learn.microsoft.com/en-us/sql/relational-databases/performance/monitor-and-tune-for-performance)
+  The index of SQL Server's own tooling — DMVs, Query Store, the Tuning Advisor. Use for:
+  picking the right diagnostic before guessing.
+
 ## Wisdom (Communities)
 
 - [r/cscareerquestions interview experiences](https://reddit.com/r/cscareerquestions)
@@ -110,6 +136,10 @@ primary its lessons were written against.
 
 ## Gaps
 
+- **From-scratch ER modelling.** Every relational source here starts from a table that already
+  exists. Nothing trusted covers going from a written domain to entities, relationships and
+  cardinalities — which is the first half of "design a schema from scratch" in an interview.
+  Raised and unresolved by the workspace that raised it.
 - **Behavioural interviewing.** No source here is trusted on it. Behavioural Problems are
   hand-authored against the template in `PROBLEM-FORMAT.md` partly for this reason.
 - **System-design rubrics.** Plenty of material on the systems; almost none on what a
