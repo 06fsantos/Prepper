@@ -19,9 +19,11 @@
  * The rule set is the same whatever vault is built, but "is this selector's subject a
  * `<details>`" is a question about markup: `details.prepper-topic-fold` and
  * `summary.prepper-topic-fold-row` are class selectors, and only the emitted pages know which
- * classes are on a disclosure element. So the elements are read off real pages, and two
+ * classes are on a disclosure element. So the elements are read off real pages, and three
  * fixtures are built because between them they emit all three kinds -- `problem-sections` the
- * seal and the rail's tree, `folded-headings` a note's own headings.
+ * seal, `folded-headings` a note's own headings, and `topic-index` the rail's tree, whose
+ * `prepper-topic-fold` is now the umbrella fold and the Cheat sheets list (a rail with neither
+ * an umbrella nor a Cheat sheet folds nothing).
  *
  * ## "Or to anything inside one", and the honest scope of it
  *
@@ -121,6 +123,7 @@ function folds(page: Page): { disclosures: Shape[]; inside: Shape[] } {
 describe("motion, and the seal that never animates", () => {
   let site: EmittedSite
   let folded: EmittedSite
+  let topicIndex: EmittedSite
   let disclosures: Shape[]
   let inside: Shape[]
 
@@ -128,10 +131,12 @@ describe("motion, and the seal that never animates", () => {
     async () => {
       site = await buildFixture("problem-sections")
       folded = await buildFixture("folded-headings")
+      topicIndex = await buildFixture("topic-index")
 
       const pages = [
         ...site.pageSlugs().map((slug) => site.page(slug)),
         ...folded.pageSlugs().map((slug) => folded.page(slug)),
+        ...topicIndex.pageSlugs().map((slug) => topicIndex.page(slug)),
       ].map(folds)
 
       disclosures = pages.flatMap((page) => page.disclosures)

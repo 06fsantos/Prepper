@@ -1,6 +1,8 @@
 ---
 id: 01M19YK30432XWJ8F6JEDZYHJN
 title: Query performance
+topic:
+  - databases
 ---
 
 Diagnosis after the fact: reading the plan the optimiser produced, working out which estimate

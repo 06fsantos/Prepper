@@ -1,6 +1,8 @@
 ---
 id: 01M195VTJ2EM37BAZN4JHYNQD7
 title: The .NET thread pool
+topic:
+  - concurrency-and-async
 ---
 
 The machine that runs continuations and queued work items, and decides for itself how many

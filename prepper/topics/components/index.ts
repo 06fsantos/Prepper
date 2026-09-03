@@ -13,7 +13,14 @@ import type {
 import type { GraphNode } from "../../graph/graph.ts"
 import { graphOf } from "../../graph/graph.ts"
 
-import { cheatSheets, topicIndex, topicOf, type Plan, type Topic } from "../topic-index.ts"
+import {
+  cheatSheets,
+  sidebarTree,
+  topicOf,
+  type Plan,
+  type SidebarRoot,
+  type Topic,
+} from "../topic-index.ts"
 
 /** Which view of the one index a placement renders. See `../index.ts` for why it is an option. */
 export type View = "sidebar" | "term-index"
@@ -49,37 +56,54 @@ function viewOf(opts: Options | undefined): View {
 }
 
 /**
- * The **rail's** view: the whole topic index as a bare, foldable name list.
+ * The **rail's** view: the topic index folded one level deep, as a bare foldable name list.
  *
  * This is a jump list. It stands beside a page the reader is already reading, in a 320px
  * column, and the question it answers is "where else is there" -- so it is names, folded, one
  * per line, and nothing about a topic is shown until the reader opens it.
  *
- * It is no longer what the entry page renders. That was the arrangement up to ticket 08 and it
- * made the app open on a 38rem column of the rail's own list in a 1500px window: the same
- * markup in a place that wanted a landing. What the two views share is the index itself and
- * `filed()` below it, which is the part that could ever disagree; what they no longer share is
- * a density that only one of the two places was ever right for. See `TopicCards`.
+ * What folds now is the **umbrella**: a root topic opens to the topics filed under it, rendered
+ * as plain links and no deeper. The rail used to open each topic to its own note-type groups;
+ * that detail moved to the topic's Term page and its entry-page card, because a jump list beside
+ * an article reads better two levels of names deep than one level of names and one of contents.
+ * A root nothing nests under is a plain row with no disclosure, the same leaf a childless item
+ * has always been. See `sidebarTree` for how the forest is built, and `TopicCards` for the
+ * landing's denser view of the same index.
  */
-export function TopicTree(topics: Topic[], from: FullSlug): ComponentChild {
+export function TopicTree(roots: SidebarRoot[], from: FullSlug): ComponentChild {
   return h(
     "nav",
     { class: "prepper-topics", "aria-label": "Topics" },
     h(
       "ul",
       { class: "prepper-topic-list" },
-      topics.map((topic) =>
+      roots.map((root) =>
         h(
           "li",
-          { class: "prepper-topic", "data-topic": topic.term.slug },
+          { class: "prepper-topic", "data-topic": root.term.slug },
           fold(
-            topic.term.slug,
-            link(from, topic.term, "prepper-topic-name"),
-            topic.groups.length > 0 ? filed(topic, from) : null,
+            root.term.slug,
+            link(from, root.term, "prepper-topic-name"),
+            root.children.length > 0 ? subtopics(root, from) : null,
           ),
         ),
       ),
     ),
+  )
+}
+
+/**
+ * The topics nested under one umbrella, as plain links.
+ *
+ * No fold and no note-type groups: the rail stops at two levels, so this is where the tree ends
+ * and the reader either recognises the topic they want or opens its page. Each is `link()` by the
+ * Term's own `title`, the same labelling every rail uses, and the one the reader is on is marked.
+ */
+function subtopics(root: SidebarRoot, from: FullSlug): ComponentChild {
+  return h(
+    "ul",
+    { class: "prepper-topic-sublist" },
+    root.children.map((child) => h("li", null, link(from, child))),
   )
 }
 
@@ -350,9 +374,9 @@ function CheatSheets(sheets: GraphNode[], from: FullSlug): ComponentChild {
  * scriptless phone is the app's name in the bar, which is a plain link to an entry page that
  * *is* the topic index rendered as content.
  */
-function Sidebar(topics: Topic[], sheets: GraphNode[], from: FullSlug): ComponentChild {
+function Sidebar(roots: SidebarRoot[], sheets: GraphNode[], from: FullSlug): ComponentChild {
   return h("div", { class: "prepper-topic-rail" }, [
-    TopicTree(topics, from),
+    TopicTree(roots, from),
     CheatSheets(sheets, from),
   ])
 }
@@ -415,7 +439,7 @@ const PrepperTopics: QuartzComponentConstructor<Options> = (opts) => {
     const graph = graphOf(allFiles)
 
     if (view === "sidebar") {
-      return Sidebar(topicIndex(graph), cheatSheets(graph), slug)
+      return Sidebar(sidebarTree(graph), cheatSheets(graph), slug)
     }
 
     // Terms only. A topic is a Term and nothing else, so an "everything about this topic"
@@ -547,6 +571,25 @@ const styles = `
    than under the arrow that opens it. */
 .prepper-topic-groups {
   margin: 0.1rem 0 0.5rem 1.4rem;
+}
+/* The topics under an umbrella: plain links, indented to line up under the name that opens them
+   (the same 1.4rem the note-type groups used before they left the rail), and set as full-width
+   rows like every other leaf so the pointer never has to hunt for the words. */
+.prepper-topic-sublist {
+  list-style: none;
+  padding: 0;
+  margin: 0.1rem 0 0.5rem 1.4rem;
+}
+.prepper-topics .prepper-topic-sublist > li > a {
+  display: block;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--md-sys-shape-corner-medium);
+  color: var(--md-sys-color-on-surface-variant);
+  background-color: transparent;
+}
+.prepper-topics .prepper-topic-sublist > li > a:hover {
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
 }
 /* Every leaf of the navigation, in both lists: a row of the same shape as the one above it,
    the whole width of the rail, so the pointer never has to find the words. This is scoped to

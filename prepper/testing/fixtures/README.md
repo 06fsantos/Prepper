@@ -146,10 +146,15 @@ anything.
   and a body link so that "neither a node nor the source of an edge" is a fact about a note
   that would otherwise have contributed two edges.
 
-- **`topic-index/`** — four Terms and seven notes filed under two of them: a Plan, a Cheat
+- **`topic-index/`** — five Terms and seven notes filed under two of them: a Plan, a Cheat
   sheet, two Lessons, a Reference and a Problem under *Hash maps*, and a Cheat sheet, that
   same Plan and one of those Lessons under *Complexity*. Its cluster is *the topic index*, so every detail is a fact
-  about navigation rather than about links. `lessons/hash-map-lookup-cost` names both topics
+  about navigation rather than about links. The fifth Term, *Data structures*, is an
+  **umbrella**: *Hash maps* and *Complexity* name it in their own `topic` field, so the rail
+  renders it as a top-level fold over those two as plain topic links, while their note-type
+  groups stay on the cards and Term pages. *Éviction policies* and *System design* name no
+  umbrella, so they stay top-level themselves — which is what makes "a topic with no umbrella
+  still renders" statable. `lessons/hash-map-lookup-cost` names both topics
   and is the note that has to appear under **both**, not deduped to one. The five note types
   under *Hash maps* are what make "grouped by note type, the Plan first and the Cheat sheet
   next" statable — two groups that sort first against the alphabet's advice, and a Reference

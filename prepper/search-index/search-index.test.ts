@@ -222,8 +222,13 @@ describe("`topic` is copied to `tags`", () => {
     assert.deepEqual(site.notes["cheat-sheets/hash-map-quick-reference"].tags, ["hash-maps"])
   })
 
-  test("a Term, which is about no topic, has no tags", () => {
-    assert.deepEqual(site.notes["terms/hash-maps"].tags, [])
+  test("a Term about no topic has no tags; one filed under an umbrella is tagged by it", () => {
+    // `topic` is copied to `tags` for every note that declares one, Terms included -- so a Term
+    // that names no topic (an umbrella, or a topic filed under nothing) has none, and a topic
+    // filed under an umbrella carries that umbrella as its one tag, the same as any other note.
+    assert.deepEqual(site.notes["terms/system-design"].tags, [])
+    assert.deepEqual(site.notes["terms/data-structures"].tags, [])
+    assert.deepEqual(site.notes["terms/hash-maps"].tags, ["data-structures"])
   })
 
   test("the field is copied, never renamed: the page still reads `topic`", () => {

@@ -1,6 +1,8 @@
 ---
 id: 01M19YK304HXM5HRV9W09NR5SD
 title: SQL Server indexing
+topic:
+  - databases
 ---
 
 The physical structures underneath a table: one clustered B+ tree that *is* the table in key

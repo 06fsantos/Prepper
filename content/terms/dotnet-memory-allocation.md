@@ -1,6 +1,8 @@
 ---
 id: 01M195VTJ27KXFQVJ124CN3X7P
 title: Managed memory allocation
+topic:
+  - concurrency-and-async
 ---
 
 Where the objects concurrent code produces go, and what makes one expensive: the generational

@@ -34,6 +34,13 @@ function topicNode(page: Page, title: string, scope: Element | Root = page.main)
   return found
 }
 
+/** The topics nested under one umbrella, as their rendered link text, in order. */
+function childrenOf(page: Page, umbrella: Element): string[] {
+  return page
+    .selectAll(".prepper-topic-sublist > li > a", umbrella)
+    .map((link) => page.text(undefined, link))
+}
+
 /**
  * What is filed under a topic, as `[group heading, [note titles]]` pairs in rendered order.
  *
@@ -75,6 +82,7 @@ describe("the topic index", () => {
     assert.ok(site.hasPage("index"))
     assert.deepEqual(topics(home), [
       "Complexity",
+      "Data structures",
       "Éviction policies",
       "Hash maps",
       "System design",
@@ -100,16 +108,53 @@ describe("the topic index", () => {
     ])
   })
 
-  test("the sidebar tree is the same index as the Term page's", () => {
-    // Read on a page that is neither the entry point nor the Term itself, so what is being
-    // compared is genuinely the sidebar: a Problem, three directories away from both.
+  test("the sidebar tree is umbrella folds over plain topic links", () => {
+    // Read on a page that is neither the entry point nor a Term, so what is being read is
+    // genuinely the rail: a Problem, three directories from either. The top level is the
+    // umbrella and the two topics filed under no umbrella, in title order -- and the rail
+    // carries no note-type groups any more, only names.
     const problem = site.page("problems/two-sum")
-    const sidebar = topicNode(problem, "Hash maps", problem.tree)
+    const tree = problem.require(".prepper-topics", problem.tree)
 
+    assert.deepEqual(topics(problem, tree), [
+      "Data structures",
+      "Éviction policies",
+      "System design",
+    ])
+
+    const umbrella = topicNode(problem, "Data structures", tree)
     assert.deepEqual(
-      groups(problem, sidebar),
-      groups(hashMaps, hashMaps.require(".prepper-topic-index")),
+      childrenOf(problem, umbrella),
+      ["Complexity", "Hash maps"],
+      "the topics under the umbrella are plain links",
     )
+    assert.deepEqual(
+      problem.selectAll(".prepper-topic-group", tree),
+      [],
+      "the rail carries no note-type groups",
+    )
+  })
+
+  test("a topic filed under an umbrella is nested, never also at the top level", () => {
+    // The whole point of the umbrella: a filed topic moves under it rather than doubling.
+    const problem = site.page("problems/two-sum")
+    const tree = problem.require(".prepper-topics", problem.tree)
+
+    assert.ok(!topics(problem, tree).includes("Hash maps"), "Hash maps is nested, not top-level")
+    assert.ok(
+      childrenOf(problem, topicNode(problem, "Data structures", tree)).includes("Hash maps"),
+    )
+  })
+
+  test("a topic under no umbrella still renders, at the top level -- nothing disappears", () => {
+    // "Éviction policies" and "System design" name no umbrella, so they stay top-level rather
+    // than vanishing. The invariant is that every topic in the vault has a line in the rail.
+    const problem = site.page("problems/two-sum")
+    const tree = problem.require(".prepper-topics", problem.tree)
+    const top = topics(problem, tree)
+
+    assert.ok(top.includes("Éviction policies"))
+    assert.ok(top.includes("System design"))
   })
 
   test("a note with two topics appears under both, not deduped to one", () => {
@@ -197,31 +242,29 @@ describe("the topic index", () => {
     )
   })
 
-  test("every item of the sidebar tree is a fold, and it arrives open", () => {
+  test("the umbrella folds, and it arrives open", () => {
     const problem = site.page("problems/two-sum")
     const tree = problem.require(".prepper-topics", problem.tree)
 
     // Open, unlike every other fold in the build: a note's headings arrive closed because a
     // closed outline is how a reader chooses a section, and navigation that arrived closed
-    // would make them open a topic to find out whether it holds anything.
+    // would make a reader open a section to find out whether it holds anything.
     const folds = problem.selectAll("details.prepper-topic-fold", tree)
-    assert.equal(folds.length, 2, "a fold for each topic that has anything under it")
+    assert.equal(folds.length, 1, "one fold in the tree: the umbrella")
     for (const fold of folds) {
       assert.equal(fold.properties.open, true, `${String(fold.properties.dataFold)} arrived shut`)
       assert.ok(problem.select("summary", fold), "a fold with no row to work it")
     }
 
     // The id the memory holds an item under, and the only thing the scripts know about the
-    // tree. It is the Term's own slug, so it cannot drift from what the item points at.
-    assert.deepEqual(folds.map((fold) => String(fold.properties.dataFold)).sort(), [
-      "terms/complexity",
-      "terms/hash-maps",
-    ])
+    // tree. It is the umbrella Term's own slug, so it cannot drift from what the row points at.
+    assert.deepEqual(folds.map((fold) => String(fold.properties.dataFold)), ["terms/data-structures"])
   })
 
-  test("a topic nothing is filed under has no disclosure to work", () => {
-    // "System design" is a Term with no Lessons. There is nothing behind a fold, so there is
-    // no fold -- and the row is still a row, so the names line up down the tree.
+  test("a top-level topic with no topics under it has no disclosure to work", () => {
+    // "System design" is a root with nothing filed under it under no umbrella -- so no topics
+    // nest beneath it in the rail. There is nothing behind a fold, so there is no fold, and the
+    // row is still a row, so the names line up down the tree.
     const problem = site.page("problems/two-sum")
     const empty = topicNode(problem, "System design", problem.tree)
 
@@ -386,26 +429,28 @@ describe("the topic index gets its density", () => {
     // the index computes, which is the same order the rail offers them in.
     assert.deepEqual(
       cards(home).map((card) => home.text(".prepper-topic-card-heading", card)),
-      ["Complexity", "Éviction policies", "Hash maps", "System design"],
+      ["Complexity", "Data structures", "Éviction policies", "Hash maps", "System design"],
     )
     assert.deepEqual(topics(home), [
       "Complexity",
+      "Data structures",
       "Éviction policies",
       "Hash maps",
       "System design",
     ])
   })
 
-  test("a card holds exactly what the rail holds under the same topic", () => {
-    // The one assertion that makes "one index, three views" a fact rather than a caption.
-    // Read off a Problem, three directories from either, so what is being compared is
-    // genuinely the rail's copy and not the page's own.
-    const problem = site.page("problems/two-sum")
+  test("a card holds exactly what the Term page's own index holds", () => {
+    // The assertion that makes "one index, the same groups everywhere it renders them" a fact
+    // rather than a caption. The rail no longer carries the note-type groups -- it stops at
+    // topic names -- so the two views left with groups are the entry-page card and the Term
+    // page's own index, and this demands they agree.
+    const term = site.page("terms/hash-maps")
     const card = topicNode(home, "Hash maps")
 
     assert.deepEqual(
       groups(home, card),
-      groups(problem, topicNode(problem, "Hash maps", problem.tree)),
+      groups(term, term.require(".prepper-topic-index")),
     )
     assert.deepEqual(hrefs(home, card), [
       "./terms/hash-maps",
@@ -466,10 +511,11 @@ describe("the topic index gets its density", () => {
     }
   })
 
-  test("the rail is untouched: still a bare foldable name list, on every page", () => {
+  test("the rail is a bare foldable name list, never a card, on every page", () => {
     // The density belongs to a view. Written into `TopicTree` it would have landed here too,
     // and the rail is a jump list beside an article -- the one place in the app where showing
-    // everything under every topic is wrong.
+    // everything under every topic is wrong. What the rail folds is the umbrella and the flat
+    // Cheat sheets list -- two folds -- and never a card.
     for (const page of [home, term, lesson, site.page("problems/two-sum")]) {
       const rail = page.require(".left.sidebar", page.tree)
       assert.deepEqual(
@@ -484,7 +530,7 @@ describe("the topic index gets its density", () => {
       )
       assert.equal(
         page.selectAll("details.prepper-topic-fold", rail).length,
-        3,
+        2,
         `${page.slug}: the rail's folds`,
       )
     }
@@ -510,7 +556,7 @@ describe("the topic index gets its density", () => {
     // collapsed it in the other. `folds.js` now finds one tree per page.
     assert.deepEqual(home.selectAll("details.prepper-topic-fold", home.main), [])
     assert.deepEqual(term.selectAll("details.prepper-topic-fold", term.main), [])
-    assert.equal(home.selectAll("details.prepper-topic-fold", home.tree).length, 3)
+    assert.equal(home.selectAll("details.prepper-topic-fold", home.tree).length, 2)
   })
 
   test("column count is asked of the container, not of the viewport", () => {

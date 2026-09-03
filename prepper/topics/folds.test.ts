@@ -54,13 +54,13 @@ describe("collapsing an item of the topic tree", () => {
 
   test("working the row collapses the item, and that is what is remembered", async () => {
     const screen = await openPage(fixture, page)
-    const hashMaps = fold(screen, "terms/hash-maps")
+    const structures = fold(screen, "terms/data-structures")
 
-    screen.click(row(hashMaps))
+    screen.click(row(structures))
     await settled()
 
-    assert.equal(hashMaps.open, false)
-    assert.deepEqual([...screen.remembered], [["prepper-topic-folds", "terms/hash-maps"]])
+    assert.equal(structures.open, false)
+    assert.deepEqual([...screen.remembered], [["prepper-topic-folds", "terms/data-structures"]])
     assert.deepEqual(
       screen.recorded,
       [],
@@ -71,29 +71,31 @@ describe("collapsing an item of the topic tree", () => {
   test("a second item shuts alongside the first, and opening one takes it back out", async () => {
     const screen = await openPage(fixture, page)
 
-    screen.click(row(fold(screen, "terms/hash-maps")))
-    screen.click(row(fold(screen, "terms/complexity")))
+    // The two folds the rail now has: the one umbrella and the flat Cheat sheets list. The
+    // topics under the umbrella are plain links, not folds of their own.
+    screen.click(row(fold(screen, "terms/data-structures")))
+    screen.click(row(fold(screen, "cheat-sheets")))
     await settled()
 
     assert.deepEqual((screen.remembered.get("prepper-topic-folds") ?? "").split(" ").sort(), [
-      "terms/complexity",
-      "terms/hash-maps",
+      "cheat-sheets",
+      "terms/data-structures",
     ])
 
-    screen.click(row(fold(screen, "terms/hash-maps")))
+    screen.click(row(fold(screen, "terms/data-structures")))
     await settled()
 
     // What is stored is the exceptions, so opening an item again leaves nothing behind.
-    assert.equal(screen.remembered.get("prepper-topic-folds"), "terms/complexity")
+    assert.equal(screen.remembered.get("prepper-topic-folds"), "cheat-sheets")
   })
 
   test("a reader who collapsed a topic opens the next page with it collapsed", async () => {
     const screen = await openPage(fixture, page, {
-      remembered: { "prepper-topic-folds": "terms/hash-maps" },
+      remembered: { "prepper-topic-folds": "terms/data-structures" },
     })
 
-    assert.equal(fold(screen, "terms/hash-maps").open, false)
-    assert.equal(fold(screen, "terms/complexity").open, true, "only the item that was shut")
+    assert.equal(fold(screen, "terms/data-structures").open, false)
+    assert.equal(fold(screen, "cheat-sheets").open, true, "only the item that was shut")
   })
 
   test("following a topic's name is not collapsing it", async () => {
@@ -102,12 +104,13 @@ describe("collapsing an item of the topic tree", () => {
     // it would shut the topic the reader has just navigated into, for a reason they could not
     // name.
     const screen = await openPage(fixture, page)
-    const hashMaps = fold(screen, "terms/hash-maps")
+    const structures = fold(screen, "terms/data-structures")
 
-    screen.click(hashMaps.querySelector(":scope > summary .prepper-topic-name") as Element)
+    // The umbrella's summary is a link to its own overview page, the same as a topic name was.
+    screen.click(structures.querySelector(":scope > summary .prepper-topic-name") as Element)
     await settled()
 
-    assert.equal(hashMaps.open, true)
+    assert.equal(structures.open, true)
     assert.deepEqual([...screen.remembered], [])
   })
 

@@ -188,3 +188,62 @@ function groupsUnder(graph: LinkGraph, term: GraphNode): TopicGroup[] {
 function byTitle(a: string, b: string): number {
   return a.localeCompare(b, "en") || (a < b ? -1 : a > b ? 1 : 0)
 }
+
+/** One row of the rail's forest: an umbrella (or an un-filed topic), and the topics under it. */
+export interface SidebarRoot {
+  /** The Term at the top level. Its `<summary>` is still a link to its own overview page. */
+  term: GraphNode
+  /** The Terms filed directly under it, in title order. Empty for a topic nothing nests under. */
+  children: GraphNode[]
+}
+
+/**
+ * The **rail's** forest: the topic index folded one level deep on the Term→Term `about` edge.
+ *
+ * The rail no longer lists every topic flat. A topic that names another Term in `topic` -- an
+ * umbrella like "Databases" -- files itself under it, and the rail shows two levels: the roots,
+ * and the topics nested beneath each. This is not a second index and not a new field: it reads
+ * the same `about` edges `topicIndex` does, asking a different question of them -- *which topics
+ * sit under which* rather than *what is filed under this one*. So an umbrella is any Term other
+ * topic-Terms name, and re-homing a section is a frontmatter edit no code here can fall behind.
+ *
+ * Three rules, in the order they settle a Term's place:
+ *
+ * - A **root** is a Term with no outgoing `about` edge to another Term -- it names no parent, so
+ *   it is top-level. Umbrellas are roots; so is a topic nobody has filed under one yet.
+ * - A root's **children** are the Terms filed under it: its incoming `about` edges whose source
+ *   is itself a Term. Rendered as plain links, because the rail stops at two levels -- a topic's
+ *   own note-type groups live on its Term page and its entry-page card, not here.
+ * - **Nothing disappears.** A Term that is neither a root nor a direct child of one -- the middle
+ *   of an A→B→C chain, whose parent is itself nested -- is appended as a childless root, so every
+ *   topic in the vault has a line in the rail. "Nothing is gated" is the invariant this keeps.
+ *
+ * Roots and children both in `byTitle` order, the same comparison the flat index sorts by.
+ */
+export function sidebarTree(graph: LinkGraph): SidebarRoot[] {
+  const terms = graph.nodes.filter((node) => node.type === "term")
+  const isTerm = (slug: string) => nodeAt(graph, slug)?.type === "term"
+
+  const roots = terms.filter(
+    (term) => !outgoing(graph, term.slug, "about").some((edge) => isTerm(edge.target)),
+  )
+
+  const rendered = new Set<string>(roots.map((root) => root.slug))
+  const forest = roots.map((term) => {
+    const children = incoming(graph, term.slug, "about")
+      .map((edge) => nodeAt(graph, edge.source))
+      .filter((node): node is GraphNode => node?.type === "term")
+      .sort((a, b) => byTitle(a.title, b.title))
+    for (const child of children) rendered.add(child.slug)
+    return { term, children }
+  })
+
+  // A grandchild whose parent is itself nested is placed nowhere by the two rules above. It
+  // renders at the top level rather than vanishing -- childless, because it is not a root of the
+  // umbrella that swallowed its parent, and its own children (if any) still list under it.
+  const leftover = terms
+    .filter((term) => !rendered.has(term.slug))
+    .map((term) => ({ term, children: [] as GraphNode[] }))
+
+  return [...forest, ...leftover].sort((a, b) => byTitle(a.term.title, b.term.title))
+}

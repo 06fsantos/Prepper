@@ -1,6 +1,8 @@
 ---
 id: 01M1924ABTC9PPE4PNHZAXG3N5
 title: HTTP resilience
+topic:
+  - http-and-resilience
 ---
 
 What you wrap around a call to a dependency you do not control — retry, circuit breaker,
