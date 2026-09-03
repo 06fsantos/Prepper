@@ -63,6 +63,12 @@
  * never runs, which is Quartz's search preview pane, a page mid-load, and a reader with
  * scripting off. `conceal` below says the rest.
  *
+ * The one thing the script rearranges rather than reveals is an mcq's option *order*: the
+ * options are emitted here in the order they were written -- correct one first, the way an
+ * author writes a task list -- and shuffled in the browser so the answer's position is not a
+ * tell. Where the script does not run they stay in written order, the same degradation floor
+ * concealment rests on. See `multipleChoice` and `prepper-quiz.js`.
+ *
  * ## What a defective fence does
  *
  * It stays a code block, and validation raises an error.

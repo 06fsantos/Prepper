@@ -93,7 +93,12 @@ A block **arrives closed**: an explanation, a reveal and a cloze answer carry th
 attribute, so nothing is on screen before the reader answers — not in the search preview
 pane, not during a slow load, not with scripting off.
 [`prepper/quiz/prepper-quiz.js`](prepper/quiz/prepper-quiz.js) is the browser half, a
-hand-written custom element with **no build step**, and it only ever _opens_ things. An mcq
+hand-written custom element with **no build step**, and it only ever _opens_ things — with one
+exception. An mcq's options are emitted in **written order** (correct one first, the way an
+author writes a task list) and **shuffled client-side on each view**, so the answer's position
+is not a tell; the correct answer may land anywhere, first included. Where the script does not
+run — a reader with scripting off, and Quartz's search preview pane — the options stay in
+written order, the same degradation floor concealment rests on. An mcq
 grades the instant an option is clicked — no submit control, single-select — and opens the
 clicked option's explanation and the correct one's, leaving the rest shut; a cloze reveals
 every hole on one grade; a recall reveals and offers a self-grade. Answering **records

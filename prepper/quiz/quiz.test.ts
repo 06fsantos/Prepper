@@ -65,6 +65,9 @@ describe("a well-formed quiz fence becomes an answerable block", () => {
     const quiz = quizById(page, "01M0Z900000000000000000604")
     assert.equal(page.text(".quiz-prompt", quiz), "A hash map lookup, average case, costs what?")
 
+    // The build emits the options in written order -- correct one first, the way an author
+    // writes a task list. They are shuffled client-side (seam 2, `answering.test.ts`), so this
+    // is the written order and not what most readers see; do not "fix" the build to shuffle.
     const options = page.selectAll(".quiz-option", quiz)
     assert.deepEqual(
       options.map((o) => page.text(".quiz-option-text", o)),

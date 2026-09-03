@@ -69,44 +69,44 @@ describe("answering a quiz block", { timeout: 120_000 }, () => {
     })
 
     test("a wrong click opens that option's explanation and the right one's, and no other", async () => {
+      // Selected by their correct flag rather than by position, because the options are
+      // shuffled on load: which one is where is exactly what this feature made unpredictable.
       const screen = await lesson()
-      const [right, firstWrong, secondWrong] = screen.all(`${MCQ} .quiz-option`)
+      const right = screen.one(`${MCQ} .quiz-option[data-quiz-correct="true"]`)
+      const [chosen, otherWrong] = screen.all(`${MCQ} .quiz-option[data-quiz-correct="false"]`)
 
-      screen.click(firstWrong)
+      screen.click(chosen)
 
-      assert.deepEqual(
-        screen.all(`${MCQ} .quiz-option`).map((o) => opened(screen, o)),
-        [true, true, false],
-        "the clicked option and the correct one open; the third stays shut",
-      )
-      assert.equal(
-        collapse(firstWrong.querySelector(".quiz-explanation")?.textContent),
-        "Nothing is scanned unless buckets collide. See collision-handling.",
-      )
+      assert.ok(opened(screen, chosen), "the clicked wrong option opens")
+      assert.ok(opened(screen, right), "the correct option opens too")
+      assert.equal(opened(screen, otherWrong), false, "the untouched wrong option stays shut")
       assert.equal(
         collapse(right.querySelector(".quiz-explanation")?.textContent),
         "The key hashes straight to its bucket.",
+        "the correct option shows its own explanation, wherever the shuffle put it",
       )
-      assert.equal(secondWrong.getAttribute("data-quiz-revealed"), null)
     })
 
     test("a right click opens that option's explanation, and the key stays shut", async () => {
       const screen = await lesson()
-      const [right] = screen.all(`${MCQ} .quiz-option`)
+      const right = screen.one(`${MCQ} .quiz-option[data-quiz-correct="true"]`)
 
       screen.click(right)
 
       assert.equal(screen.one(MCQ).getAttribute("data-quiz-answered"), "correct")
+      assert.ok(opened(screen, right))
       assert.deepEqual(
-        screen.all(`${MCQ} .quiz-option`).map((o) => opened(screen, o)),
-        [true, false, false],
+        screen.all(`${MCQ} .quiz-option[data-quiz-correct="false"]`).map((o) => opened(screen, o)),
+        [false, false],
+        "the wrong options' explanations stay shut",
       )
     })
 
     test("is answered once: a second click opens nothing further", async () => {
       const screen = await lesson()
       const quiz = screen.one(MCQ)
-      const [right, wrong, other] = screen.all(`${MCQ} .quiz-option`)
+      const right = screen.one(`${MCQ} .quiz-option[data-quiz-correct="true"]`)
+      const [wrong, other] = screen.all(`${MCQ} .quiz-option[data-quiz-correct="false"]`)
 
       screen.click(wrong)
       const answered = quiz.outerHTML
@@ -118,11 +118,55 @@ describe("answering a quiz block", { timeout: 120_000 }, () => {
 
     test("answers from the keyboard too", async () => {
       const screen = await lesson()
-      const [right] = screen.all(`${MCQ} .quiz-option`)
+      const right = screen.one(`${MCQ} .quiz-option[data-quiz-correct="true"]`)
 
       screen.press(right, "Enter")
 
       assert.equal(screen.one(MCQ).getAttribute("data-quiz-answered"), "correct")
+    })
+
+    test("shuffles the options client-side, keeping each paired with its own explanation", async () => {
+      // `Math.random() === 0` makes Fisher-Yates draw a known permutation: the options,
+      // emitted correct-first, come out correct-last. A forced draw, so the reorder is a fact
+      // rather than a coin toss the test hopes lands its way.
+      const screen = await openPage("quiz-fence-types", "lessons/hash-map-lookup-cost", {
+        random: () => 0,
+      })
+      const written = ["Constant time, no scan", "Constant time, one scan", "Linear time, full scan"]
+
+      const order = optionTexts(screen)
+      assert.deepEqual(order, [
+        "Constant time, one scan",
+        "Linear time, full scan",
+        "Constant time, no scan",
+      ])
+      assert.notDeepEqual(order, written, "the options were reordered from how they were written")
+      assert.deepEqual([...order].sort(), [...written].sort(), "no option was added or lost")
+
+      const correct = screen.one(`${MCQ} .quiz-option[data-quiz-correct="true"]`)
+      assert.equal(
+        collapse(correct.querySelector(".quiz-option-text")?.textContent),
+        "Constant time, no scan",
+      )
+      assert.equal(
+        collapse(correct.querySelector(".quiz-explanation")?.textContent),
+        "The key hashes straight to its bucket.",
+        "the correct flag, its text and its explanation all moved together",
+      )
+      assert.deepEqual(screen.recorded, [], "shuffling records nothing")
+    })
+
+    test("without scripts, the options keep their written order -- the correct one first", async () => {
+      // The degradation floor: no JavaScript, and Quartz's search preview pane, get the emitted
+      // markup, which is written order. The shuffle is an enhancement over a correct page.
+      const screen = await openPage("quiz-fence-types", "lessons/hash-map-lookup-cost", {
+        scripts: false,
+      })
+      assert.deepEqual(optionTexts(screen), [
+        "Constant time, no scan",
+        "Constant time, one scan",
+        "Linear time, full scan",
+      ])
     })
   })
 
@@ -251,6 +295,13 @@ describe("answering a quiz block", { timeout: 120_000 }, () => {
     })
   })
 })
+
+/** The text of each mcq option, in the order they stand on the page. */
+function optionTexts(screen: Screen): string[] {
+  return screen
+    .all(`${MCQ} .quiz-option`)
+    .map((o) => collapse(o.querySelector(".quiz-option-text")?.textContent))
+}
 
 /** Whether an option's explanation has been opened. */
 function opened(screen: Screen, option: Element): boolean {

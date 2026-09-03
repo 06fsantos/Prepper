@@ -18,6 +18,16 @@
  * *un*hides. There is no state in which it has to hide something first, and therefore no
  * frame in which the answer is on screen before the reader has answered.
  *
+ * ## What is reordered, and why it is safe
+ *
+ * The one thing this file rearranges is an mcq's options: they are emitted in the order they
+ * were written -- correct one first, because that is how an author writes a task list -- and
+ * shuffled here, once, when the block connects, so the answer's position is not a tell. That
+ * is not concealment and does not touch it: the shuffle never unhides an explanation, and an
+ * option's `hidden` explanation moves with the `<li>` that carries it. Where this script does
+ * not run, the options stay in written order -- the same degradation floor the concealment
+ * rests on, one step wider.
+ *
  * ## What answering does, and does not do
  *
  * An mcq grades **the instant an option is clicked** -- no submit control, strictly
@@ -60,12 +70,15 @@
     /**
      * An mcq: every option is a control, and the first click is the answer.
      *
-     * The options are made buttons *here* rather than in the markup, because a list item
-     * that announces itself as a button and does nothing when pressed is a worse page than
-     * a list item. Without this script they are what they read as: the options, in prose.
+     * The options are shuffled first, so the correct one -- written first by convention -- is
+     * not always first on the page. Then each is made a button *here* rather than in the
+     * markup, because a list item that announces itself as a button and does nothing when
+     * pressed is a worse page than a list item. Without this script they are what they read
+     * as: the options, in prose, in the order they were written.
      */
     #armMultipleChoice() {
       const options = [...this.querySelectorAll(".quiz-option")]
+      shuffleInto(options)
       for (const option of options) {
         option.setAttribute("role", "button")
         option.setAttribute("tabindex", "0")
@@ -159,7 +172,26 @@
     }
   }
 
-  /** Open every explanation an option carries. The only thing this file does to the page. */
+  /**
+   * Shuffle an mcq's options in place, so the correct answer is not always first.
+   *
+   * Fisher-Yates over the `<li>` nodes, re-appended to their shared list in the drawn order --
+   * re-appending an existing child moves it, so appending in order rewrites the order. Each
+   * `<li>` carries its own text, its (hidden) explanation and its `data-quiz-correct`, so
+   * moving the node moves the whole option intact; `#grade` finds the correct one by that
+   * attribute rather than by position, so nothing downstream cares that the order changed.
+   */
+  function shuffleInto(options) {
+    const parent = options[0]?.parentElement
+    if (!parent) return
+    for (let i = options.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[options[i], options[j]] = [options[j], options[i]]
+    }
+    for (const option of options) parent.append(option)
+  }
+
+  /** Open every explanation an option carries. The only concealment this file ever lifts. */
   function open(option) {
     option.setAttribute(REVEALED, "true")
     for (const explanation of option.querySelectorAll(".quiz-explanation")) {

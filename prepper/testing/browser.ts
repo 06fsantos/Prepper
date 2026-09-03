@@ -200,6 +200,11 @@ const defaultWidth = 1280
  * the one question `prepper/sidebar/toggle.js` puts to the window -- which of the rail's two
  * presentations is on screen, so that a press knows whether it is putting a column away or
  * calling a drawer up.
+ *
+ * `random` is the same kind of thing as `width`: a source with an answer the test states.
+ * `prepper/quiz/prepper-quiz.js` shuffles an mcq's options with `Math.random`, so a test that
+ * wants a known option order supplies the draws that produce it. Installed on the window before
+ * any script runs, because the shuffle happens as the block connects.
  */
 export async function openPage(
   fixture: string,
@@ -208,7 +213,13 @@ export async function openPage(
     scripts = true,
     remembered = {},
     width = defaultWidth,
-  }: { scripts?: boolean; remembered?: Record<string, string>; width?: number } = {},
+    random,
+  }: {
+    scripts?: boolean
+    remembered?: Record<string, string>
+    width?: number
+    random?: () => number
+  } = {},
 ): Promise<Screen> {
   const site = await buildFixture(fixture)
   const dom = new JSDOM(site.page(slug).html, {
@@ -217,6 +228,7 @@ export async function openPage(
   })
   const memory = new Map(Object.entries(remembered))
   fillJsdomGaps(dom, width)
+  if (random) (dom.window as unknown as { Math: Math }).Math.random = random
   const recorded = wireTripwires(dom, memory)
   const ran = scripts ? runPrepperScripts(dom, site, slug) : 0
   return new Screen(dom.window, dom.window.document.documentElement, ran, recorded, memory)
