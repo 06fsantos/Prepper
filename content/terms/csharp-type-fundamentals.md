@@ -1,16 +1,16 @@
 ---
 id: 01M1NJP99EAB2M40DDCZY82GP5
-title: C# type fundamentals
+title: C# fundamentals
 ---
 
-What every value in a C# program actually is underneath the syntax: whether it lives inline in
-its variable or behind a reference, how many bits it occupies and what those bits can and cannot
-represent, and where the runtime spends an allocation you did not write. The topics filed here are
-the ones an interviewer reaches for to check that you know the machine below the language — the
-value/reference split that governs copying and equality, the numeric types and the precision each
-one buys, and the way a date collapses to a single integer count of ticks.
+The C# a senior interview actually probes: not syntax, but how the language sits on the runtime
+beneath it — where a value lives and what an assignment copies, when the compiler or the JIT spends
+an allocation you did not write, how equality and dispatch are decided, and what the garbage
+collector does with what you leave behind. The topics filed here are the ones an interviewer reaches
+for to check that you know the machine below the language rather than the keywords on top of it.
 
-The through-line is that a type's *representation* explains its *behaviour*: a struct copies
-because it is the instance, `double` loses a cent because it is base-2, and `decimal` keeps it
-because it is base-10. Reach for these when a question starts "what's the difference between…" or
-"how is … stored".
+The through-line is that *representation and mechanism* explain *behaviour*: a struct copies because
+it is the instance, a mutable dictionary key is lost because its hash was taken once at insert, a
+`List<int>` never boxes because the JIT reifies value-type generics, and a captured local moves to
+the heap because a lambda needs it to outlive the stack frame. Reach for these when a question
+starts "what's the difference between…", "how is … stored", or "what does that cost".

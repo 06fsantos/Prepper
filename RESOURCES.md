@@ -99,6 +99,50 @@ primary its lessons were written against.
   EventPipe collection from a live process: GC, thread-pool and JIT events. Use for: the field
   half — a running process with a symptom and no hypothesis yet.
 
+### C# language fundamentals
+
+The primary sources the "C# fundamentals" subject — generics, equality, records/modifiers,
+delegates and closures, garbage collection, and LINQ — was written against. All Microsoft
+Learn unless noted.
+
+- [Generics in the run time — Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/generics-in-the-run-time)
+  Primary source for the fact with no syntax to it: the JIT reifies a separate body per value
+  type and shares one across all reference types. Use for: why `List<int>` never boxes, and why
+  variance is reference-types-only. With [constraints on type parameters](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters)
+  and [covariance and contravariance](https://learn.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance).
+- [Object.GetHashCode — Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode)
+  The binding contract in the remarks: equal objects hash equal, and the hash must not change
+  while the object is a key. Use for: why a mutable key strands its dictionary entry. With
+  [equality comparisons](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/expressions/equality)
+  for `==` (static) versus `Equals` (virtual).
+- [Records — Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/records)
+  Compiler-generated value equality, `ToString`, and `with`. Use for: how a record's equality
+  differs from a class's and from a plain struct's reflective `ValueType.Equals`. With
+  [`ref struct`](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/ref-struct)
+  for the one *enforced* stack-confinement rule, and [method parameters](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/method-parameters)
+  for `in`/`ref`/`out`.
+- [Eric Lippert: The Truth About Value Types](https://learn.microsoft.com/en-us/archive/blogs/ericlippert/the-truth-about-value-types) and [The Stack Is An Implementation Detail](https://learn.microsoft.com/en-us/archive/blogs/ericlippert/the-stack-is-an-implementation-detail-part-one)
+  The correction to "structs live on the stack": the spec guarantees value *semantics*, not a
+  storage location. Use for: retiring the myth precisely rather than repeating it — `ref struct`
+  is the sole place stack-confinement is a real guarantee.
+- [Large Object Heap — Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap)
+  The 85,000-byte threshold, collection as part of gen 2, and no compaction by default. Use for:
+  what happens to a large per-request buffer. With [implement a Dispose method](https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/implementing-dispose)
+  and [finalizers](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/finalizers)
+  for deterministic versus GC-timed cleanup and `GC.SuppressFinalize`. (Generational
+  fundamentals are already listed above under concurrency and allocation.)
+- [System.Span overview — Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/fundamentals/runtime-libraries/system-span) and [stackalloc](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/stackalloc)
+  `Span<T>` as a stack-only `ref struct`, and stack memory that is not GC-tracked. Use for: why a
+  `Span` cannot cross an `await` and why `Memory<T>` exists.
+- [Deferred execution and lazy evaluation — Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/standard/linq/deferred-execution-lazy-evaluation)
+  A LINQ query runs when iterated, not when built. Use for: the double-enumeration trap, with
+  [CA1851](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1851)
+  for the analyzer and [`IQueryable<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.linq.iqueryable-1)
+  for the expression-tree-versus-delegate boundary where a query stops being SQL.
+- [Delegates (C# programming guide) — Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/delegates/) and [Dissecting the local functions in C# 7 — Microsoft DevBlogs](https://devblogs.microsoft.com/premier-developer/dissecting-the-local-functions-in-c-7/)
+  Multicast delegates and events, and how a captured local is hoisted into a heap display class.
+  Use for: the two-allocations-when-capturing / zero-when-not cost of a closure.
+
 ### Relational databases and SQL Server
 
 - [Database normalization description — Microsoft Learn](https://learn.microsoft.com/en-us/office/troubleshoot/access/database-normalization-description)
