@@ -122,6 +122,14 @@ middle of what should be an in-memory operation, and it is one of the more drama
 a plan that looks fine and a query that is not. A spill almost always traces back to an
 underestimated row count: the grant was sized for the estimate.
 
+Modern SQL Server can correct some of these choices at runtime instead of living with the
+estimate: a batch-mode adaptive join picks its algorithm from the real build-side count, and
+memory-grant feedback resizes a grant that spilled so the next run does not. These **intelligent
+query processing** features are gated on the database's compatibility level and catalogued in
+[[execution-plan-operators#Runtime adaptation and intelligent query processing]]. They soften a
+bad estimate; they do not remove it — which is why the finding is still the estimate, not the
+operator.
+
 The individual operators, the warnings to look for and what each one means are collected in
 [[execution-plan-operators]].
 

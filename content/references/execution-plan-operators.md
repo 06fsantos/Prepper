@@ -129,6 +129,33 @@ FROM ...
 OPTION (MAXDOP 1);   -- 1 forces a serial plan; any n caps the degree at n
 ```
 
+## Runtime adaptation and intelligent query processing
+
+Everything above treats the plan as fixed once chosen: the optimiser costs the candidates from
+its estimates, picks one, and the query runs it. **Intelligent query processing** (IQP) is the
+family of features, added across SQL Server 2017–2022, that lets the engine correct a bad
+estimate *while or after* the query runs rather than being stuck with the plan the estimate
+produced. They belong in a diagnosis because they change the answer to "why did recompiling not
+help?" — some of the belief-correction now happens with no recompile at all.
+
+| Feature | Since | What it does |
+|---|---|---|
+| **Batch-mode adaptive join** | 2017 | The plan defers the join choice. It materialises the build input, and if the real row count crosses a stored threshold it runs a Hash Match, otherwise a Nested Loops — one plan, the algorithm decided at runtime from the actual count instead of the estimate |
+| **Memory-grant feedback** | 2017 batch, 2019 row | A grant that spilled to `tempdb`, or one that reserved far more than the query touched, is resized for the next run and remembered on the cached plan — so a repeatedly-run query converges on a right-sized grant instead of spilling every time |
+| **Interleaved execution** | 2017 | For constructs the optimiser cannot estimate up front — a multi-statement table-valued function the worst offender — it pauses optimisation, runs that part to get a real count, and finishes optimising with it rather than the fixed 100-row guess |
+
+Two things to keep straight in the room:
+
+- **They are compatibility-level gated.** A database restored at an older compatibility level
+  runs on SQL Server 2022 without any of them, so "we upgraded the server and nothing got faster"
+  is often a compatibility level that never moved; `ALTER DATABASE … SET COMPATIBILITY_LEVEL` is
+  the switch (verified 2026-09-04, [intelligent query processing](https://learn.microsoft.com/en-us/sql/relational-databases/performance/intelligent-query-processing)).
+- **They reduce the damage of a wrong estimate; they do not repair the estimate.** An adaptive
+  join picks the right algorithm, but a downstream operator was still costed from the bad number,
+  and memory-grant feedback needs several executions and backs off if the right size keeps
+  oscillating. The finding is still a cardinality error, and
+  [[statistics-and-cardinality-estimation]] is still where it is fixed.
+
 ## Three that cost people points
 
 - **Calling a scan the bug.** The diagnosis is not "there is a scan", it is "this operator read

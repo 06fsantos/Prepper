@@ -124,6 +124,10 @@ primary its lessons were written against.
 - [Monitor and Tune for Performance — Microsoft Learn](https://learn.microsoft.com/en-us/sql/relational-databases/performance/monitor-and-tune-for-performance)
   The index of SQL Server's own tooling — DMVs, Query Store, the Tuning Advisor. Use for:
   picking the right diagnostic before guessing.
+- [Intelligent query processing in SQL databases — Microsoft Learn](https://learn.microsoft.com/en-us/sql/relational-databases/performance/intelligent-query-processing)
+  The 2017–2022 runtime-adaptive features — adaptive joins, memory-grant feedback, interleaved
+  execution — and the compatibility level each needs. Use for: why the engine can correct a bad
+  cardinality estimate without a recompile, and why an upgrade sometimes changes nothing.
 
 ## Wisdom (Communities)
 

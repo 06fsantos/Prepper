@@ -143,6 +143,16 @@ own. A table that is bulk-loaded should have its statistics updated at the end o
 than left to a threshold, because the first query after the load is exactly the one that will be
 compiled against the pre-load picture.
 
+On a large **partitioned** table that question gets its own answer. A plain `UPDATE STATISTICS`
+reads across every partition, so a nightly load that touched only yesterday's partition still
+pays to re-read the whole history. **Incremental statistics** (SQL Server 2014+) keep a
+per-partition summary and merge them into the table-level histogram, which lets you refresh only
+the partition that changed — `UPDATE STATISTICS Orders (Status) WITH RESAMPLE ON PARTITIONS (n)`
+— instead of the entire table. They are switched on per statistic with `WITH INCREMENTAL = ON`.
+The catch is that the merged histogram is still capped at the same 200 steps for the whole table:
+incremental buys cheaper *maintenance* on a big table, not finer *resolution* (verified
+2026-09-04, [the statistics documentation](https://learn.microsoft.com/en-us/sql/relational-databases/statistics/statistics)).
+
 ```quiz 01M1GF4Z6C17173FS0SA3S6QE8 cloze
 Statistics summarise a column's distribution as a {{histogram}} of at most {{200}} steps, plus a
 density vector and a header. The estimate the optimiser derives from them is the {{cardinality}},
