@@ -173,6 +173,154 @@ Learn unless noted.
   execution — and the compatibility level each needs. Use for: why the engine can correct a bad
   cardinality estimate without a recompile, and why an upgrade sometimes changes nothing.
 
+### Interview levels and process
+
+The sources the senior-interview path is written against — what a level *is* as a scope claim,
+and what each round grades. See the research note
+`content/research/what-do-senior-software-engineer-interviews-test.md` for how each claim is
+chased to its owner.
+
+- [levels.fyi: a standardized SWE level framework](https://www.levels.fyi/blog/swe-level-framework.html)
+  A neutral, cross-company mapping of what each level owns. Primary for the mid→senior→staff
+  scope lines: autonomy, component complexity, and the team-vs-org-wide impact radius. Use for:
+  defending "senior means X" as scope rather than title.
+- [progression.fyi](https://progression.fyi/about/)
+  A collection of real companies' public progression frameworks / career ladders. Use for:
+  seeing how much the *wording* of a level varies over a scope claim that does not, and why the
+  framework travels where the title does not.
+
+### Distributed-systems fundamentals
+
+The theory under the system-design round — the theorems and impossibility results a senior
+candidate is expected to reason from, not merely name.
+
+- [Gilbert & Lynch, "Brewer's Conjecture and the Feasibility of Consistent, Available,
+  Partition-Tolerant Web Services" (MIT)](https://groups.csail.mit.edu/tds/papers/Gilbert/Brewer2.pdf)
+  The primary source that turned Brewer's CAP *conjecture* into a *theorem*. Precise
+  definitions of atomic consistency (linearizability), availability, and partition tolerance,
+  and the impossibility proof for the asynchronous model plus the weaker partially-synchronous
+  result. Use for: defending what CAP actually claims rather than the "pick two" folklore.
+- [Abadi, "Consistency Tradeoffs in Modern Distributed Database System Design" (IEEE Computer,
+  2012)](https://ieeexplore.ieee.org/document/6127847/)
+  Introduces PACELC: CAP covers only the partition case; *else* (no partition) a system still
+  trades latency against consistency, and the two branches are set independently (PA/EL, PC/EC,
+  and the blends). Use for: the more complete senior framing, and classifying real datastores.
+- [Vogels, "Eventually Consistent" (allthingsdistributed.com, 2007)](https://www.allthingsdistributed.com/2007/12/eventually_consistent.html)
+  The vocabulary the field uses for consistency models: strong / weak / eventual, the
+  inconsistency window, the client-centric variants (read-your-writes, monotonic read/write,
+  causal, session), and the N/W/R quorum formula where `W + R > N` guarantees strong consistency.
+  Written by the engineer who ran Amazon's storage. Use for: framing eventual consistency as a
+  principled trade-off rather than degraded strong consistency, and for the quorum arithmetic.
+- [Ongaro & Ousterhout, "In Search of an Understandable Consensus Algorithm" (USENIX ATC
+  2014)](https://raft.github.io/raft.pdf)
+  The Raft paper. Consensus decomposed into leader election, log replication, and safety;
+  explicitly equivalent to Paxos in fault-tolerance and performance but designed to be
+  understandable. Majority voting (`2f + 1` tolerates `f`), terms as a logical clock, the commit
+  rule, and the election restriction that keeps committed entries final. Use for: explaining how
+  a cluster agrees and why a consensus cluster is CP.
+- [The Raft website and visualisation (raft.github.io)](https://raft.github.io/)
+  Interactive animations of an election, log replication, and a partition, plus links to
+  implementations. Use for: making the majority rule and leader election click faster than prose.
+- [Sookocheff, "Unpacking the eight fallacies of distributed computing"](https://sookocheff.com/post/distributed-systems/unpacking-the-eight-fallacies-of-distributed-computing/)
+  Secondary compilation of the eight fallacies (network reliable, latency zero, …); the list has
+  no canonical primary paper — it is oral history from the Sun engineers. Takes each fallacy in
+  turn and says what it breaks and how modern systems cope. Use for: the failure-mode checklist a
+  design conversation runs through.
+
+### Behavioral / leadership round
+
+The first-party rubric for the behavioral round. Amazon is the useful exception among big-tech
+companies: its evaluation framework is published rather than internal, so it is the best proxy for
+the private ladders other companies grade against. See Track 5 of the research note
+`content/research/what-do-senior-software-engineer-interviews-test.md`.
+
+- [Amazon: Leadership Principles](https://www.aboutamazon.com/about-us/leadership-principles)
+  Primary for the 16 Leadership Principles — the explicit framework a behavioral answer is scored
+  against. Use for: the shape of what the round is measuring, and which principles carry the senior
+  weight (mentorship, ownership of ambiguity, Have Backbone; Disagree and Commit).
+- [Amazon jobs: interviewing at Amazon](https://www.amazon.jobs/content/en/how-we-hire/interviewing-at-amazon)
+  Primary for the STAR structure (Situation, Task, Action, Result) as Amazon's recommended way to
+  tell a story, populated with examples mapped to the principles. Use for: the answer structure a
+  scorable behavioral response needs.
+- [Amazon: recruiters' interview tips](https://www.aboutamazon.com/news/workplace/recruiters-offer-their-best-tips-for-interviewing-at-amazon)
+  Primary for the concrete senior-relevant guidance: say "I," not "we" and be specific about your
+  own contribution; quantify results; and prepare specific real stories rather than memorizing the
+  principles. Use for: defending the "I"/quantify/stories-not-principles habits.
+
+### System-design building blocks and estimation
+
+The applied half of the design round — the components and the arithmetic — sitting on top of
+the distributed-systems theory above.
+
+- [Dean & Norvig, "Numbers Everyone Should Know" (brenocon mirror)](https://brenocon.com/dean_perf.html)
+  **Secondary** mirror of Jeff Dean's latency slides: L1 ≈ 0.5 ns, main memory ≈ 100 ns, disk
+  seek ≈ 10 ms, cross-continent round trip ≈ 150 ms. Use for: the *shape* of the latency ladder
+  — memory ≪ network ≪ disk seek. The absolutes are dated (NVMe has collapsed the memory-to-disk
+  gap), so carry the ratios and the method, never the nanoseconds; the ~150 ms round trip is the
+  one durable rung, bounded by the speed of light rather than hardware.
+- [AWS, "What is caching?"](https://aws.amazon.com/caching/)
+  Vendor-neutral tour of the one component every design reaches for: the benefits (sub-millisecond
+  reads, IOPS density, hot-spot relief) and the common placements (database, CDN/edge, session,
+  API-response). Use for: the vocabulary a round expects you to select from, and for framing a TTL
+  as the freshness-versus-speed knob rather than a default.
+- [DeCandia et al., "Dynamo: Amazon's Highly Available Key-value Store" (SOSP
+  2007)](https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf)
+  The primary source for partitioning + replication in an always-available store: consistent
+  hashing on a ring (with virtual nodes) for placement, a preference list of `N` replicas,
+  object versioning (vector clocks) with application-level merge for reconciliation, and the
+  `W + R > N` quorum dial. The blueprint under Cassandra, Riak, and DynamoDB. Use for: the
+  concrete AP design the CAP/consistency theory turns into, and the section-4 architecture walk.
+
+The five components a design round expects you to *select and justify* — load balancing, rate
+limiting, message queues, CDNs, API design — are each pinned to a first-party implementation
+below rather than to interview-prep folklore. See the research note
+`content/research/which-building-blocks-does-a-system-design-round-expect-you-to-select.md`.
+
+- [AWS Elastic Load Balancing — NLB (L4) and ALB (L7) developer guides](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/introduction.html)
+  Primary for the L4/L7 fork in the words that own it: the NLB "functions at the fourth layer,"
+  flow-hash, connection-pinned; the [ALB](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html)
+  "functions at the seventh layer" and routes on content. Use for: defending L4-vs-L7 as
+  speed/protocol-agnostic versus content-aware, and health checks across AZs.
+- [NGINX HTTP load balancing admin guide](https://docs.nginx.com/nginx/admin-guide/load-balancer/http-load-balancer/) and [rate limiting with NGINX](https://blog.nginx.org/blog/rate-limiting-nginx)
+  Primary for the load-balancing algorithms named verbatim (round robin, least connections, IP
+  hash, generic/`consistent` ketama hash) and `slow_start`; and for `limit_req` as the **leaky
+  bucket** (default rejection is 503, overridable via `limit_req_status`). Use for: the algorithm
+  list and the leaky-bucket implementation.
+- [AWS API Gateway request throttling](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html)
+  Primary for the **token bucket** (steady `rate` + `burst` capacity) and the 429 response. Use
+  for: token bucket as burst-tolerant, and the throttle response contract.
+- [Cloudflare, "Counting things — a lot of different things"](https://blog.cloudflare.com/counting-things-a-lot-of-different-things/) and [WAF rate-limiting-rules parameters](https://developers.cloudflare.com/waf/rate-limiting-rules/parameters/)
+  First-party (the counting numbers live in the engineering **blog**): the **sliding-window
+  counter** — two numbers per counter, ≈0.003% wrongly limited, ≈6% rate error — and the
+  distributed-limiter propagation lag. Use for: sliding-vs-fixed window and its accuracy cost.
+- [RFC 6585 §4 — 429 Too Many Requests](https://www.rfc-editor.org/rfc/rfc6585) and [RFC 9110 §9.2.2 — idempotent methods](https://www.rfc-editor.org/rfc/rfc9110)
+  The definitions everything defers to: 429 MAY carry `Retry-After`; an idempotent method has the
+  same effect for N identical requests as for one (GET, HEAD, PUT, DELETE). Use for: the
+  rate-limit response contract and which HTTP methods are safe to retry.
+- [Apache Kafka introduction](https://kafka.apache.org/intro) and [KIP-98 / Idempotent Producer (Apache cwiki)](https://cwiki.apache.org/confluence/display/KAFKA/Idempotent+Producer)
+  Primary for the **log** shape (append-only, partitioned, retained, replayable), per-partition
+  ordering, and that "exactly-once" is producer-side **dedup** (PID + sequence number), not a wire
+  guarantee. The main single-page docs render as a JS shell to a fetcher, so the delivery-semantics
+  detail is pinned to the cwiki KIP. Use for: queue-vs-log, ordering scope, and the effectively-once
+  correction.
+- [RabbitMQ — consumer acknowledgements and publisher confirms](https://www.rabbitmq.com/docs/confirms)
+  Primary for the **classic queue** delivery model: unacked deliveries are requeued (at-least-once,
+  duplicates possible) and consumers must be "implemented with idempotence in mind." Use for: the
+  competing-consumers side of the queue-vs-log choice.
+- [AWS CloudFront — introduction](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html) and [invalidation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html)
+  Primary for CDN mechanics: edge locations, the **pull** miss-then-fetch model, the default 24-hour
+  TTL, and AWS's own recommendation of **versioned filenames over invalidation**. The push/pull
+  *taxonomy* itself is general-industry framing (**secondary**); the mechanism is first-party. Use
+  for: the freshness/TTL trade-off and why invalidation is the hard part.
+- [Fielding dissertation, Ch. 5 (REST)](https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm), [gRPC introduction](https://grpc.io/docs/what-is-grpc/introduction/), [GraphQL introduction](https://graphql.org/learn/introduction/)
+  Each is primary **for its own definition only** — the three-way *fit* comparison (ubiquity vs
+  efficiency vs client-shaped fetches) has no canonical primary and is **secondary** as a
+  head-to-head. Use for: defining each style precisely before comparing them.
+- [Google AIP-158 (pagination)](https://google.aip.dev/158) and [Stripe API — pagination](https://docs.stripe.com/api/pagination) / [idempotent requests](https://docs.stripe.com/api/idempotent_requests)
+  Primary for cursor/keyset pagination (opaque, non-user-parseable `page_token`; Stripe's
+  `starting_after`/`ending_before` object-ID cursors) and the POST idempotency-key pattern. Use
+  for: defending cursor over offset, and idempotency on non-idempotent methods.
+
 ## Wisdom (Communities)
 
 - [r/cscareerquestions interview experiences](https://reddit.com/r/cscareerquestions)
@@ -188,8 +336,10 @@ Learn unless noted.
   exists. Nothing trusted covers going from a written domain to entities, relationships and
   cardinalities — which is the first half of "design a schema from scratch" in an interview.
   Raised and unresolved by the workspace that raised it.
-- **Behavioural interviewing.** No source here is trusted on it. Behavioural Problems are
-  hand-authored against the template in `PROBLEM-FORMAT.md` partly for this reason.
+- **Behavioural interviewing beyond Amazon.** Amazon's Leadership Principles and STAR are now
+  adopted above as genuinely first-party, but they are the exception: no other big-tech company
+  publishes its behavioural rubric, so Amazon's is used as the proxy. Behavioural Problems are
+  still hand-authored against the template in `PROBLEM-FORMAT.md`.
 - **System-design rubrics.** Plenty of material on the systems; almost none on what a
   forty-five-minute answer is graded against.
 - **Hedging and trace context.** W3C Trace Context assumes a linear parent-child hierarchy;
