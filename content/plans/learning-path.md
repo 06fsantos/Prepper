@@ -9,7 +9,7 @@ topic:
   - behavioral-interviews
 ---
 
-The one path across the six reading orders, from the fundamentals through the four rounds of the
+The one path across the seven reading orders, from the fundamentals through the four rounds of the
 loop — zero to hired, in the order the legs come. Everything below is a link to a reading order that
 already exists and stands on its own; this page only says which comes first and why, and hands you off
 to each in turn. The vault carries no reading order of its own: `prerequisites` is a graph and there are
@@ -27,7 +27,7 @@ records.
 ## Read first — the frame
 
 [[what-senior-means-as-a-level]] — the master lens, pulled to the very top so the whole journey inherits
-it once. It is the note the system-design and behavioural reading orders each already open with, and it
+it once. It is the note the coding, system-design and behavioural reading orders each already open with, and it
 is here for the same reason they do: "senior" is a claim about **scope and ownership of ambiguity**, not
 about how much you know. Everything below is either the fundamentals that make the claim defensible or a
 round where it is proved. This is the one place this page links a Lesson directly rather than a reading
@@ -50,11 +50,11 @@ order — it earns the exception by being the lens every leg inherits.
 
 ## The rounds — rehearse each stage of the loop
 
-4. [[reading-order-for-the-coding-round]] — big-O and the data-structures-and-algorithms core, the Problem
-   bank, and the Lesson on what a coding round is actually grading, sequenced into how the screen and the
-   two on-sites are passed. **This reading order is not written yet.** The link renders as a marked,
-   unclickable affordance today and goes live the day that Plan is authored, with no edit to this page —
-   which is the whole reason this note delegates rather than flattening the six orders into one table.
+4. [[reading-order-for-the-coding-round]] — the coding screen and the two coding on-sites: what the round
+   grades *on top of* a correct answer — narrate the approach, weigh the trade-off, enumerate the edge
+   cases, test — and the small base it is spent on, big-O, the hash-map trade that collapses a quadratic
+   scan, and the C# equality probe. First of the rounds because it is the front of the loop and the stage
+   that leans most directly on the fundamentals the base just earned.
 5. [[reading-order-for-the-system-design-round]] — the 45-minute design conversation and the distributed-
    systems theory under it: CAP and PACELC, consistency models, consensus, and the applied moves that
    spend them on a real prompt. Its companion is [[reading-order-for-api-requests]] — HTTP resilience
@@ -65,11 +65,3 @@ order — it earns the exception by being the lens every leg inherits.
    path opened with is evidenced directly: scope owned, ambiguity absorbed, conflict navigated. Last
    because it is the round that asks you to *prove*, out loud, the thing the frame Lesson defined and the
    five legs before it made defensible.
-
-## The one gap, named
-
-There is no coding-round reading order **yet** — leg 4 is the only unwritten link on this page, and it is
-left visible on purpose rather than hidden, so the gap is a thing you are told about rather than a dead
-link you trip over. Its ingredients already live in the vault (the big-O and DSA Terms, the Problem bank,
-[[the-senior-coding-signal]]); what is missing is the note that sequences them. The day it is authored,
-leg 4 lights up here on its own.
