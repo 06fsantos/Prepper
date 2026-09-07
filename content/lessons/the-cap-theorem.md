@@ -39,11 +39,11 @@ everyday sense:
 ```quiz 01M1XVE1FV3XG8VE3VJMYADTCZ
 The "C" in CAP and the "C" in ACID are the same guarantee.
 
-- [ ] False — CAP's C is linearizability (one up-to-date copy, reads see the latest write)
+- [x] False — CAP's C is linearizability (one up-to-date copy, reads see the latest write)
   > CAP's consistency is about all nodes agreeing on the current value at once. ACID's is
     about a single transaction moving the database between valid states. Different concerns
     that happen to share a letter — a classic interview trap.
-- [x] True — both mean the data is never in an invalid state
+- [ ] True — both mean the data is never in an invalid state
   > This is the trap. ACID's C is about transactional invariants on one database; CAP's C is
     linearizability across nodes — every read reflects the latest write. Reasoning about a
     distributed design from the ACID definition will mislead you.
