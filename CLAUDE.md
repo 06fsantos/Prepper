@@ -409,6 +409,15 @@ placed by [`prepper/home`](prepper/home/index.ts), and it names the Plan's topic
 every one of them is a live link in a card two inches below, and a second copy of the same six
 links would be the entry page disagreeing with itself about what is navigation.
 
+The band is otherwise **title order and nothing else**, with one editorial exception: a Plan
+that declares `featured: true` is pinned to the front of it, so the mission's own first answer
+to "where do I start" leads rather than whichever reading order sorts first alphabetically. The
+flag rides the graph -- `GraphNode.featured`, present only when a note sets it, so
+`linkGraph.json` grows it on the one node that carries it -- and `plans()` reads it. A note's own
+claim about itself is what pins it, so **nothing in the build names a slug** to find the featured
+Plan; a featured Plan still sorts by title against any other, so the flag decides the band rather
+than a hand-kept order.
+
 ## Design tokens
 
 The **chrome** is painted from a Material 3 token layer derived from one seed (`#284b63`), and

@@ -133,7 +133,8 @@ export function topicOf(graph: LinkGraph, slug: string): Topic | undefined {
  * appears once here rather than twice.
  */
 /**
- * Every Plan in the vault, in title order and under no topic at all.
+ * Every Plan in the vault, the featured one first and the rest in title order, under no
+ * topic at all.
  *
  * The list the entry page opens with. A Plan claims several topics -- a reading order for
  * API requests is about the client, the resilience patterns and the tracing at once -- so
@@ -141,17 +142,27 @@ export function topicOf(graph: LinkGraph, slug: string): Topic | undefined {
  * and "where do I start" is a question asked before a topic has been chosen. Its sibling
  * is `cheatSheets` below, for the same reason and with the same shape: a list off the
  * graph, keyed by type rather than by topic.
+ *
+ * The band is otherwise unranked -- title order and nothing else -- so a Plan that declares
+ * `featured: true` is the one editorial exception: the vault's *where do I start* naming its
+ * own first answer, pinned above the alphabet. A featured Plan is still sorted by title
+ * against any other featured one, so the flag decides the band rather than a hand-kept order.
  */
 export function plans(graph: LinkGraph): Plan[] {
   return graph.nodes
     .filter((node) => node.type === "plan")
-    .sort((a, b) => byTitle(a.title, b.title))
+    .sort((a, b) => rankOf(a) - rankOf(b) || byTitle(a.title, b.title))
     .map((note) => ({
       note,
       topics: outgoing(graph, note.slug, "about")
         .map((edge) => nodeAt(graph, edge.target))
         .filter((node): node is GraphNode => node !== undefined),
     }))
+}
+
+/** A featured node sorts ahead of an unfeatured one; the tie is broken by title. */
+function rankOf(node: GraphNode): number {
+  return node.featured ? 0 : 1
 }
 
 export function cheatSheets(graph: LinkGraph): GraphNode[] {

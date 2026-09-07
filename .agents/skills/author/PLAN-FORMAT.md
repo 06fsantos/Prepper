@@ -34,15 +34,25 @@ topic:
 ---
 ```
 
-| field   | required | shape                                                              |
-| ------- | -------- | ------------------------------------------------------------------ |
-| `id`    | yes      | A new ULID.                                                        |
-| `title` | yes      | Names the subject, not the note type's job. **Not** "Lesson plan". |
-| `topic` | yes      | List. Every value names an existing Term — usually several.        |
+| field      | required | shape                                                              |
+| ---------- | -------- | ------------------------------------------------------------------ |
+| `id`       | yes      | A new ULID.                                                        |
+| `title`    | yes      | Names the subject, not the note type's job. **Not** "Lesson plan". |
+| `topic`    | yes      | List. Every value names an existing Term — usually several.        |
+| `featured` | no       | `true` on the **one** Plan that leads the entry-page band.         |
 
 `topic` is where a Plan differs from every other type in practice: it claims **all** the
 topics it orders, because that is what puts it at the top of each of their cards. There are no
 `prerequisites` on a Plan — it is not a step in anything.
+
+`featured` is the band's one exception to title order: the band that opens the app is otherwise
+unranked, so a Plan that declares `featured: true` is pinned to the front of it — the vault's
+*where do I start* naming its own first answer. It is a note's own claim about itself, so the
+build finds the featured Plan by the field and never by a slug. Keep it to **one** Plan: a
+second `featured: true` does not break the build, but two "start here first" answers is the band
+saying two things, and they only sort against each other by title. Set it by the dev's
+direction, not on your own — which reading order leads is an editorial call about the mission,
+not a property of the Plan you can read off its contents.
 
 ## Body
 

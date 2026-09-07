@@ -1,6 +1,7 @@
 ---
 id: 01M1YQ54TKFNXPJNEBE5Z3R7ZX
 title: A reading order for the coding round
+featured: true
 topic:
   - coding-interviews
   - big-o-notation

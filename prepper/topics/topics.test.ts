@@ -363,16 +363,25 @@ describe("where to start", () => {
       .selectAll(".prepper-start-here, .prepper-topic-cards", body)
       .map((node) => classesOf(node)[0])
     assert.deepEqual(sections, ["prepper-start-here", "prepper-topic-cards"])
-    assert.deepEqual(banded(home), ["Where to start on hash maps"])
+    assert.deepEqual(banded(home), ["Where to start on hash maps", "A tour of eviction"])
+  })
+
+  test("a featured Plan is pinned to the front of the band, above title order", () => {
+    // The band is otherwise unranked -- title order and nothing else. A Plan that declares
+    // `featured: true` is the vault's *where do I start* naming its own first answer, so it
+    // leads even though "A tour of eviction" sorts before "Where to start on hash maps" by
+    // title. The pin is the note's own claim: nothing in the build names a slug to find it.
+    assert.deepEqual(banded(home), ["Where to start on hash maps", "A tour of eviction"])
   })
 
   test("a Plan in the band is a link to the Plan, and the Plan is a page", () => {
     const band = home.require(".prepper-start-here", home.tree)
     assert.deepEqual(
       home.links({ scope: band }).map((link) => link.href),
-      ["./plans/where-to-start-on-hash-maps"],
+      ["./plans/where-to-start-on-hash-maps", "./plans/a-tour-of-eviction"],
     )
     assert.ok(site.hasPage("plans/where-to-start-on-hash-maps"))
+    assert.ok(site.hasPage("plans/a-tour-of-eviction"))
   })
 
   test("the band names the topics a Plan spans, in the order the Plan wrote them", () => {

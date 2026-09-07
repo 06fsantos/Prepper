@@ -85,6 +85,16 @@ export interface GraphNode {
   /** The note's `title`. What a link to it is labelled with, never the alias it was written with. */
   title: string
   type: NoteType
+  /**
+   * The note declared `featured: true`. Present only when it did, so `linkGraph.json` grows
+   * the flag on the one note that carries it rather than a `false` on every node.
+   *
+   * The one editorial bit in an otherwise structural graph: today only `plans()` reads it, to
+   * pin a Plan to the front of the entry page's band -- the vault's answer to *where do I start*
+   * naming which start comes first. It is a note's own claim about itself, so nothing in the
+   * build names a slug to find the featured one.
+   */
+  featured?: true
 }
 
 /**
@@ -124,6 +134,7 @@ export function linkGraph(files: readonly QuartzPluginData[]): LinkGraph {
     slug: file.slug as FullSlug,
     title: String(file.frontmatter?.title ?? file.slug),
     type: noteTypeOf(file)!,
+    ...(file.frontmatter?.featured === true ? { featured: true as const } : {}),
   }))
 
   // `byStem` answers a frontmatter target, which names a filename. A body link needs no

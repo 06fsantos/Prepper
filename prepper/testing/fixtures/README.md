@@ -146,9 +146,9 @@ anything.
   and a body link so that "neither a node nor the source of an edge" is a fact about a note
   that would otherwise have contributed two edges.
 
-- **`topic-index/`** — five Terms and seven notes filed under two of them: a Plan, a Cheat
-  sheet, two Lessons, a Reference and a Problem under *Hash maps*, and a Cheat sheet, that
-  same Plan and one of those Lessons under *Complexity*. Its cluster is *the topic index*, so every detail is a fact
+- **`topic-index/`** — five Terms and eight notes: under *Hash maps* a Plan, a Cheat
+  sheet, two Lessons, a Reference and a Problem; a Cheat sheet, that same Plan and one of
+  those Lessons under *Complexity*; and a second Plan under *Éviction policies*. Its cluster is *the topic index*, so every detail is a fact
   about navigation rather than about links. The fifth Term, *Data structures*, is an
   **umbrella**: *Hash maps* and *Complexity* name it in their own `topic` field, so the rail
   renders it as a top-level fold over those two as plain topic links, while their note-type
@@ -161,9 +161,13 @@ anything.
   before a Problem, which no alphabet would give. `plans/where-to-start-on-hash-maps` names
   both topics for a second reason: the entry page's Plans band is the one list in the app
   where a note spanning two topics appears **once**, so a Plan under a single topic could
-  not tell the band and the cards apart. `terms/system-design` has nothing filed under it and
+  not tell the band and the cards apart. That same Plan carries `featured: true`, and the
+  second one — `plans/a-tour-of-eviction`, which does not — is titled to sort **before** it
+  by the alphabet, so the band putting the featured Plan first is what makes the pin statable
+  rather than title order agreeing by luck. `terms/system-design` has nothing filed under it and
   a body that explains the area, which is the **area overview** a topic with no Lessons and
-  therefore no Cheat sheet has to fall back on; `terms/eviction` is empty too and titled
+  therefore no Cheat sheet has to fall back on; `terms/eviction` has only that second Plan
+  filed under it and an empty body of its own, and is titled
   *Éviction policies*, which is what makes the tree's alphabetical ordering mean what a
   reader means by it rather than what code-point order does. The two Cheat sheets are named
   `…-quick-reference` rather than after their topics because filenames are unique
