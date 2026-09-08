@@ -7,6 +7,7 @@ topic:
   - big-o-notation
   - hash-maps
   - stacks
+  - graphs
   - equality-and-hashing
 ---
 
@@ -26,6 +27,11 @@ under pressure. Read [[the-senior-coding-signal]] first and the rest of the path
 signal is spent on"; skip it and the fundamentals below look like the point, which is the mid-level
 reading of the round.
 
+This is also the answer to "should I grind a 150-problem list for the coding round?" — no. There is
+a small, fixed *core* of patterns worth making automatic, because that is the priority-one recall
+this round rests on; but grinding a large list for *coverage* is the mid-level reading again. The
+distinction, and the core itself, is "Make the core patterns automatic" below.
+
 ## The order
 
 | # | Read | Scope | Why here |
@@ -41,6 +47,21 @@ Steps 1–2 are the round; steps 3–6 are the base it is spent on. If you are s
 irreducible pair — the signal you are graded on, and the one tool most answers turn on — but read in this
 order the base arrives already framed as something to narrate rather than something to merely know.
 
+## Make the core patterns automatic
+
+Beneath the reasoning is a base of recall the mission puts first, and most prompts reduce to a small,
+fixed vocabulary: two pointers and sliding window over a sequence, binary search over a sorted or
+monotonic space, hash maps for membership, [[stacks|stacks]] for most-recent-first, and BFS/DFS over
+a [[graphs|graph]]. [[common-coding-patterns]] gives each its *tell* — the phrase in a prompt that
+should trigger it — its cost, and a short C# skeleton. Make those six automatic so that recognising
+one costs you no working memory, and spend the memory you save on the narration
+[[the-senior-coding-signal]] actually grades.
+
+This is the fixed core the caveat above points at, and it is a different act from grinding a large
+list. Learn the six cold, then *borrow* a handful of problems from any big list as narration reps —
+rather than completing it for coverage, which grades the mid-level axis. Breadth of algorithms is
+table stakes; fluent recall of the core, spent out loud, is the level.
+
 ## Practice checkpoints
 
 The reading is the smaller half; the round is a performance, so the practice is solving *out loud* against
@@ -54,6 +75,12 @@ the disciplines in step 2. Place the Problems like this:
 - **Alongside them**, [[valid-parentheses]] widens the base past hash maps to a second structure, the
   [[stacks|stack]]: "most recent opener, first" is LIFO, and the easy-to-forget edge case (a leftover opener
   at the end) is exactly the kind you practise surfacing unprompted.
+- **After the patterns lesson**, drill each newly-named pattern on its canonical Problem, narrating
+  the way the two above teach. [[binary-search]] — say the loop invariant and which half you discard
+  each step, and surface the off-by-one and the empty-array edge. [[longest-substring-without-repeating-characters]]
+  — narrate the window growing on the right and shrinking from the left, and say why it is one pass
+  rather than nested. [[number-of-islands]] — say the BFS-vs-DFS choice and its trade out loud, and
+  name the visited-set (or sink-in-place) decision as the thing that stops a cell being counted twice.
 
 There is no separate code-review Problem, and that is not a gap: [[the-senior-coding-signal]] folds that
 round in, and the practice for it is the same habit read in reverse — narrate what you read, name the bug

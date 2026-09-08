@@ -19,6 +19,11 @@ themselves are kept and judged.
 - [The NeetCode problem list](https://neetcode.io/practice)
   The problem canon. Use for: what to import, and as the on-list gate the `import` skill
   checks against — widening past it invalidates the acquisition method.
+- [The NeetCode roadmap](https://neetcode.io/roadmap)
+  The common coding patterns organised as a dependency graph — two pointers, sliding window,
+  binary search, stacks, graph traversal, and the rest. Use for: mapping the fixed core of
+  patterns a coding round reduces to, mined for a few representative problems rather than
+  completed end to end.
 
 ### HttpClient and HTTP resilience in .NET
 
