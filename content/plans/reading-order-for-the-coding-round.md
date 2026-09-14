@@ -51,14 +51,15 @@ order the base arrives already framed as something to narrate rather than someth
 
 Beneath the reasoning is a base of recall the mission puts first, and most prompts reduce to a small,
 fixed vocabulary: two pointers and sliding window over a sequence, binary search over a sorted or
-monotonic space, hash maps for membership, [[stacks|stacks]] for most-recent-first, and BFS/DFS over
-a [[graphs|graph]]. [[common-coding-patterns]] gives each its *tell* — the phrase in a prompt that
-should trigger it — its cost, and a short C# skeleton. Make those six automatic so that recognising
+monotonic space, hash maps for membership, [[stacks|stacks]] for most-recent-first, BFS/DFS over
+a [[graphs|graph]], the same two traversals over a [[trees|tree]], and a [[heaps|heap]] for the
+top K. [[common-coding-patterns]] gives each its *tell* — the phrase in a prompt that
+should trigger it — its cost, and a short C# skeleton. Make those eight automatic so that recognising
 one costs you no working memory, and spend the memory you save on the narration
 [[the-senior-coding-signal]] actually grades.
 
 This is the fixed core the caveat above points at, and it is a different act from grinding a large
-list. Learn the six cold, then *borrow* a handful of problems from any big list as narration reps —
+list. Learn the eight cold, then *borrow* a handful of problems from any big list as narration reps —
 rather than completing it for coverage, which grades the mid-level axis. Breadth of algorithms is
 table stakes; fluent recall of the core, spent out loud, is the level.
 
@@ -81,6 +82,10 @@ the disciplines in step 2. Place the Problems like this:
   — narrate the window growing on the right and shrinking from the left, and say why it is one pass
   rather than nested. [[number-of-islands]] — say the BFS-vs-DFS choice and its trade out loud, and
   name the visited-set (or sink-in-place) decision as the thing that stops a cell being counted twice.
+  [[binary-tree-level-order-traversal]] — say why "one list per level" is BFS and name the move that
+  keeps the levels apart (fix the queue's width before draining it). [[top-k-frequent-elements]] —
+  narrate the hash-map count *then* the size-`k` min-heap, and justify the `O(n log k)` heap out loud
+  against the `O(n log n)` full sort you are choosing not to do.
 
 There is no separate code-review Problem, and that is not a gap: [[the-senior-coding-signal]] folds that
 round in, and the practice for it is the same habit read in reverse — narrate what you read, name the bug

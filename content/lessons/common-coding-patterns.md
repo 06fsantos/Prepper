@@ -12,9 +12,9 @@ A senior coding round is not won by knowing more algorithms — [[the-senior-cod
 clear that the skeleton is table stakes and the audible reasoning around it is the level. But
 there is a small, fixed vocabulary of patterns that most prompts reduce to, and the win is having
 each one so automatic that recognising it and writing its skeleton costs you no working memory,
-leaving all of it for the narration you are actually graded on. This is that vocabulary — six
+leaving all of it for the narration you are actually graded on. This is that vocabulary — eight
 patterns, each with its *tell* (the phrase in a prompt that should trigger it), its cost, and a
-skeleton to make reflexive. Learning these six cold is a different act from grinding a large
+skeleton to make reflexive. Learning these eight cold is a different act from grinding a large
 problem list for coverage: breadth-for-coverage is the mid-level reading of the round, and this is
 the fluency the [[coding-interviews|round]] rewards spending.
 
@@ -156,11 +156,100 @@ void Dfs(char[][] grid, int r, int c) {
 }
 ```
 
+## Trees (DFS/BFS)
+
+**Tell:** a **binary tree** and a question about depth, levels, or a root-to-leaf path — "level
+order", "maximum depth", "is it balanced", "lowest common ancestor". A [[trees|tree]] is a
+[[graphs|graph]] with no cycles, so the same two traversals apply: DFS (recursion, natural for depth
+and path questions) and BFS (a queue, natural for anything asked *by level*). The grid DFS above is
+this pattern on a graph with four neighbours; a tree just has named `left`/`right` ones.
+
+**Cost:** `O(n)` time — every node once — and `O(h)` space for the recursion stack or the widest
+level, where the height `h` is `O(log n)` balanced and `O(n)` degenerate.
+
+```csharp
+IList<IList<int>> LevelOrder(TreeNode root) {
+    var levels = new List<IList<int>>();
+    if (root is null) return levels;
+    var queue = new Queue<TreeNode>();
+    queue.Enqueue(root);
+    while (queue.Count > 0) {
+        int width = queue.Count;           // fix this level's size before draining it
+        var level = new List<int>();
+        for (int i = 0; i < width; i++) {
+            TreeNode node = queue.Dequeue();
+            level.Add(node.val);
+            if (node.left is not null) queue.Enqueue(node.left);
+            if (node.right is not null) queue.Enqueue(node.right);
+        }
+        levels.Add(level);
+    }
+    return levels;
+}
+```
+
+The canonical drill is [[binary-tree-level-order-traversal]]: the tell is "one list per level", and
+capturing `width` before the inner loop is the move that keeps the levels apart.
+
+```quiz 01M2G2PHQ6RXEBCTPRFC596X7V
+A prompt gives you a binary tree and asks for its node values **grouped by depth — one list per
+level, top to bottom**. Which traversal writes that out most directly?
+
+- [x] BFS with a queue, draining one level at a time
+  > "Grouped by depth, one list per level" is the breadth-first tell: fix the queue's size at the
+    start of each level, drain exactly that many nodes, and enqueue their children for the next.
+- [ ] DFS by recursion, one branch to the bottom first
+  > DFS reaches the deepest node before its siblings, so the levels come out interleaved; it can be
+    made to work by threading a depth through, but it is not the direct fit BFS is.
+- [ ] Two pointers converging from both ends
+  > Two pointers needs a linear, ordered sequence with two ends to walk toward each other; a tree
+    branches, so there are no such ends.
+- [ ] Binary search over the node values
+  > Binary search needs a sorted or monotonic axis to halve; an arbitrary binary tree's values are
+    not globally ordered, and the question is about shape, not lookup.
+```
+
+## Heaps / top-K
+
+**Tell:** the **K largest, smallest, or most frequent**, or a stream where you repeatedly need the
+current extreme — "top K", "K closest points", "merge K sorted lists". Sorting the whole input to
+read the top off costs `O(n log n)`; a [[heaps|heap]] capped at size `k` answers the K question in
+`O(n log k)` and never holds more than `k` items. Often it follows a hash-map counting pass, which
+is what makes it the natural next step after the recap above.
+
+**Cost:** `O(n log k)` time, `O(k)` space — cheaper than the `O(n log n)` full sort whenever `k` is
+much smaller than `n`, which is the whole point of the pattern.
+
+```csharp
+int[] TopKFrequent(int[] nums, int k) {
+    var counts = new Dictionary<int, int>();
+    foreach (int n in nums)
+        counts[n] = counts.GetValueOrDefault(n) + 1;   // hash-map pass first
+    var heap = new PriorityQueue<int, int>();           // min-heap keyed by frequency
+    foreach (var (value, freq) in counts) {
+        heap.Enqueue(value, freq);
+        if (heap.Count > k) heap.Dequeue();             // over the cap: drop the least frequent
+    }
+    return heap.UnorderedItems.Select(x => x.Element).ToArray();
+}
+```
+
+The drill is [[top-k-frequent-elements]] — the canonical hash-map-then-heap combo, and the reason to
+narrate *why a min-heap of size `k`* rather than sorting all the counts.
+
+```quiz 01M2G2PHQ6ENSVE3XX5YWYX6EH cloze
+You need the k most frequent values out of `n`. Sorting everything to read the top off costs
+{{O(n log n)}}, but keeping a min-[[heaps|heap]] capped at size `k` gets there in {{O(n log k)}}
+while ever holding only `k` items: push each candidate and {{pop}} the moment the heap grows past
+`k`, so the weakest is what falls out.
+```
+
 ## What to take away
 
-Six patterns cover most of what a coding round asks: two pointers and sliding window over a
+Eight patterns cover most of what a coding round asks: two pointers and sliding window over a
 sequence, binary search over a sorted or monotonic space, hash maps for membership, stacks for
-most-recent-first, and BFS/DFS over a graph. Make each one's tell and skeleton automatic so the
+most-recent-first, BFS/DFS over a graph, the same two traversals over a tree, and a heap for the
+top K. Make each one's tell and skeleton automatic so the
 recognition is free — and then spend the working memory you saved on narrating the trade-off,
 enumerating the edge cases, and naming the tests, which is the [[the-senior-coding-signal|thing the
 round is really scoring]].
@@ -169,7 +258,7 @@ round is really scoring]].
 A friend suggests you grind all 150 problems on a popular list before your senior loop. Given how
 this round is graded, what is the sharper use of the same time?
 
-> Learn the *fixed core* of patterns cold — the six here — and then practise the ones you already
+> Learn the *fixed core* of patterns cold — the eight here — and then practise the ones you already
 > recognise **out loud**, rehearsing the narration, the trade-off, the edge cases, and the tests.
 >
 > Grinding 150 for coverage optimises breadth of algorithms, which is the mid-level bar: at the
