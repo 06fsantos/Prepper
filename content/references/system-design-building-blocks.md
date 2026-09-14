@@ -14,7 +14,9 @@ saying what you bought and what you paid is the signal.
 Three of these sit on theory that has its own notes — reach through to
 [[the-cap-theorem]], [[consistency-models]],
 [[partitioning-replication-and-consistent-hashing]], [[caching-and-ttls]] and
-[[idempotency-and-safe-retries]] rather than re-deriving them here.
+[[idempotency-and-safe-retries]] rather than re-deriving them here. And each of the five blocks
+below is now a taught Lesson as well — this table is the scan-grid to re-read the whole surface at
+once, and the **full treatment** link at the foot of each section is where the reasoning lives.
 
 ## At a glance
 
@@ -54,6 +56,8 @@ senior trap is **session stickiness**: pinning a client to one backend breaks ev
 and turns that backend's death into lost sessions — the real fix is a stateless service, so any
 algorithm works.
 
+**Full treatment:** [[load-balancing]].
+
 ## Rate limiting
 
 Four algorithms, each a real primary implementation:
@@ -80,6 +84,8 @@ cheaper the rejection.
 overridable via `limit_req_status` — 429 is *correct*, not universal. A distributed limiter also
 has a propagation lag, so a little excess slips through before the counter updates
 ([Cloudflare WAF](https://developers.cloudflare.com/waf/rate-limiting-rules/parameters/)).
+
+**Full treatment:** [[rate-limiting]].
 
 ## Message queues
 
@@ -111,6 +117,8 @@ parallelism. **Cost:** a broker cluster to run (a new SPOF if you let it), event
 downstream, and **backpressure** — a queue filling faster than it drains grows unbounded, so
 consumers pull at their own pace and producers must handle a full queue.
 
+**Full treatment:** [[message-queues]].
+
 ## CDN
 
 A network of edge locations that caches content close to users; a request is routed to the
@@ -131,6 +139,8 @@ invalidations are billed beyond the free tier
 ([CloudFront invalidation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html)).
 Costs: staleness within the TTL, invalidation latency/complexity (you don't control downstream
 caches), and a request/data-transfer bill.
+
+**Full treatment:** [[content-delivery-networks]].
 
 ## API design
 
@@ -156,3 +166,5 @@ defines an idempotent method as one where "the intended effect... of multiple id
 is the same as... a single such request" (GET, HEAD, PUT, DELETE)
 ([RFC 9110 §9.2.2](https://www.rfc-editor.org/rfc/rfc9110)); for non-idempotent POSTs, pass an
 **idempotency key** ([Stripe](https://docs.stripe.com/api/idempotent_requests)).
+
+**Full treatment:** [[api-design]].
