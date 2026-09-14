@@ -8,7 +8,7 @@
  *
  * | View       | Function     | Where                   | Shape                                   |
  * | ---------- | ------------ | ----------------------- | --------------------------------------- |
- * | `sidebar`  | `TopicTree`  | the rail, every page    | a bare foldable name list               |
+ * | `sidebar`  | `TopicTree`  | the rail, every page    | nested folds, each opening to its notes |
  * | entry page | `TopicCards` | `prepper/home`'s body   | a card per topic, note types as columns |
  * | term-index | `TermIndex`  | a Term's `.page-footer` | the one card for the page's own topic   |
  *

@@ -55,6 +55,165 @@ downtime, and latency *first*; it unlocks every component choice after it.
   stateless), API-response cache. Each answers the same question: *how stale can this be, and how
   do you bound it?*
 
+**CDN: the cache at the edge — same freshness-for-speed trade, moved next to the reader.** The one
+block that beats the ~150 ms cross-continent round trip (speed-of-light bound), by serving content
+from an edge location near the user; also a shield that absorbs read traffic and attacks before
+origin. Reach for it: cacheable content (`.html/.css/.js`, images) to a spread-out audience. Lead
+with the trade, then the box. [[content-delivery-networks|Full treatment]]; CloudFront owns the words.
+
+- **Pull vs push.** *Pull* = miss-then-fetch: the edge holds nothing until the first reader, then
+  fetches from origin once and caches (CloudFront's model, the low-effort default — first request
+  per edge pays the miss). *Push* = you upload assets ahead of time. The pull *mechanism* is
+  first-party; the push/pull *labels* are general-industry framing, not CloudFront's own term.
+- **TTL is the freshness dial.** Content sits at the edge for a TTL, then the next read misses to
+  origin. CloudFront default **24 h** (min 0s, no max). Long → higher hit rate + origin offload but
+  staler; short → fresher but more origin traffic. Set it **per content type**; one global TTL is a
+  down-level tell.
+- **Invalidation vs versioned filenames — the key trade.** To change something before its TTL:
+  *invalidate* (edge refetches on next request) — slow to propagate, billed, and **can't reach
+  caches you don't own** (a downstream browser/proxy serves the old copy until *its* TTL). Or serve a
+  *versioned filename* (`app.a1b2c3.js`, content hash) — a new URL nothing has cached, effective
+  everywhere immediately. **AWS recommends versioning over invalidation.** Pairing: long-TTL immutable
+  versioned assets + a short-TTL HTML doc pointing at them; invalidation is the rare escape hatch.
+
+**Load balancing: four defensible choices, not a box.** The block that turns "add a machine"
+into horizontal scale and a dead box into a non-event — and a single point of failure itself
+unless run redundant across zones. Lead with the fork, then the cost. [[load-balancing|Full
+treatment]]; AWS ELB and NGINX own the words.
+
+- **Layer (the first fork) — L4 vs L7.** L4 forwards connections by a flow hash over IP/port
+  and never reads the request: fast, protocol-blind (TCP/UDP/QUIC), pins a connection to a
+  target for life. L7 terminates and parses the request (usually TLS too) to route on **content**
+  — path, host header, method. Content routing is the *whole* reason to pay L7's cost.
+- **Algorithm.** *Round robin* by default (identical servers, uniform requests; weights for
+  uneven boxes). *Least connections* when request **durations vary** — round robin counts
+  requests, not work. *IP / consistent hash* only when you deliberately want stickiness to a
+  per-key cache; [[partitioning-replication-and-consistent-hashing|ketama]] minimises reshuffle
+  on a membership change.
+- **The stickiness trap (the senior tell).** A sticky session pins a client to one backend so it
+  can keep state in memory. It **breaks even distribution** (the balancer can't steer by load)
+  and **turns a server's death into lost sessions**. The fix is not a smarter pin — make the
+  service **stateless**, session in a shared [[caching-and-ttls|store]], so any server takes any
+  request. A [[real-time-delivery|WebSocket]] is the named exception (one long-lived connection).
+- **Health + slow-start.** Routes "only to healthy targets" — only as good as the readiness
+  endpoint you own. A recovered box at full weight instantly is swamped into cold caches and
+  **flaps**; `slow_start` ramps its weight from 0. Routing cousin of spreading
+  [[bulkheads-and-blast-radius|blast radius]].
+
+**Rate limiting: a coarse cap against abuse and overload — pick the algorithm by what it trades.**
+Four algorithms trading burst tolerance vs output smoothness vs boundary accuracy; lead with the
+trade, then the box. [[rate-limiting|Full treatment]]; AWS, NGINX, Cloudflare and the RFCs own the
+words.
+
+- **Token bucket** — refill at `rate`, cap `burst`; a request spends a token. Bounds the *input
+  burst* (a full bucket absorbs a spike) while holding the average. AWS API Gateway's model. Reach
+  for it for bursty-but-bounded clients.
+- **Leaky bucket** — drains at a fixed rate, overflow dropped. Bounds the *output rate* (smooth), to
+  shield a fragile downstream. NGINX `limit_req`. The token/leaky fork = tolerate-the-burst vs
+  smooth-the-output.
+- **Fixed window** — count per interval, reset each window. `O(1)`, one integer; the **boundary
+  problem** lets a client run 2× the rate across the seam.
+- **Sliding window** — weight previous window by overlap (two numbers/counter). Fixes the seam
+  spike; ~0.003% wrongly limited, ~6% rate error. Exact (log-based) costs `O(requests)` memory —
+  the fourth trade is **accuracy vs memory**.
+- **Response contract:** **429 Too Many Requests** + `Retry-After` (RFC 6585). Trap: NGINX defaults
+  to **503**, override `limit_req_status` — 429 is *correct*, not universal. Client only auto-retries
+  a 429 on [[idempotency-and-safe-retries|idempotent methods]].
+- **Where it sits:** as far toward the edge as the counter can be shared — edge → gateway (per key)
+  → per-service [[load-balancing|proxy]]; closest-to-client rejection is cheapest.
+- **The honesty:** a distributed limiter **counts approximately** — per-node counters reconcile with
+  a few seconds' lag, so excess slips through. Exact means a synchronous shared counter on the hot
+  path (a bottleneck). It's a coarse control, not an exact quota — say so.
+
+**Message queues: async middleware — pick the shape, then defend delivery and ordering.** Decouples
+producer from consumer in time. Three shapes, and naming which is the first move. Lead with the
+guarantee you give up, not the box. [[message-queues|Full treatment]]; Kafka and RabbitMQ own the words.
+
+- **The three shapes.** *Classic queue* (RabbitMQ): one message → competing consumers, dropped on
+  ack — task distribution, one job done once by one of N workers, scale by adding workers. *Log*
+  (Kafka): append-only, partitioned, **retained** — many consumers each read the full stream, and you
+  can **replay** history. *Pub/sub*: each message → *every* subscriber (fan-out). The queue-vs-log
+  tell is *what happens after a read* — a queue forgets, a log keeps.
+- **"Exactly once" is the folklore trap.** No wire-level exactly-once exists. Three guarantees:
+  at-most-once (may lose), **at-least-once** (may duplicate — the default), exactly-once. Real
+  exactly-once is **"effectively once"** = at-least-once **+ dedup**. Kafka's is *producer-side*
+  dedup (PID + per-partition sequence number rejects retried appends); it does nothing for a consumer
+  that crashes after the work and before the offset commit. So design for at-least-once and make the
+  consumer [[idempotency-and-safe-retries|idempotent]] (key off a stable message id → duplicate is a
+  no-op). Both brokers say the app must be idempotent.
+- **Ordering is narrow.** A log orders events only **within a partition, not across a topic**. Order
+  per entity → route by a **partition key**. A global total order → a **single partition** → **no
+  consumer parallelism**. Need order only per key.
+- **Backpressure — the buffer is finite.** Producers outrunning consumers grow the backlog unbounded.
+  Consumers **pull at their own pace** (Kafka's throttle; alert on **lag**); a classic queue bounds
+  and blocks/rejects/dead-letters producers. Decide what gives when consumers fall behind — never
+  assume infinite buffer. Standing costs: a broker cluster to run (a new SPOF if you let it) and
+  eventual consistency downstream.
+
+**API design: the contract shape is a choice with a cost — four decisions, not "expose a REST API."**
+Four forks, each defended by its axis. Lead with what you optimised. [[api-design|Full treatment]];
+Fielding, gRPC, GraphQL, Stripe and AIP own the words.
+
+- **Style — three axes, pick one.** *REST* buys **ubiquity** (universal tooling, HTTP caching free,
+  human-readable) — the public default; costs over-/under-fetching and chatty round-trips. *gRPC*
+  buys **efficiency** (binary Protobuf over HTTP/2, streaming) — the **internal** service-to-service
+  pick; costs a schema/codegen step and is not browser-native. *GraphQL* buys **client-shaped
+  fetches** (a response is exactly what the client asked for) — diverse clients, differently-shaped
+  data; costs server complexity, harder caching, N+1 risk. No style gets all three; the head-to-head
+  *fit* is engineering judgement, the definitions are first-party.
+- **Pagination — cursor beats offset at scale.** *Offset* (`LIMIT/OFFSET`, page numbers) **drifts**
+  (an insert/delete shifts every later page) and **slows on deep pages** (walks and discards skipped
+  rows). *Cursor/keyset* pages relative to an **opaque token** (Stripe's `starting_after` object id;
+  AIP-158's user-unparseable `page_token`) — an indexed seek, stable under edits. Give up: random
+  access (no jump-to-page-50). Offset only earns its keep for numbered-page UIs.
+- **Versioning — additive is free, breaking takes a version.** New optional field / new endpoint =
+  backwards-compatible, no new version. Remove / rename / change meaning = breaking, take a new
+  version (URL path `/v2`, header, or media type). Run both at once, migrate clients, retire the
+  empty one. The discipline is deciding which kind of change you are shipping *before* you ship it.
+- **Idempotency keys — make a `POST` safe to retry.** `GET/PUT/DELETE` are idempotent; `POST` is
+  not, and is where the duplicate hurts most (a double charge). Client mints one key **per logical
+  operation** (`Idempotency-Key` header), server stores key→first-result and replays it on a repeat.
+  Two traps: mint it *inside* the retry loop (fresh key per attempt = plain duplicate) or reuse one
+  key across two real charges (second swallowed). It is the API's own contract — nothing in HTTP or
+  the resilience library does it for you. This is [[idempotency-and-safe-retries|the same idempotency]]
+  that makes a retry safe at all.
+
+**Real-time delivery: how fresh data reaches an open client — one axis, pull vs push.** The
+"design a news feed / chat" prompt turns on this. Polling is **pull** (pays in wasted requests +
+latency); SSE and WebSockets are **push** (pay in a held-open connection per client — state the
+app tier would rather not carry). Pick the least machinery for the traffic's *direction* and
+*frequency*, then lead with the cost.
+
+- **Short polling** — ask on a timer. Simplest, no protocol; wasteful (mostly-empty answers) and
+  laggy (worst case = the interval). Rare updates, seconds of staleness OK.
+- **Long polling** — server holds the request open until there is news, then the client re-asks.
+  Push's latency over pull's compatibility; costs a parked request per client, plus reconnect churn.
+- **SSE** (`text/event-stream`, browser `EventSource`, auto-reconnect) — **one-way** server→client
+  over a kept-open HTTP response. The right size for a feed / notifications; no return channel.
+- **WebSocket** (`Upgrade` off HTTP, RFC 6455) — **full-duplex**, either side sends anytime. Chat,
+  games, collaboration. Heaviest to operate: sticky [[load-balancing|routing]], you build reconnect
+  + missed-message recovery, N open sockets to size for.
+- Direction (1-way vs 2-way) and pull-vs-push cost are **structural**; *which* fits a given feed is
+  engineering judgement. Behind the last hop sits fan-out (a [[message-queues|queue]]); none of these
+  streams is CDN-cacheable — being uncacheably fresh is the job. Full treatment: [[real-time-delivery]].
+
+**Choosing the datastore: read the workload, not "SQL vs NoSQL."** No default store; five data
+models, each built for one workload shape and paying for it elsewhere. Signals that decide it:
+access pattern, query shape, consistency need, scale/write pattern, how connected the data is.
+[[choosing-a-datastore|Full fork]]; DDIA is the book.
+
+- **Relational** — ad-hoc queries, joins, many-to-many, [[transactions-and-acid|ACID]]. The safe
+  pick when access patterns are *unknown or changing* (the optimizer plans any query at run time).
+  Give up: easy horizontal scale.
+- **Document** — a self-contained aggregate read whole by id, schema that moves. Give up: joins /
+  many-to-many.
+- **Key-value** — point lookup by key at extreme scale (session, cache). Give up: any non-key query.
+- **Wide-column** — one *fixed* query at huge write throughput, denormalized. Give up: flexibility.
+- **Graph** — when traversing the relationships *is* the query. Give up: bulk scans, easy sharding.
+- **Consistency, honestly:** "SQL strong / NoSQL eventual" is a starting heuristic modern *tunable*
+  stores have blurred — reach for [[pacelc|PACELC]] (what under a partition, what when healthy), not
+  "pick two." Which store fits is *engineering judgement*; the graded thing is the defence.
+
 **Scaling the data: partition for capacity, replicate for survival.** Two different moves — keep
 them separate. [[partitioning-replication-and-consistent-hashing|Dynamo]] is the blueprint (under
 Cassandra, Riak, DynamoDB) and the concrete face of the [[the-cap-theorem|AP]] choice.
@@ -71,9 +230,54 @@ Cassandra, Riak, DynamoDB) and the concrete face of the [[the-cap-theorem|AP]] c
   and availability. High `W`/low `R` = read-cheap; the [[back-of-envelope-estimation|estimate]]
   says which way to lean.
 
+**Availability is composed, not quoted — count in nines.** The
+[[availability-and-the-nines|uptime axis]] is the estimation cousin of the throughput one: state
+the target, then *derive* whether the design hits it. Turn nines into a downtime budget first —
+**99.9% ≈ 44 min/month, 99.99% ≈ 4 min, 99.999% ≈ 26 s** — so you know if the ask is careful code
+or automated failover. Each nine costs ~10× more; the target is a requirement to negotiate, not a
+virtue to max.
+
+- **Series multiply — every dependency is a tax.** A request crossing components that must *all*
+  be up has availability `A₁ × A₂ × …`, always **below the weakest link**. Three hops at 99.9% →
+  ~99.7%. Your SLA ceiling is the product of what you depend on.
+- **Parallel compounds — redundancy buys nines back.** `n` copies where *one* suffices →
+  `1 − (1 − a)ⁿ`. Two servers at 99% → 99.99%. This is why
+  [[partitioning-replication-and-consistent-hashing|replication]] exists; the preference list is
+  this formula.
+- **The trap is independence.** Parallel only earns its nines if copies fail separately — same
+  rack, AZ, power feed, or a shared bad deploy is one **failure domain**, and the redundancy buys
+  nothing against it. Spread across domains ([[bulkheads-and-blast-radius|blast radius]], for
+  uptime). A shared downstream DB is a *series* term no parallel app tier removes.
+- **Not the same as CAP's A.** This is a % of uptime; [[the-cap-theorem|CAP]] availability is the
+  binary "every request gets a response." They share a word. When asked for a *number*, they mean
+  the nines.
+
+**Observability is how you show the design works — the move after the last box.** State it as
+process, not tooling: measure, promise, page.
+
+- **Three telemetry types, three jobs:** *metrics* (cheap aggregates — say something is wrong),
+  *traces* (one request across services — say where), *logs* (discrete events — say what). Alert
+  on the metric, drill into the trace, read the log. [[distributed-tracing|Tracing]] is the
+  correlation half; this is the picture it sits in.
+- **SLI → SLO → SLA:** an *indicator* is the measure (latency, error rate); an *objective* is the
+  target on it ("99% under 100 ms"); an *agreement* adds a **consequence** (a refund) — no
+  consequence means it is only an SLO. Keep the internal objective **tighter** than the promised
+  agreement, and **never target 100%**: the gap to perfect is the **error budget** you spend on
+  shipping. Same order-of-magnitude-per-nine economics as the [[availability-and-the-nines|nines]].
+- **The four golden signals** — the four things to measure when you cannot measure everything:
+  **latency** (split success from failure — a slow error hides in a blended average), **traffic**
+  (demand), **errors** (explicit, implicit, or by policy), **saturation** (how full the tightest
+  resource is; a *leading* indicator — latency rises before the resource maxes out).
+- **Alert on symptoms, not causes** — page on golden signals / SLO breaches, because those fire
+  only when a user is actually affected; leave CPU, replica lag, cache-hit ratio on a dashboard you
+  open *after* the page. Same instinct as spreading redundancy across
+  [[bulkheads-and-blast-radius|failure domains]]: defend the effect, not an enumerated trigger list.
+
+Full treatment: [[metrics-logs-and-the-golden-signals]].
+
 The reach-for-it signal: any open-ended "design X" prompt → run the four moves. Asked to open a
 box → reach for the [[distributed-systems|theory]] under it. Data too big or too hot for one
-machine → partition + replicate on a ring. Two valid-but-different designs → they made different,
-defensible assumptions.
+machine → partition + replicate on a ring. "How do you know it's healthy?" → golden signals paged
+against SLOs. Two valid-but-different designs → they made different, defensible assumptions.
 
 Full treatment: [[system-design-is-graded-on-process]].

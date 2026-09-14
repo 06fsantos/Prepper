@@ -263,6 +263,23 @@ the distributed-systems theory above.
   — memory ≪ network ≪ disk seek. The absolutes are dated (NVMe has collapsed the memory-to-disk
   gap), so carry the ratios and the method, never the nanoseconds; the ~150 ms round trip is the
   one durable rung, bounded by the speed of light rather than hardware.
+- [Google, "Site Reliability Engineering" — Embracing Risk](https://sre.google/sre-book/embracing-risk/) and its [availability table](https://sre.google/sre-book/availability-table/)
+  First-party for the *nines*: the availability-to-downtime table (99.9% ≈ 8.8 h/year, 99.99% ≈
+  53 min, 99.999% ≈ 5 min) and the error-budget framing that turns an availability target into a
+  number a team spends against. Use for: the downtime budget behind an availability figure, and
+  for treating a target as a negotiated requirement rather than a maximized virtue. Pair with the
+  series-multiply / parallel-`1 − (1 − a)ⁿ` composition arithmetic (standard reliability math, no
+  single owning paper).
+- [Google, "Site Reliability Engineering" — Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/)
+  First-party for the **four golden signals** — latency (measured separately for successful vs
+  failed requests), traffic, errors, saturation (a leading indicator; latency rises before a
+  resource maxes out) — and for **alerting on symptoms, not causes**. Use for: what to measure when
+  you cannot measure everything, and why a symptom-based page earns the interruption.
+- [Google, "Site Reliability Engineering" — Service Level Objectives](https://sre.google/sre-book/service-level-objectives/)
+  First-party for the **SLI / SLO / SLA** ladder: indicator (the measure) → objective (the target
+  on it) → agreement (an SLO with a *consequence*; no consequence means it is only an SLO). Use
+  for: the internal-SLO-tighter-than-SLA rule, why the target is never 100%, and the error-budget
+  framing of the gap to perfect.
 - [AWS, "What is caching?"](https://aws.amazon.com/caching/)
   Vendor-neutral tour of the one component every design reaches for: the benefits (sub-millisecond
   reads, IOPS density, hot-spot relief) and the common placements (database, CDN/edge, session,
@@ -325,6 +342,13 @@ below rather than to interview-prep folklore. See the research note
   Primary for cursor/keyset pagination (opaque, non-user-parseable `page_token`; Stripe's
   `starting_after`/`ending_before` object-ID cursors) and the POST idempotency-key pattern. Use
   for: defending cursor over offset, and idempotency on non-idempotent methods.
+- [RFC 6455 — The WebSocket Protocol](https://www.rfc-editor.org/rfc/rfc6455) and [WHATWG HTML — Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) (with [MDN's `EventSource` overview](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events))
+  First-party for **real-time delivery**, a gap with no pre-pinned source. RFC 6455 owns the
+  WebSocket `Upgrade` handshake and full-duplex framing; the WHATWG standard owns the
+  `text/event-stream` format and `EventSource`'s automatic-reconnect / last-event-id model. Use
+  for: the push half of short-poll / long-poll / SSE / WebSocket, and why SSE is one-way over HTTP
+  while a WebSocket switches transports. Polling itself is just [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110)
+  request/response; the pull-vs-push framing is general-industry (**secondary**), the two specs are primary.
 
 ## Wisdom (Communities)
 

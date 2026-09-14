@@ -10,7 +10,7 @@ import type {
   QuartzComponentConstructor,
   QuartzComponentProps,
 } from "../../../quartz/components/types.ts"
-import type { GraphNode } from "../../graph/graph.ts"
+import type { GraphNode, LinkGraph } from "../../graph/graph.ts"
 import { graphOf } from "../../graph/graph.ts"
 
 import {
@@ -56,55 +56,98 @@ function viewOf(opts: Options | undefined): View {
 }
 
 /**
- * The **rail's** view: the topic index folded one level deep, as a bare foldable name list.
+ * The **rail's** view: the topic index, every topic a fold that opens to what is under it.
  *
- * This is a jump list. It stands beside a page the reader is already reading, in a 320px
- * column, and the question it answers is "where else is there" -- so it is names, folded, one
- * per line, and nothing about a topic is shown until the reader opens it.
+ * This is a jump list beside a page the reader is already reading, so it arrives as a column of
+ * topic names and shows a topic's contents only once the reader opens it. But "contents" is now
+ * everything filed under the topic, not just the topics nested beneath it: a topic opens to its
+ * **note-type groups** -- the Lessons, References, Problems and the rest -- and to its **child
+ * topics**, each itself a fold that opens the same way. So the way to a leaf note is the rail and
+ * not only a topic's own page: opening "Data structures" then "Hash maps" reaches "Two sum"
+ * without leaving the rail.
  *
- * What folds now is the **umbrella**: a root topic opens to the topics filed under it, rendered
- * as plain links and no deeper. The rail used to open each topic to its own note-type groups;
- * that detail moved to the topic's Term page and its entry-page card, because a jump list beside
- * an article reads better two levels of names deep than one level of names and one of contents.
- * A root nothing nests under is a plain row with no disclosure, the same leaf a childless item
- * has always been. See `sidebarTree` for how the forest is built, and `TopicCards` for the
- * landing's denser view of the same index.
+ * It renders the same `groups()` markup the entry-page card and the Term page do -- the shared
+ * body below a heading that keeps "one index, three views" one index -- with the single
+ * divergence that the rail drops the **Terms** group: those child topics are rendered as nested
+ * folds instead of as a flat list of links, because in the rail a child topic is something to
+ * open, not a leaf to follow. A topic with neither notes nor children -- a Term named but not
+ * yet written under -- is a plain row with no disclosure, the same leaf a childless item has
+ * always been. See `sidebarTree` for how the forest is built, and `TopicCards` for the landing's
+ * denser view of the same index.
  */
-export function TopicTree(roots: SidebarRoot[], from: FullSlug): ComponentChild {
+export function TopicTree(graph: LinkGraph, roots: SidebarRoot[], from: FullSlug): ComponentChild {
   return h(
     "nav",
     { class: "prepper-topics", "aria-label": "Topics" },
     h(
       "ul",
       { class: "prepper-topic-list" },
-      roots.map((root) =>
-        h(
-          "li",
-          { class: "prepper-topic", "data-topic": root.term.slug },
-          fold(
-            root.term.slug,
-            link(from, root.term, "prepper-topic-name"),
-            root.children.length > 0 ? subtopics(root, from) : null,
-          ),
-        ),
-      ),
+      roots.map((root) => topicItem(graph, root.term, root.children, from)),
     ),
   )
 }
 
 /**
- * The topics nested under one umbrella, as plain links.
+ * One topic in the rail: a fold over its note-type groups and its child topics.
  *
- * No fold and no note-type groups: the rail stops at two levels, so this is where the tree ends
- * and the reader either recognises the topic they want or opens its page. Each is `link()` by the
- * Term's own `title`, the same labelling every rail uses, and the one the reader is on is marked.
+ * Recursive by construction, but the forest `sidebarTree` hands it is only two levels deep -- a
+ * grandchild whose parent is itself nested is a leftover root there, not a child here -- so a
+ * child is rendered with no children of its own and the recursion bottoms out at once. What a
+ * child does carry is its own notes: this is where "Hash maps" opens to its Problems and its
+ * Lessons, one level below the umbrella it sits under.
+ *
+ * `data-fold` is the Term's own slug, the id the fold memory holds an item under; a topic
+ * appears once in the forest, so the id is unique per rendered fold and the nested folds are
+ * remembered independently of the umbrella over them.
  */
-function subtopics(root: SidebarRoot, from: FullSlug): ComponentChild {
+function topicItem(
+  graph: LinkGraph,
+  term: GraphNode,
+  children: GraphNode[],
+  from: FullSlug,
+): ComponentChild {
+  const topic = topicOf(graph, term.slug)
+  const leafGroups = topic ? railGroups(topic, from) : []
+  const childItems = children.map((child) => topicItem(graph, child, [], from))
   return h(
-    "ul",
-    { class: "prepper-topic-sublist" },
-    root.children.map((child) => h("li", null, link(from, child))),
+    "li",
+    { class: "prepper-topic", "data-topic": term.slug },
+    fold(term.slug, link(from, term, "prepper-topic-name"), topicBody(leafGroups, childItems)),
   )
+}
+
+/**
+ * A topic's fold body: its note-type groups, then its child topics, or nothing.
+ *
+ * Two lists rather than one, because they are two kinds of thing: the groups are leaves to
+ * follow and the sublist is topics to open further, and the stylesheet indents each under the
+ * name that revealed it. They are handed to `fold()` as siblings of the `<summary>` rather than
+ * wrapped in a box, so the browser's own "hide the non-summary children when shut" governs them
+ * directly -- a wrapper set to `display: contents` would be an author rule the closed-state UA
+ * rule could not beat, and the fold would leak open. Null when the topic holds neither, which is
+ * what turns the item into a disclosure-less leaf row up in `fold()`.
+ */
+function topicBody(leafGroups: ComponentChild[], childItems: ComponentChild[]): ComponentChild {
+  if (leafGroups.length === 0 && childItems.length === 0) return null
+  const parts: ComponentChild[] = []
+  if (leafGroups.length > 0) parts.push(h("ul", { class: "prepper-topic-groups" }, leafGroups))
+  if (childItems.length > 0)
+    parts.push(h("ul", { class: "prepper-topic-list prepper-topic-sublist" }, childItems))
+  return parts
+}
+
+/**
+ * A topic's note-type groups for the rail: the same `groups()` markup, with the Terms group
+ * dropped.
+ *
+ * The rail is the one view where a child topic is rendered as a fold to open rather than a link
+ * to follow, so the "Terms" group -- which is exactly the child topics `sidebarTree` nests as
+ * folds -- would be a second, flat copy of them under the same parent. Dropping it here loses no
+ * note: the group holds only Term nodes, and every one of them has its own line in the rail.
+ */
+function railGroups(topic: Topic, from: FullSlug): ComponentChild[] {
+  const nonTerm: Topic = { ...topic, groups: topic.groups.filter((group) => group.type !== "term") }
+  return groups(nonTerm, from)
 }
 
 /**
@@ -112,10 +155,11 @@ function subtopics(root: SidebarRoot, from: FullSlug): ComponentChild {
  *
  * Exported for `prepper/home`, which is the one placement that renders it. It is a second
  * *view*, not a second index: the topics come from the same `topicIndex(graphOf(allFiles))`
- * the rail is built from, each card's body is the same `filed()` the rail folds away and the
- * Term page prints, and the leaves are the same `link()` labelled by the same `title`. What
- * differs is the wrapper and nothing else, which is the only kind of divergence "one index,
- * three views" permits.
+ * the rail is built from, each card's body is the same `groups()` the rail folds behind a topic
+ * and the Term page prints, and the leaves are the same `link()` labelled by the same `title`.
+ * What differs is the wrapper -- and the card keeps the Terms group the rail drops, because on a
+ * landing a child topic is another card to scan, not a fold to open. That is the only kind of
+ * divergence "one index, three views" permits.
  *
  * ## Why the cards do not fold
  *
@@ -374,9 +418,14 @@ function CheatSheets(sheets: GraphNode[], from: FullSlug): ComponentChild {
  * scriptless phone is the app's name in the bar, which is a plain link to an entry page that
  * *is* the topic index rendered as content.
  */
-function Sidebar(roots: SidebarRoot[], sheets: GraphNode[], from: FullSlug): ComponentChild {
+function Sidebar(
+  graph: LinkGraph,
+  roots: SidebarRoot[],
+  sheets: GraphNode[],
+  from: FullSlug,
+): ComponentChild {
   return h("div", { class: "prepper-topic-rail" }, [
-    TopicTree(roots, from),
+    TopicTree(graph, roots, from),
     CheatSheets(sheets, from),
   ])
 }
@@ -439,7 +488,7 @@ const PrepperTopics: QuartzComponentConstructor<Options> = (opts) => {
     const graph = graphOf(allFiles)
 
     if (view === "sidebar") {
-      return Sidebar(sidebarTree(graph), cheatSheets(graph), slug)
+      return Sidebar(graph, sidebarTree(graph), cheatSheets(graph), slug)
     }
 
     // Terms only. A topic is a Term and nothing else, so an "everything about this topic"
@@ -572,24 +621,13 @@ const styles = `
 .prepper-topic-groups {
   margin: 0.1rem 0 0.5rem 1.4rem;
 }
-/* The topics under an umbrella: plain links, indented to line up under the name that opens them
-   (the same 1.4rem the note-type groups used before they left the rail), and set as full-width
-   rows like every other leaf so the pointer never has to hunt for the words. */
+/* The topics nested under an umbrella: each its own fold, indented to line up under the name
+   that opens them (the same 1.4rem the note-type groups take), and no deeper -- a child works
+   itself and opens to its own contents exactly as the umbrella does. */
 .prepper-topic-sublist {
   list-style: none;
   padding: 0;
   margin: 0.1rem 0 0.5rem 1.4rem;
-}
-.prepper-topics .prepper-topic-sublist > li > a {
-  display: block;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--md-sys-shape-corner-medium);
-  color: var(--md-sys-color-on-surface-variant);
-  background-color: transparent;
-}
-.prepper-topics .prepper-topic-sublist > li > a:hover {
-  background-color: var(--md-sys-color-surface-container-high);
-  color: var(--md-sys-color-on-surface);
 }
 /* Every leaf of the navigation, in both lists: a row of the same shape as the one above it,
    the whole width of the rail, so the pointer never has to find the words. This is scoped to

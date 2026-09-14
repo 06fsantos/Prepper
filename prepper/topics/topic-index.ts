@@ -223,8 +223,9 @@ export interface SidebarRoot {
  * - A **root** is a Term with no outgoing `about` edge to another Term -- it names no parent, so
  *   it is top-level. Umbrellas are roots; so is a topic nobody has filed under one yet.
  * - A root's **children** are the Terms filed under it: its incoming `about` edges whose source
- *   is itself a Term. Rendered as plain links, because the rail stops at two levels -- a topic's
- *   own note-type groups live on its Term page and its entry-page card, not here.
+ *   is itself a Term. The rail renders each child as a fold of its own, opening to that child's
+ *   note-type groups -- so the two levels of topics this returns are two levels of foldable
+ *   topics, and a leaf note is reached by opening a child, not only from its Term page.
  * - **Nothing disappears.** A Term that is neither a root nor a direct child of one -- the middle
  *   of an A→B→C chain, whose parent is itself nested -- is appended as a childless root, so every
  *   topic in the vault has a line in the rail. "Nothing is gated" is the invariant this keeps.

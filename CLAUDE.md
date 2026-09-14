@@ -342,11 +342,11 @@ who collapsed the rail never sees it flash.
 They share the data path and the markup below each heading -- one `topicIndex()`, one `groups()`
 -- and **diverge only in the wrapper**, because the rail and a landing are not the same job:
 
-| View       | Rendered by  | Where                   | Shape                                   |
-| ---------- | ------------ | ----------------------- | --------------------------------------- |
-| `sidebar`  | `TopicTree`  | the rail, every page    | a bare foldable name list               |
-| entry page | `TopicCards` | `prepper/home`'s body   | a card per topic, note types as columns |
-| term-index | `TermIndex`  | a Term's `.page-footer` | the one card for the page's own topic   |
+| View       | Rendered by  | Where                   | Shape                                       |
+| ---------- | ------------ | ----------------------- | ------------------------------------------- |
+| `sidebar`  | `TopicTree`  | the rail, every page    | nested folds, each opening to its notes     |
+| entry page | `TopicCards` | `prepper/home`'s body   | a card per topic, note types as columns     |
+| term-index | `TermIndex`  | a Term's `.page-footer` | the one card for the page's own topic       |
 
 The **Plans band** above the cards is not a fourth view of this index: it is a flat list keyed
 by type rather than by topic, the way the rail's Cheat sheets list is. See "Plans" below.
@@ -360,13 +360,20 @@ in it. The card rules are reached through the cards' own classes and never throu
 `prepper-generated-index`, which is the reading surface's contract for how wide the _column_ is
 and not a hook for what goes in it.
 
-Only the rail's view **folds**: a topic's note-type groups and the flat Cheat sheets list each
-sit behind a `<details>` whose `<summary>` is the row -- a chevron, and the topic's own name, still a link
-to its Term page. It is the same element the seal and a note's headings are, for the same
-reason, but with the **opposite default**: navigation arrives **open**, because a tree that
-arrived shut would make the reader open a topic to find out whether it holds anything. So what
-is stored is the exceptions -- `prepper-topic-folds`, the ids of the items that are shut, the
-second and last key in the app and the same category as the first.
+Only the rail's view **folds**, and it folds all the way down: every topic that holds anything is
+a `<details>` whose `<summary>` is the row -- a chevron, and the topic's own name, still a link to
+its Term page -- and it opens to that topic's **note-type groups** (the same `groups()` markup the
+card and the Term page render) and to its **child topics**, each a fold of the same kind. So a
+leaf note is reachable from the rail and not only from a topic's own page: opening "Data
+structures" then "Hash maps" reaches "Two sum" without leaving the rail. The one divergence from
+the card is that the rail drops the **Terms** group -- those child topics are the nested folds, so
+a flat list of them under the same parent would be a second copy. A topic with neither notes nor
+child topics is a plain row with no disclosure. The flat Cheat sheets list folds the same way,
+beside the tree. It is the same element the seal and a note's headings are, for the same reason,
+but with the **opposite default**: navigation arrives **open**, because a tree that arrived shut
+would make the reader open a topic to find out whether it holds anything. So what is stored is the
+exceptions -- `prepper-topic-folds`, the ids of the items that are shut, the second and last key
+in the app and the same category as the first.
 
 Two things in [`folds.js`](prepper/topics/folds.js) are load-bearing. It listens to the
 **click on the row, never to `toggle`**: `toggle` cannot say who moved the fold, and two things

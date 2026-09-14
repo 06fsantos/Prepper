@@ -22,8 +22,8 @@
  * classes are on a disclosure element. So the elements are read off real pages, and three
  * fixtures are built because between them they emit all three kinds -- `problem-sections` the
  * seal, `folded-headings` a note's own headings, and `topic-index` the rail's tree, whose
- * `prepper-topic-fold` is now the umbrella fold and the Cheat sheets list (a rail with neither
- * an umbrella nor a Cheat sheet folds nothing).
+ * `prepper-topic-fold` is every topic that holds anything -- the umbrella, the topics nested
+ * under it, and the flat Cheat sheets list.
  *
  * ## "Or to anything inside one", and the honest scope of it
  *

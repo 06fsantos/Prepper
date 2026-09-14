@@ -79,5 +79,5 @@ large fact tables. Name it, say OLAP, move on.
 **The reach-for-it signal:** a plan with a seek followed by a per-row lookup, or a filter on a
 column that is wrapped in a function.
 
-Full treatment: [[clustered-and-nonclustered-indexes]], then
-[[covering-indexes-and-included-columns]].
+Full treatment: [[what-an-index-is]] for the engine-neutral concept, then
+[[clustered-and-nonclustered-indexes]] and [[covering-indexes-and-included-columns]].

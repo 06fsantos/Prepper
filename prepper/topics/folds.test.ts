@@ -71,8 +71,9 @@ describe("collapsing an item of the topic tree", () => {
   test("a second item shuts alongside the first, and opening one takes it back out", async () => {
     const screen = await openPage(fixture, page)
 
-    // The two folds the rail now has: the one umbrella and the flat Cheat sheets list. The
-    // topics under the umbrella are plain links, not folds of their own.
+    // Two folds worked independently: the umbrella and the flat Cheat sheets list. Every topic
+    // that holds anything is a fold now -- the umbrella's children among them -- so each is
+    // remembered under its own id, and shutting one leaves the rest as they were.
     screen.click(row(fold(screen, "terms/data-structures")))
     screen.click(row(fold(screen, "cheat-sheets")))
     await settled()
