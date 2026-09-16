@@ -1,0 +1,92 @@
+# The curated company list the scanner scans. Committed config, not personal data
+# (platform-architecture ticket 07). The scanner does NOT discover companies — this
+# hand-authored list IS the target set. Filters are NOT here: they live on the
+# Candidate Profile (Preferences), because the match signal is the candidate.
+#
+# Schema (ticket 04 / scanner/CONTEXT.md):
+#   - slug:     stable lowercased id, never changes once a Company has Roles against it
+#   - name:     display name
+#   - careers:  one or more Sources, each { url, ats? }
+#       ats hint ∈ greenhouse | lever | ashby | workday | html — the applicant-tracking
+#       system the page is served by, which sizes the Anti-corruption layer. It is a
+#       curation-time HINT: filled where reasonably known, left blank where unknown.
+#   - tags:     optional free labels (used for notes/skew, not for filtering)
+#   - notes:    optional prose
+#
+# The `url`s and `ats` hints below are best-known at curation time and are NOT verified.
+# Ticket 08 (ATS-landscape research) confirms each URL, its ATS, and whether it is
+# server- or JS-rendered — the empirical facts ticket 09's ACL design consumes.
+#
+# Roster skew (ticket 07 decision — both tiers, tight ~10):
+#   Tier A — systematic finance / hedge funds (London): the CV's soft-industry target
+#            (the Marshall Wace hint, ticket 02).
+#   Tier B — C#/.NET-forward fintech / financial services (London): the primary-stack match.
+
+companies:
+  # ── Tier A: systematic finance / hedge funds (London) ──────────────────────
+  - slug: marshall-wace
+    name: Marshall Wace
+    careers:
+      - url: https://www.mwam.com/careers/
+    tags: [hedge-fund, systematic-finance, london]
+    notes: The CV's source-folder hint (ticket 02); leads the target set.
+
+  - slug: g-research
+    name: G-Research
+    careers:
+      - url: https://www.gresearch.com/careers/
+        ats: greenhouse
+    tags: [hedge-fund, systematic-finance, london]
+
+  - slug: man-group
+    name: Man Group
+    careers:
+      - url: https://www.man.com/careers
+        ats: workday
+    tags: [hedge-fund, systematic-finance, london]
+
+  - slug: qube-rt
+    name: Qube Research & Technologies
+    careers:
+      - url: https://www.qube-rt.com/careers
+    tags: [hedge-fund, systematic-finance, london]
+
+  - slug: xtx-markets
+    name: XTX Markets
+    careers:
+      - url: https://www.xtxmarkets.com/careers/
+    tags: [systematic-finance, market-maker, london]
+
+  - slug: citadel
+    name: Citadel
+    careers:
+      - url: https://www.citadel.com/careers/open-opportunities/
+        ats: greenhouse
+    tags: [hedge-fund, systematic-finance, london]
+
+  - slug: squarepoint
+    name: Squarepoint Capital
+    careers:
+      - url: https://www.squarepoint-capital.com/careers
+    tags: [hedge-fund, systematic-finance, london]
+
+  # ── Tier B: C#/.NET-forward fintech / financial services (London) ──────────
+  - slug: ig-group
+    name: IG Group
+    careers:
+      - url: https://careers.iggroup.com/
+        ats: workday
+    tags: [fintech, trading-platform, london, dotnet]
+
+  - slug: fnz
+    name: FNZ
+    careers:
+      - url: https://www.fnz.com/careers
+    tags: [fintech, wealth-platform, london, dotnet]
+
+  - slug: fidelity-international
+    name: Fidelity International
+    careers:
+      - url: https://careers.fidelityinternational.com/
+        ats: workday
+    tags: [financial-services, investments, london, dotnet]

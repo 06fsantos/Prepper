@@ -1,0 +1,14 @@
+<Project>
+  <!-- Shared settings for every project in the scanner solution. One place, so the
+       six contexts stay uniform and the polyglot repo's .NET lane has a single knob. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <!-- Assemblies and namespaces are Scanner.<ProjectName>, so the sealing rule is
+         legible in a stack trace and the architecture test reads real assembly names. -->
+    <RootNamespace>Scanner.$(MSBuildProjectName)</RootNamespace>
+    <AssemblyName>Scanner.$(MSBuildProjectName)</AssemblyName>
+  </PropertyGroup>
+</Project>

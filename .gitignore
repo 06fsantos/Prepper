@@ -15,3 +15,7 @@ quartz/cli/tui/dist/
 
 # Agent worktrees: checkouts of this repo, never content of it.
 .claude/worktrees/
+
+# Private CV data — read by the scanner from this path, never committed (no remote was
+# assumed when it landed here; there is one). See platform-architecture tickets 05/11.
+.scratch/platform-architecture/cv/

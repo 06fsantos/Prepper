@@ -4,6 +4,10 @@
 #
 # `npm run validate` is the project's **only hard gate**: the build and the dev server
 # report violations and carry on, and this is where an error in the vault stops a release.
+#
+# Two lanes, one CI (ADR 0006): the `check` job is the Library (Node/Quartz), the `scanner`
+# job is the .NET context. They are Separate Ways -- independent jobs, no shared step -- so a
+# scanner failure never blocks a Library release and vice versa.
 name: Prepper
 
 on:
@@ -40,3 +44,22 @@ jobs:
 
       - name: Build the site
         run: npm run build
+
+  scanner:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore scanner/Scanner.sln
+
+      - name: Build
+        run: dotnet build scanner/Scanner.sln --no-restore -c Release
+
+      - name: Test
+        run: dotnet test scanner/Scanner.sln --no-build -c Release
