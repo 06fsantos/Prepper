@@ -36,24 +36,49 @@ more careers **Sources**. Authored by hand in `companies.yaml`, not scraped or d
 _Avoid_: employer, org, target
 
 **Source**:
-One careers-page entry on a Company: a URL and an optional `ats` hint
-(`greenhouse` | `lever` | `ashby` | `workday` | `html`). The hint records, at curation
-time, whether the page is a known applicant-tracking system or bespoke HTML — which is
-what sizes the [[Anti-corruption layer]].
-_Avoid_: careers page, feed, endpoint
+One **fetchable endpoint** on a Company — not a careers page in the abstract but a single
+place roles are read from. A Company has one or more; a systematic-finance firm that splits
+roles across five job boards has five Sources. A Source carries a **Kind**
+(`Greenhouse` | `Workday` | `Html` | `Headless`) that selects the [[Role source]] which reads it
+and the **typed parameters** that Kind needs (a Greenhouse board token, a Workday tenant/host/site,
+an Html url) — so the old free-text `ats` hint is promoted to a discriminated shape known at
+curation time. `Headless` is the deferred Kind: a JS-rendered site (e.g. Qube-RT) with no adapter
+yet, recorded on the Company but skipped-with-reason by the [[Scan]]; the seam anticipates a future
+`HeadlessRoleSource` without building one.
+_Avoid_: careers page, feed, ats hint
 
 **Role**:
 A single open position, **normalized** — the clean internal shape the Anti-corruption
 layer emits, never the raw page. Carries title, location/remoteness, a description, a set
 of canonical [[Technology]] tags, seniority, a link, and a `SourceHash` + `FirstSeen`/
-`LastSeen` for dedup and change-detection. Identified by `(CompanyId, ExternalId ?? Url)`.
+`LastSeen` for dedup and change-detection. Identified by `(CompanyId, ExternalId ?? Url)`;
+its `SourceHash` is a hash of the **normalized content** (title, location, description,
+link, tags), the one change signal that works whatever the ATS. A Role is **never deleted**:
+whether it is still listed is *derived*, not stored — a Role whose `LastSeen` predates the
+latest **successful** [[Scrape run]] for its [[Source]] is closed, and a Source whose fetch
+failed closes nothing.
 _Avoid_: job, posting, listing, vacancy
 
 **Anti-corruption layer**:
 The translation shell at the scraping edge (a DDD ACL): messy per-site HTML or ATS
 payloads in, a normalized [[Role]] out, so upstream churn never reaches the scanner's own
-model. One of the two DDD moves ADR 0006 keeps.
-_Avoid_: scraper (the ACL is more than the fetch), adapter, parser
+model. One of the two DDD moves ADR 0006 keeps. It is **not one class** but three
+collaborating parts: the per-Source [[Role source]]s (fetch + field-mapping, one per
+[[Source]] Kind), one **normalizer** shared across all of them (change-detection,
+Technology tagging, missing-field handling — everything that is the same whatever the ATS),
+and one shared **good-citizen policy** (honest User-Agent, robots.txt, response cache, rate
+limit, and the hard line of no anti-bot evasion). A new company or ATS is a new Source row
+or a new Role source, never a change to the scanner's core.
+_Avoid_: scraper (the ACL is more than the fetch), parser
+
+**Role source**:
+The per-[[Source]] adapter inside the [[Anti-corruption layer]]: it fetches one Source of a
+given Kind and maps its raw payload to a candidate [[Role]], then hands off to the shared
+normalizer. One implementation per Kind (`Greenhouse`, `Workday`, `Html`), selected by the
+Source's Kind — so the adapters that read a published JSON API never inherit the fragility
+of one that parses bespoke HTML. The seam Job Scanning depends on; adding a Kind is adding a
+Role source.
+_Avoid_: scraper, connector, provider
 
 ### Candidate Profile
 

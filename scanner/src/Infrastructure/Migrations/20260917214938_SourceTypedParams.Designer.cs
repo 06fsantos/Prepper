@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Scanner.Infrastructure;
 
@@ -10,9 +11,11 @@ using Scanner.Infrastructure;
 namespace Scanner.Infrastructure.Migrations
 {
     [DbContext(typeof(ScannerDbContext))]
-    partial class ScannerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260917214938_SourceTypedParams")]
+    partial class SourceTypedParams
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.10");

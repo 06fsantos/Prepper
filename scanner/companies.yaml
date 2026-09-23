@@ -3,90 +3,127 @@
 # hand-authored list IS the target set. Filters are NOT here: they live on the
 # Candidate Profile (Preferences), because the match signal is the candidate.
 #
-# Schema (ticket 04 / scanner/CONTEXT.md):
+# Schema (scanner/CONTEXT.md, refined by tickets 08/09):
 #   - slug:     stable lowercased id, never changes once a Company has Roles against it
 #   - name:     display name
-#   - careers:  one or more Sources, each { url, ats? }
-#       ats hint ∈ greenhouse | lever | ashby | workday | html — the applicant-tracking
-#       system the page is served by, which sizes the Anti-corruption layer. It is a
-#       curation-time HINT: filled where reasonably known, left blank where unknown.
-#   - tags:     optional free labels (used for notes/skew, not for filtering)
+#   - tags:     optional free labels — the industry signal Matching reads, plus notes/skew
 #   - notes:    optional prose
+#   - sources:  one or more fetchable endpoints, each a { kind, url, + typed params }.
+#       kind ∈ greenhouse | workday | html | headless — selects the Role source adapter
+#       (headless has no adapter yet → recorded but skipped-with-reason).
+#         greenhouse: boardToken            (one Source per board)
+#         workday:    tenant, workdayHost, site
+#         html:       url is the fetch target
+#         headless:   url is recorded; no adapter, so it is skipped
 #
-# The `url`s and `ats` hints below are best-known at curation time and are NOT verified.
-# Ticket 08 (ATS-landscape research) confirms each URL, its ATS, and whether it is
-# server- or JS-rendered — the empirical facts ticket 09's ACL design consumes.
+# The coordinates below are the EMPIRICAL facts confirmed by ticket 08's ATS-landscape
+# research (careers pages followed to where they serve jobs, JSON endpoints hit live) and
+# re-verified while building ticket 12. The pre-08 `careers`/`ats` hints they replace were
+# wrong in three places (Man Group, G-Research, Citadel) and blank in five.
 #
-# Roster skew (ticket 07 decision — both tiers, tight ~10):
-#   Tier A — systematic finance / hedge funds (London): the CV's soft-industry target
-#            (the Marshall Wace hint, ticket 02).
+# Roster skew (ticket 07 — both tiers, tight ~10):
+#   Tier A — systematic finance / hedge funds (London): the CV's soft-industry target.
 #   Tier B — C#/.NET-forward fintech / financial services (London): the primary-stack match.
+# Citadel is DROPPED from the roster: its careers site sits behind Cloudflare bot protection
+# (403 to non-browser clients), and the ACL builds no anti-bot evasion (ticket 08/09 hard line).
 
 companies:
   # ── Tier A: systematic finance / hedge funds (London) ──────────────────────
   - slug: marshall-wace
     name: Marshall Wace
-    careers:
-      - url: https://www.mwam.com/careers/
     tags: [hedge-fund, systematic-finance, london]
-    notes: The CV's source-folder hint (ticket 02); leads the target set.
+    notes: >-
+      The CV's source-folder hint (ticket 02); leads the target set. Roles are split
+      across five Greenhouse boards (the main board is often empty).
+    sources:
+      - kind: greenhouse
+        url: https://job-boards.greenhouse.io/marshallwace
+        boardToken: marshallwace
+      - kind: greenhouse
+        url: https://job-boards.greenhouse.io/mw-tech-grad
+        boardToken: mw-tech-grad
+      - kind: greenhouse
+        url: https://job-boards.greenhouse.io/mwinternshipprogram
+        boardToken: mwinternshipprogram
+      - kind: greenhouse
+        url: https://job-boards.greenhouse.io/mwnoninvestmentroles
+        boardToken: mwnoninvestmentroles
+      - kind: greenhouse
+        url: https://job-boards.greenhouse.io/mwam-imperial-placements
+        boardToken: mwam-imperial-placements
 
   - slug: g-research
     name: G-Research
-    careers:
-      - url: https://www.gresearch.com/careers/
-        ats: greenhouse
     tags: [hedge-fund, systematic-finance, london]
+    notes: Bespoke server-rendered HTML; vacancies are plain <a href="/vacancies/{slug}/"> links.
+    sources:
+      - kind: html
+        url: https://www.gresearch.com/vacancies/
 
   - slug: man-group
     name: Man Group
-    careers:
-      - url: https://www.man.com/careers
-        ats: workday
     tags: [hedge-fund, systematic-finance, london]
+    notes: Greenhouse EU board (the pre-08 `workday` hint was wrong).
+    sources:
+      - kind: greenhouse
+        url: https://job-boards.eu.greenhouse.io/mangroup
+        boardToken: mangroup
 
   - slug: qube-rt
     name: Qube Research & Technologies
-    careers:
-      - url: https://www.qube-rt.com/careers
     tags: [hedge-fund, systematic-finance, london]
+    notes: JS-rendered custom careers page; no adapter yet, so the scan records it skipped.
+    sources:
+      - kind: headless
+        url: https://www.qube-rt.com/careers
 
   - slug: xtx-markets
     name: XTX Markets
-    careers:
-      - url: https://www.xtxmarkets.com/careers/
     tags: [systematic-finance, market-maker, london]
-
-  - slug: citadel
-    name: Citadel
-    careers:
-      - url: https://www.citadel.com/careers/open-opportunities/
-        ats: greenhouse
-    tags: [hedge-fund, systematic-finance, london]
+    sources:
+      - kind: greenhouse
+        url: https://job-boards.greenhouse.io/xtxmarketstechnologies
+        boardToken: xtxmarketstechnologies
 
   - slug: squarepoint
     name: Squarepoint Capital
-    careers:
-      - url: https://www.squarepoint-capital.com/careers
     tags: [hedge-fund, systematic-finance, london]
+    sources:
+      - kind: greenhouse
+        url: https://job-boards.greenhouse.io/squarepointcapital
+        boardToken: squarepointcapital
 
   # ── Tier B: C#/.NET-forward fintech / financial services (London) ──────────
   - slug: ig-group
     name: IG Group
-    careers:
-      - url: https://careers.iggroup.com/
-        ats: workday
     tags: [fintech, trading-platform, london, dotnet]
+    notes: Workday SPA backed by the public CXS JSON endpoint (careers.iggroup.com does not resolve).
+    sources:
+      - kind: workday
+        url: https://ig.wd103.myworkdayjobs.com/EXT_IG
+        tenant: ig
+        workdayHost: wd103
+        site: EXT_IG
 
   - slug: fnz
     name: FNZ
-    careers:
-      - url: https://www.fnz.com/careers
     tags: [fintech, wealth-platform, london, dotnet]
+    sources:
+      - kind: workday
+        url: https://fnz.wd3.myworkdayjobs.com/fnz_careers
+        tenant: fnz
+        workdayHost: wd3
+        site: fnz_careers
 
   - slug: fidelity-international
     name: Fidelity International
-    careers:
-      - url: https://careers.fidelityinternational.com/
-        ats: workday
     tags: [financial-services, investments, london, dotnet]
+    notes: >-
+      Workday tenant `fil`, site `001` (confirmed live via the careers gateway,
+      2026-09-17). Distinct from fmr.wd1 (the separate US company, Fidelity Investments).
+    sources:
+      - kind: workday
+        url: https://fil.wd3.myworkdayjobs.com/en-US/001
+        tenant: fil
+        workdayHost: wd3
+        site: "001"

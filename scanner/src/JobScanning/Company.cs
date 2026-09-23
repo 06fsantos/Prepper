@@ -17,29 +17,6 @@ public class Company
     /// <summary>Free-form curation tags (e.g. <c>hedge-fund</c>, <c>fintech</c>).</summary>
     public List<string> Tags { get; set; } = new();
 
-    /// <summary>One or more careers-page entries. Owned value objects, not entities.</summary>
+    /// <summary>One or more careers <see cref="Source"/>s. Owned value objects, not entities.</summary>
     public ICollection<Source> Sources { get; set; } = new List<Source>();
-}
-
-/// <summary>
-/// One careers-page entry on a <see cref="Company"/>: a URL and an optional <see cref="Ats"/>
-/// hint recorded at curation time — which is what sizes the Anti-corruption layer.
-/// </summary>
-public class Source
-{
-    public required string Url { get; set; }
-
-    /// <summary>The known applicant-tracking system, or <c>null</c>/<see cref="AtsKind.Html"/>
-    /// for bespoke HTML.</summary>
-    public AtsKind? Ats { get; set; }
-}
-
-/// <summary>The applicant-tracking systems the ACL knows how to read, plus bespoke HTML.</summary>
-public enum AtsKind
-{
-    Html = 0,
-    Greenhouse = 1,
-    Lever = 2,
-    Ashby = 3,
-    Workday = 4,
 }
