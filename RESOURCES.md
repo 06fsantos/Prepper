@@ -51,6 +51,29 @@ primary the workspace's lessons were written against.
   sharded-dependency pitfall.
 - [Azure Architecture Center: Bulkhead pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/bulkhead)
   Use for: isolating resource pools per dependency so one slow call cannot starve the rest.
+- [Azure Service Bus: Queues, topics, and subscriptions](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-queues-topics-subscriptions)
+  Primary source for the Service Bus building blocks. Use for: queue (FIFO, competing consumers) vs
+  topic/subscription (pub/sub, filters), and receive-and-delete (at-most-once) vs peek-lock (at-least-once).
+- [Azure Service Bus: Compare messaging services](https://learn.microsoft.com/en-us/azure/service-bus-messaging/compare-messaging-services)
+  Use for: the Service Bus (messages) vs Event Hubs (event streams) vs Event Grid (discrete events)
+  line, and the events-vs-messages distinction; the feature table (ordering, dedup, dead-lettering, replay).
+- [Azure Architecture Center: Transactional Outbox](https://learn.microsoft.com/en-us/azure/architecture/databases/guide/transactional-out-box-cosmos)
+  Use for: the dual-write problem and the outbox pattern — committing the event in the same transaction
+  as the state change and relaying it, plus Service Bus duplicate detection on `MessageId`.
+- [Azure Architecture Center: Saga pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/saga)
+  Use for: distributed consistency without 2PC — local transactions, compensating transactions, and the
+  choreography vs orchestration fork; the command-vs-event definition.
+- [Azure Architecture Center: Event Sourcing pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/event-sourcing)
+  Primary source for event sourcing. Use for: append-only event store as source of truth, rehydration,
+  materialized views, snapshots, and the benefits/issues lists (audit trail, eventual consistency, no
+  ad-hoc querying, event versioning, idempotent at-least-once handlers).
+- [Azure Architecture Center: CQRS pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cqrs)
+  Use for: the command/query read-write split, single-store vs separate-store CQRS, syncing separate
+  stores via the outbox, and how event sourcing pairs with CQRS (event store = write model, projections
+  = read model); the when-to-use / when-not lists.
+- [Martin Fowler: Event Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html)
+  The canonical definition ("capture all changes to an application state as a sequence of events").
+  Use for: the fundamental idea, temporal queries, and the external-systems-on-replay caution.
 - [RFC 7231 §4.2 — Safe and Idempotent Methods](https://www.rfc-editor.org/rfc/rfc7231#section-4.2)
   The definition everything else defers to. Use for: which HTTP methods are safe to retry, and
   why "unsafe" is a specification term rather than a judgement call.
@@ -349,6 +372,117 @@ below rather than to interview-prep folklore. See the research note
   for: the push half of short-poll / long-poll / SSE / WebSocket, and why SSE is one-way over HTTP
   while a WebSocket switches transports. Polling itself is just [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110)
   request/response; the pull-vs-push framing is general-industry (**secondary**), the two specs are primary.
+
+### Modernizing a monolith
+
+The migration story behind "how would you break up / modernize this monolith?" — a distinct
+concern from the target patterns above, and the framing an "assist with modernizing monolith
+applications while delivering business value" brief asks for.
+
+- [Martin Fowler: StranglerFigApplication](https://martinfowler.com/bliki/StranglerFigApplication.html) and [MonolithFirst](https://martinfowler.com/bliki/MonolithFirst.html)
+  First-party for the **strangler fig** metaphor (grow the new system around the old, route traffic
+  incrementally, let the monolith shrink) and the **start-with-a-monolith** argument (you don't know
+  the right service boundaries until the domain teaches them). Use for: why a big-bang rewrite fails
+  and why a modular monolith can be the destination.
+- [Microsoft: Strangler Fig pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/strangler-fig) and [Anti-corruption Layer pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/anti-corruption-layer)
+  First-party for the **routing-facade mechanism** (intercept requests, route to legacy or new) and
+  the **ACL** that isolates the two models during coexistence. Use for: the concrete machinery of an
+  incremental migration and the pattern pairing.
+- Sam Newman, _Monolith to Microservices_ (O'Reilly)
+  The decomposition playbook: extracting along **bounded contexts**, sequencing by ease/value, and
+  the **database-splitting** patterns (giving each service its own data). Secondary as a book (no
+  free canonical URL), primary for the decomposition-and-data guidance. Use for: where to cut and how
+  to decouple the shared database.
+
+### Authentication and authorization
+
+OAuth 2.0 / OIDC / JWT — the token model behind "how do the services authenticate?" in a
+microservices design round.
+
+- [RFC 6749 — The OAuth 2.0 Authorization Framework](https://datatracker.ietf.org/doc/html/rfc6749)
+  First-party for the **authorization** half: the four roles (resource owner, client,
+  authorization server, resource server) and the grant types, including client-credentials
+  (§4.4) for service-to-service. Use for: the vocabulary and the "OAuth is authorization, not
+  authentication" line. Pair with [RFC 7636 — PKCE](https://datatracker.ietf.org/doc/html/rfc7636)
+  for the `code_verifier`/`code_challenge` binding that hardens the authorization-code flow.
+- [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html)
+  First-party for the **authentication** layer OAuth lacks: the **ID token** and what it means
+  to prove *who* logged in on top of OAuth. Use for: the OAuth-vs-OIDC distinction and why an
+  access token is not an identity statement.
+- [RFC 7519 — JSON Web Token (JWT)](https://datatracker.ietf.org/doc/html/rfc7519)
+  First-party for the token itself: `header.payload.signature`, the registered claims
+  (`iss`/`aud`/`exp`/`nbf`), and the fact that the payload is **encoded, not encrypted**. Use for:
+  validation rules and the access-vs-refresh-vs-ID distinction. Signing/keys live in the JOSE
+  family ([RFC 7515 JWS](https://datatracker.ietf.org/doc/html/rfc7515),
+  [RFC 7517 JWKS](https://datatracker.ietf.org/doc/html/rfc7517)).
+- [Microsoft identity platform documentation](https://learn.microsoft.com/en-us/entra/identity-platform/)
+  First-party for the **Azure-concrete** layer: Entra ID as the issuer, the
+  [auth-code](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow)
+  and [client-credentials](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow)
+  flows, [access](https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens) /
+  [ID](https://learn.microsoft.com/en-us/entra/identity-platform/id-tokens) tokens,
+  [scopes and permissions](https://learn.microsoft.com/en-us/entra/identity-platform/scopes-oidc),
+  and the on-behalf-of flow for propagating a user's identity down a call chain. Use for: what a
+  senior narrates when the whiteboard says "Azure".
+
+### Applied AI in insurance / reinsurance
+
+Where AI actually fits a document-and-judgment domain, and the governance a $bn-payout system
+forces. Lead with the reinsurance-specific papers; treat vendor blogs as directional.
+
+- [*Prudential Reliability of LLMs in Reinsurance* — arXiv 2511.08082](https://arxiv.org/html/2511.08082v1)
+  The single best source: a reinsurance-specific benchmark (RAIRAB) with the numbers that turn
+  hand-waving into engineering — zero-shot ~0.63 grounding / 21.4% hallucination vs RAG + logging +
+  human-in-the-loop at 0.91 / 12.8% — plus the "governance not scale" thesis and the SR 11-7 /
+  Solvency II framing. Use for: the eval, hallucination and governance tradeoffs.
+- [ClauseLens — arXiv 2510.08429](https://arxiv.org/pdf/2510.08429)
+  Constrained, interpretable ML pricing: clause-grounding plus a worst-case-tail-loss (CVaR)
+  constraint so a learned pricer stays auditable under Solvency II / the EU AI Act. Use for: the
+  "constrained pricing is the credible moonshot, not autonomous pricing" line.
+- [LMA — 2026 AI adoption survey](https://lmalloyds.com/ai-adoption-more-than-doubles-across-the-lloyds-market-in-12-months-with-93-of-survey-respondents-building-governance-frameworks/)
+  Market-wide adoption and governance figures across the Lloyd's market. Use for: calibrating the
+  "adoption doubled but stays in efficiency, not decisions" opener.
+- Cat-modelling frontier — [Insurance Journal](https://www.insurancejournal.com/news/national/2025/03/26/817293.htm)
+  and [Moody's RMS](https://www.moodys.com/web/en/us/insights/insurance/catastrophe-modeling-for-a-resilient-future-powered-by-ai.html)
+  for how Verisk / Moody's use generative AI on extreme events and post-event imagery. Use for: the
+  moonshot lane, and the "plausible but physics-violating" hallucination risk that feeds pricing.
+
+### Reinsurance domain
+
+The business a reinsurance-backend engineer plugs into: the contract vocabulary, the placement
+lifecycle, cat modelling, and cyber as the data-heavy line. Fluency-and-curiosity depth, not
+actuarial depth — distilled into [[reinsurance-domain-primer]].
+
+- [Triple-I — Background on: Reinsurance](https://www.iii.org/article/background-on-reinsurance)
+  First stop for the vocabulary: cede/cedent, the capital & capacity rationale, treaty vs
+  facultative, proportional vs excess of loss. Use for: getting the two axes right.
+- [Munich Re — Types of Reinsurance](https://www.munichre.com/content/dam/munichre/contentlounge/website-pieces/documents/Types-of-Reinsurance.pdf/_jcr_content/renditions/original./Types-of-Reinsurance.pdf)
+  (LIMA programme) with companion notes on
+  [non-proportional](https://www.munichre.com/content/dam/munichre/contentlounge/website-pieces/documents/NL-Non-Proportional_30-03-2023.pdf/_jcr_content/renditions/original./NL-Non-Proportional_30-03-2023.pdf)
+  and [proportional treaties](https://www.munichre.com/content/dam/munichre/contentlounge/website-pieces/documents/Proportional-Treaties-29-03-2023.pdf/_jcr_content/renditions/original./Proportional-Treaties-29-03-2023.pdf).
+  First-party structure of quota share, surplus, and XoL layers. Use for: what a layer looks
+  like ("limit xs retention").
+- [ACORD — Global Reinsurance & Large Commercial Data Standards](https://www.acord.org/standards-architecture/acord-data-standards/Global_Reinsurance_Data_Standards)
+  The message standard the placement lifecycle actually runs on (Placing / Accounting / Claims),
+  plus the [Ruschlikon ePlacing guide](https://www.acord.org/docs/default-source/ruschlikon-documents-newsletters/ruschlikon-member-resources/best-practice-guide-(eplacing).pdf).
+  Use for: why a system here is largely moving structured messages through stages.
+- [Moody's RMS — Catastrophe Risk Modeling](https://www.rms.com/catastrophe-modeling) and
+  [CAS — Homer & Li, "Notes on Using Property Catastrophe Model Results"](https://www.casact.org/sites/default/files/2021-02/2017_most-practical-paper_homer-li.pdf)
+  The vendor cat-model concept — event catalog / hazard / vulnerability / financial — and the
+  EP-curve → PML / AAL outputs an engineer passes around. Use for: how cat layers get priced.
+- [CAS — David R. Clark, "Basics of Reinsurance Pricing"](https://www.casact.org/sites/default/files/old/studynotes_clark_2014.pdf)
+  Experience vs exposure rating, burning cost, working layers, rate on line, reinstatements.
+  Use for: the actuarial touchpoints a Fellow-actuary COO will recognise.
+- [Swiss Re — Cyber reinsurance in the "new normal"](https://www.swissre.com/reinsurance/insights/cyber-reinsurance-in-the-new-normal.html)
+  and [Guy Carpenter — Measuring Cyber Aggregation Risk](https://www.guycarp.com/content/dam/guycarp/en/documents/dynamic-content/Measuring%20Cyber%20Aggregation%20Risk.pdf).
+  Why cyber accumulation is through shared technology rather than geography, and why it's a data
+  problem. Use for: the emerging-line answer.
+- [Arch Reinsurance — offering pages](https://reinsurance.archgroup.com/) —
+  [property](https://reinsurance.archgroup.com/offering/property-treaty),
+  [casualty](https://reinsurance.archgroup.com/offering/casualty-treaty/),
+  [marine](https://reinsurance.archgroup.com/offering/marine-and-offshore-energy/).
+  Arch's own named lines. Use for: placing Property Cat / Property XoL / Professional Liability /
+  Marine Treaties onto the two axes before the interview.
 
 ## Wisdom (Communities)
 

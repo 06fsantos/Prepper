@@ -1,7 +1,6 @@
 ---
 name: author
 description: Author a Lesson, Term, Cheat sheet, Reference, or Plan into the Prepper vault as Markdown.
-disable-model-invocation: true
 argument-hint: "[lesson|term|cheat-sheet|reference|plan] <topic, idea, or research note>"
 ---
 

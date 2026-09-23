@@ -150,6 +150,84 @@ guarantee you give up, not the box. [[message-queues|Full treatment]]; Kafka and
   assume infinite buffer. Standing costs: a broker cluster to run (a new SPOF if you let it) and
   eventual consistency downstream.
 
+**Event-driven integration: async SOA is queue theory plus four patterns you must name.** Once
+several services share a bus, the design turns on integration patterns, not the broker.
+[[azure-service-bus-and-event-driven-soa|Full treatment]] (Azure-concrete); Microsoft Learn owns the words.
+
+- **Broker vs log (the service pick).** A *broker* (Azure **Service Bus**, RabbitMQ) carries
+  high-value **messages** with a publisher↔consumer contract and forgets each on completion —
+  order processing, workflows. A *log* (**Event Hubs**, Kafka) is a retained, partitioned **event
+  stream** you can **replay** — telemetry, analytics. Pick by whether anyone re-reads history. Inside a
+  broker: **queue** = competing-consumer point-to-point; **topic/subscription** = filtered pub/sub fan-out.
+- **At-least-once is the floor, made concrete.** Peek-lock delivery = lock→complete with a **redelivery
+  window** on a crash between doing the work and acking → at-least-once. Close it with **dedup on a
+  stable message id** + an [[idempotency-and-safe-retries|idempotent]] consumer (the "effectively once"
+  of [[message-queues]]). A **dead-letter queue** drains poison messages; **sessions / partition keys**
+  give per-entity FIFO without one global queue.
+- **The outbox pattern — the load-bearing one.** The **dual-write problem**: you can't atomically
+  write a DB *and* publish to a broker, so a crash between them loses the event (or publishes one whose
+  row never committed). Fix: write the event to an **outbox** row in the [[transactions-and-acid|same
+  transaction]] as the state change; a relay reads the outbox and publishes (at-least-once → dedup +
+  idempotent consumer absorb the duplicate). Reordering the two writes never makes them atomic.
+- **Saga for cross-service consistency.** No 2PC across microservices — model a business transaction as
+  a sequence of **local transactions**, each committing in one service and emitting an event/command;
+  failure runs **compensating transactions** (no cross-service rollback). *Choreography* (services react
+  to events, no controller — simple, but cyclic-dependency risk) vs *orchestration* (a central
+  orchestrator — complex workflows, clear, but a SPOF). **Command** = *do this* (addressed, coupling);
+  **event** = *this happened* (fan-out, decoupled) — prefer events.
+- **The trade vs synchronous REST:** buys temporal decoupling, load leveling, and
+  [[bulkheads-and-blast-radius|failure isolation]] (a dead downstream is a growing queue, not a blocked
+  call chain); costs **eventual consistency**, a broker to run as a new SPOF, and the dual-write/ordering/
+  duplicate problems a REST call never has. Name both sides.
+
+**Event sourcing + CQRS: store the changes, not the state — and split reads from writes.** Two
+separate patterns taught as one; a per-sub-domain choice, never a top-level architecture.
+[[event-sourcing-and-cqrs|Full treatment]]; Microsoft Learn and Fowler own the words.
+
+- **Event sourcing.** Persist an **append-only, immutable stream of events** per entity as the
+  source of truth; derive current state by **replaying** the stream (*rehydration*). **Materialized
+  views** (projections) serve queries; **snapshots** shortcut long replays (an optimization, not a
+  new source of truth). Buys an **audit trail** + contention-free append-only writes; costs ad-hoc
+  querying and easy edits.
+- **CQRS.** Separate the **write model** (*commands* = business intent + validation) from the
+  **read model** (*queries* = DTOs, no domain logic). One store = clarity, no consistency cost;
+  **separate stores** = independent read/write scaling but now a
+  [[azure-service-bus-and-event-driven-soa#The dual-write problem, and why the outbox pattern exists|dual-write]]
+  synced via **outbox + [[idempotency-and-safe-retries|idempotent]] consumer**.
+- **They pair** because the event store is a natural write model and projections a natural read
+  model — so you can **replay history to rebuild any view** (or a new one). Distinct, though: CQRS
+  needs no events, event sourcing needs no CQRS.
+- **The bill:** [[consistency-models|eventual consistency]] on the read side ([[pacelc|PACELC]]
+  else-latency), **no SQL over events**, immutable history (correct with a **compensating event**,
+  evolve schema with **upcasters**), and **idempotent** handlers because replay is at-least-once —
+  a replay that isn't a no-op fires side effects twice.
+- **Reach for it** where the history *is* the requirement — a payment ledger, order pipeline, or a
+  reinsurance treaty book; **walk away** for plain CRUD, prototypes, or views that must be
+  real-time consistent. Scope it to the sub-domain, keep [[transactions-and-acid|CRUD]] elsewhere.
+
+**Modernizing a monolith: a risk-management problem — strangle, don't rewrite.** The "go
+microservices" prompt is really a *migration* prompt: change the shape while the business keeps
+running. Lead with the risk you're managing. [[monolith-to-microservices-modernization|Full
+treatment]]; Fowler and Sam Newman own the words.
+
+- **No big-bang rewrite.** The monolith is a *moving target* — the business keeps changing it, so a
+  rewrite ships **zero value until one risky flag-day cutover** and can't be validated cheaply first.
+- **Strangler fig** = grow the new system around the old. A **routing facade** (proxy / gateway) in
+  front of the monolith sends each capability's traffic to a new service as it's ready; extract one
+  capability, flip the router, verify, delete the dead path, repeat. Every step **small, shippable,
+  reversible** (route back to the monolith, which is still there) — and the router is where you
+  **measure** old vs new.
+- **Cut along [[distributed-systems|bounded contexts]]** (business capability, not technical layers).
+  The real coupling is the **shared database** — each service must own its data (hardest, riskiest
+  part); an **anti-corruption layer** translates between the two models while they coexist so the
+  legacy model doesn't leak. Sequence by **business value** — move what's changing/blocking first.
+- **The tax, and the exit.** Every split turns a method call into a network hop → the whole
+  [[the-eight-fallacies-of-distributed-computing|eight fallacies]] + lost strong consistency (sagas +
+  [[idempotency-and-safe-retries|idempotent]] handlers instead of a join). So **don't split what
+  doesn't need it**: a **modular monolith** (clean module boundaries, one deployable) is a valid
+  destination. Fowler's **MonolithFirst** — you don't know the boundaries until the domain teaches
+  them. Independent deployability is the prize; distribution is the price, paid only where earned.
+
 **API design: the contract shape is a choice with a cost — four decisions, not "expose a REST API."**
 Four forks, each defended by its axis. Lead with what you optimised. [[api-design|Full treatment]];
 Fielding, gRPC, GraphQL, Stripe and AIP own the words.
