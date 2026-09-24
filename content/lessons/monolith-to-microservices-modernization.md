@@ -88,7 +88,8 @@ You cannot strangle a capability you cannot cut cleanly out of the monolith, so 
 axis is **business capability**. The tool for finding those cuts is domain-driven design's
 **bounded context**: a boundary inside which a model and its language are consistent, and across
 which they change meaning. `Customer` in billing is not `Customer` in shipping; those are two
-contexts, and the seam between them is a candidate service boundary. Sam Newman's guidance in
+contexts, and the seam between them is a candidate service boundary (see [[bounded-context]] for the
+canonical treatment). Sam Newman's guidance in
 *Monolith to Microservices* is to extract along these seams, starting with the contexts that are
 **easiest to separate** or that deliver the most value soonest — not the ones deepest in the
 tangle.

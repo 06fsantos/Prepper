@@ -217,7 +217,7 @@ treatment]]; Fowler and Sam Newman own the words.
   capability, flip the router, verify, delete the dead path, repeat. Every step **small, shippable,
   reversible** (route back to the monolith, which is still there) — and the router is where you
   **measure** old vs new.
-- **Cut along [[distributed-systems|bounded contexts]]** (business capability, not technical layers).
+- **Cut along [[bounded-context|bounded contexts]]** (business capability, not technical layers).
   The real coupling is the **shared database** — each service must own its data (hardest, riskiest
   part); an **anti-corruption layer** translates between the two models while they coexist so the
   legacy model doesn't leak. Sequence by **business value** — move what's changing/blocking first.
