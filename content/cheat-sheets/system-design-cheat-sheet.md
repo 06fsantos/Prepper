@@ -205,6 +205,52 @@ separate patterns taught as one; a per-sub-domain choice, never a top-level arch
   reinsurance treaty book; **walk away** for plain CRUD, prototypes, or views that must be
   real-time consistent. Scope it to the sub-domain, keep [[transactions-and-acid|CRUD]] elsewhere.
 
+**Microservices: the defining pair, and database-per-service is the load-bearing one.** A microservice
+**deploys independently** and **owns its own data store** — miss either and you have a *distributed
+monolith* (a distributed system's costs, none of its benefits). It typically also **scales
+independently** and is run by **one team** (Conway's-law alignment — an organizational consequence, not
+a definitional test). [[microservices|Full treatment]]; Sam Newman owns the words.
+
+- **Database per service** makes data-ownership real: no service touches another's data except through
+  its **API** — not a shared DB with a table each. Share a database and one schema change breaks the
+  neighbour, so the independent-deploy prize is gone. The data boundary *is* the service boundary.
+- **The bill it creates, in the same breath:** no cross-service **join** (call the service, or keep a
+  fresh [[event-sourcing-and-cqrs|read-model copy]] over a [[message-queues|bus]]) and no distributed
+  **[[transactions-and-acid|transaction]]** (no 2PC across services). A multi-service change becomes a
+  **saga** of local transactions + compensations, with the **outbox** to publish atomically — both in
+  [[azure-service-bus-and-event-driven-soa|event-driven integration]]. "Own database" ⇒ "eventual
+  consistency + sagas"; say both together.
+- **Boundary = one [[bounded-context|bounded context]] to start** — **Newman's** bridge, not Evans,
+  **not one-to-one**: one context may span several services, a service never two contexts. Split finer
+  only under scale / deploy-cadence / team pressure; never by default.
+- **The prize is independent deployability; distribution is the price** — paid in the
+  [[the-eight-fallacies-of-distributed-computing|network tax]], lost transactions, and an
+  [[the-operational-surface-of-a-service-split|operational surface]] a monolith never had. Split only
+  where the prize beats the price.
+
+**The operational surface: infra a split forces you to run.** Services must **find, route to, and be
+governed** across the network — the tax the fallacies predict. [[the-operational-surface-of-a-service-split|Full
+treatment]].
+
+- **Service discovery** answers *where is the callee* when instances move. A **registry** of healthy
+  instances kept fresh by **health checks** (a stale entry routes into a black hole). **Client-side**
+  (caller reads registry and [[load-balancing|balances]] itself) vs **server-side** (a router/LB does
+  the lookup — one more hop, dumb client).
+- **API gateway** = single edge entry point (north-south). Does **routing**, **TLS + [[oauth-oidc-and-jwt|auth]]
+  termination** (validate the token *once*, not per service), [[rate-limiting|throttling]] +
+  [[load-balancing|LB]], and **response aggregation** — so services don't each re-implement them. Cost:
+  a **bottleneck / SPOF** by construction (scale + make redundant); put business logic in it and you've
+  rebuilt a monolith at the edge — keep it thin.
+- **Service mesh** governs service-to-service (east-west) via a **sidecar** proxy per instance +
+  control plane: **mTLS** everywhere, and retries/timeouts/circuit-breaking as **policy in infra**
+  (what [[retry-versus-circuit-breaker|retry vs breaker]] / [[total-versus-per-attempt-timeouts|timeouts]]
+  / [[bulkheads-and-blast-radius|bulkheads]] do in code), plus traffic shifting. **Often not worth it
+  for a small system** — a mesh is itself a distributed system; earns it at many-services / many-languages
+  / hard-mTLS scale.
+- **The ops tax:** you now run discovery, an edge tier, maybe a mesh, **aggregated logging + distributed
+  tracing + [[metrics-logs-and-the-golden-signals|golden-signal metrics]]** (one log/stack-trace became
+  N), and **per-service pipelines + orchestration**. A modular monolith pays none of it.
+
 **Modernizing a monolith: a risk-management problem — strangle, don't rewrite.** The "go
 microservices" prompt is really a *migration* prompt: change the shape while the business keeps
 running. Lead with the risk you're managing. [[monolith-to-microservices-modernization|Full

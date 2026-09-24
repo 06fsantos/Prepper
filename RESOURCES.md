@@ -394,6 +394,23 @@ applications while delivering business value" brief asks for.
   free canonical URL), primary for the decomposition-and-data guidance. Use for: where to cut and how
   to decouple the shared database.
 
+### Microservices: the operational surface
+
+The cross-cutting infrastructure a service split forces you to run — discovery, the edge gateway,
+the mesh — behind "what do you now operate that a monolith didn't?"
+
+- Sam Newman, _Building Microservices_ (2nd ed., O'Reilly, 2021)
+  Secondary as a book (no free canonical URL), primary for the operational surface: chapters on
+  service communication and on running many services cover service discovery, and it has a
+  service-mesh section describing the control-plane / data-plane / sidecar shape. Use for: the
+  discovery, gateway, and mesh story in the order a real system meets it.
+- [Chris Richardson: microservices.io pattern catalog](https://microservices.io/patterns/service-registry.html)
+  First-party pattern catalog for the discovery patterns by name: the
+  [service registry](https://microservices.io/patterns/service-registry.html),
+  [client-side discovery](https://microservices.io/patterns/client-side-discovery.html), and
+  [server-side discovery](https://microservices.io/patterns/server-side-discovery.html). Use for:
+  citing the client-side-vs-server-side split and the registry/health-check mechanics.
+
 ### Authentication and authorization
 
 OAuth 2.0 / OIDC / JWT — the token model behind "how do the services authenticate?" in a
