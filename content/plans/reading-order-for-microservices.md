@@ -55,7 +55,7 @@ is the decision it all informs.
 
 ## Companion reading orders
 
-Two clusters are handed off rather than inlined — open each when its step makes you want the
+Three clusters are handed off rather than inlined — open each when its step makes you want the
 whole story:
 
 - [[reading-order-for-domain-driven-design]] — the full boundary story behind step 2. Where step
@@ -67,6 +67,10 @@ whole story:
   reading order is what those patterns actually are, in code — retry vs circuit breaker, total vs
   per-attempt timeouts, bulkheads, and idempotent-safe retries. Read it when you want to know
   what the mesh is doing on your behalf.
+- [[reading-order-for-continuous-delivery]] — how each service actually ships, behind step 1's
+  independent-deploy property. Each service needs its own pipeline, a rollout strategy and schema
+  changes that keep rollback open; this orders the subject from CI through DORA. Read it when "how do
+  you deploy it on its own?" becomes the question.
 
 ## Practice checkpoint
 

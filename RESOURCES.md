@@ -534,6 +534,103 @@ actuarial depth — distilled into [[reinsurance-domain-primer]].
   Arch's own named lines. Use for: placing Property Cat / Property XoL / Professional Liability /
   Marine Treaties onto the two axes before the interview.
 
+### Continuous delivery
+
+How a change gets from a commit to production, without depending on any one tool. These are the
+sources behind "how do you ship this?" and "do you do CI/CD?".
+
+- [Martin Fowler: Continuous Integration](https://martinfowler.com/articles/continuousIntegration.html)
+  (revised January 2024)
+  The primary source for CI. It defines CI as merging into mainline at least daily, lists the
+  practices (self-testing build, every push builds, fix broken builds immediately, ten-minute
+  build, hide work-in-progress), and calls branch builds **semi-integration**. Use for: what CI is
+  and is not, and the line where CI ends and continuous delivery begins ("release to production is
+  a business decision").
+- [Martin Fowler: ContinuousDelivery](https://martinfowler.com/bliki/ContinuousDelivery.html)
+  Gives the four "you're doing continuous delivery when" tests and the exact distinction between
+  continuous delivery and continuous deployment. Use for: telling the two Ds apart, quoted.
+- [Jez Humble: continuousdelivery.com](https://continuousdelivery.com/), including its
+  [principles](https://continuousdelivery.com/principles/) and
+  [CI foundations](https://continuousdelivery.com/foundations/continuous-integration/) pages
+  The site by the co-author of _Continuous Delivery_. It defines continuous delivery as getting
+  changes into production safely, quickly and sustainably, lists the five principles, and gives the
+  three-question CI test. Use for: the discipline's own definitions and the CI self-check.
+- [Martin Fowler: DeploymentPipeline](https://martinfowler.com/bliki/DeploymentPipeline.html)
+  Breaks the build into stages that each give more confidence at more cost in time; the first stage
+  makes the binaries, gates can be automatic or manual, and the pipeline leaves an audit trail. Use
+  for: why a pipeline has stages at all.
+- [Jez Humble: Patterns](https://continuousdelivery.com/implementing/patterns/)
+  The commit stage against the later stages, and the four practices: build packages once, deploy
+  the same way to every environment, smoke-test deploys, keep environments similar. Use for: build
+  once, promote the same package.
+- [Jez Humble: Continuous Testing](https://continuousdelivery.com/foundations/test-automation/)
+  Every change is a release candidate; push defects down to cheaper tests; run stages in parallel.
+  Use for: test stages as pipeline stages rather than a testing strategy.
+- [Jez Humble: Configuration Management](https://continuousdelivery.com/foundations/configuration-management/)
+  Emergency fixes go through the normal release process, and every deployment can be traced back to
+  what it came from. Use for: the pipeline as the only route to production, hotfixes included.
+- [trunkbaseddevelopment.com](https://trunkbaseddevelopment.com/), including its pages on
+  [short-lived feature branches](https://trunkbaseddevelopment.com/short-lived-feature-branches/),
+  [committing straight to the trunk](https://trunkbaseddevelopment.com/committing-straight-to-the-trunk/),
+  [branch for release](https://trunkbaseddevelopment.com/branch-for-release/) and
+  [branch by abstraction](https://trunkbaseddevelopment.com/branch-by-abstraction/)
+  The definition of trunk-based development; branches of at most two days with one owner; small
+  teams committing straight to trunk; release branches cut just in time, fixed on trunk and
+  cherry-picked across ("CD teams do not do release branches"); the five steps of branch by
+  abstraction. Use for: what trunk-based development allows and forbids.
+- [Martin Fowler: Patterns for Managing Source Code Branches](https://martinfowler.com/articles/branching-patterns.html)
+  Builds every branching pattern from first principles: integration frequency, semantic conflicts,
+  integration fear, release branches, and the State of DevOps finding on branch lifetimes. Use for:
+  why merge pain grows with branch age.
+- [Martin Fowler: BlueGreenDeployment](https://martinfowler.com/bliki/BlueGreenDeployment.html)
+  Two environments and a router switch, instant rollback, missed transactions, and separating schema
+  deploys from application upgrades. Use for: blue-green, and why the shared database is the hard
+  part.
+- [Danilo Sato: CanaryRelease](https://martinfowler.com/bliki/CanaryRelease.html) (martinfowler.com)
+  Routing a small subset of users to the new version first, how to choose them, the cost of running
+  several versions at once, and why a canary is not an A/B test. Use for: canary release, defined.
+- [Google SRE Workbook: Canarying Releases](https://sre.google/workbook/canarying-releases/)
+  Canary against a concurrent control, SLIs as canary metrics, the 5% × 20% = 1% arithmetic, one
+  canary at a time, and how canarying compares with blue-green, artificial load and traffic teeing.
+  Use for: canary analysis done rigorously, and shadow traffic's limits.
+- [Google SRE Book: Release Engineering](https://sre.google/sre-book/release-engineering/)
+  Rollouts fitted to a service's risk profile: start in one cluster and expand exponentially, or
+  interleave across regions over days. Use for: staged rollouts at Google scale.
+- [Kubernetes docs: Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+  `Recreate` against `RollingUpdate`, max surge and max unavailable (25% defaults), and rolling a
+  revision back. Use for: the concepts of rolling and recreate deploys, not the YAML.
+- [Pete Hodgson: Feature Toggles (aka Feature Flags)](https://martinfowler.com/articles/feature-toggles.html)
+  The four toggle categories on longevity and dynamism; toggle point, router and configuration;
+  flags as inventory with a carrying cost; which flag configurations to test. Use for: separating
+  deploy from release, and keeping flags under control.
+- [Martin Fowler: DarkLaunching](https://martinfowler.com/bliki/DarkLaunching.html)
+  Calling new back-end behaviour on real traffic without users seeing it, to measure load before
+  release; why the term has drifted towards meaning a canary. Use for: dark launches, defined.
+- [Danilo Sato: ParallelChange](https://martinfowler.com/bliki/ParallelChange.html) (martinfowler.com)
+  Expand, migrate, contract: breaking a backward-incompatible change into three releasable phases.
+  Use for: the pattern behind every zero-downtime schema change.
+- [Pramod Sadalage & Martin Fowler: Evolutionary Database Design](https://martinfowler.com/articles/evodb.html)
+  Migrations as version-controlled scripts, destructive against backward-compatible changes, the
+  transition phase, and why reverse migrations rarely pay. Use for: schema change in a delivery
+  pipeline.
+- [Google SRE Workbook: On-Call](https://sre.google/workbook/on-call/)
+  Detect, roll back, fix, roll forward; avoid changes that can't be rolled back; a rollback does not
+  repair corrupted data. Use for: rollback versus roll-forward.
+- [Google SRE Book: Production Services Best Practices](https://sre.google/sre-book/service-best-practices/)
+  Roll back first and diagnose afterwards. Use for: the default response to a bad deploy, quoted.
+- [Microsoft Learn: ALTER TABLE (Transact-SQL)](https://learn.microsoft.com/en-us/sql/t-sql/statements/alter-table-transact-sql)
+  `ALTER TABLE` takes a schema modification (Sch-M) lock; adding a `NOT NULL` column with a
+  runtime-constant default is metadata-only. Use for: keeping the expand step quick on SQL Server.
+- [DORA: Software delivery performance metrics](https://dora.dev/guides/dora-metrics/)
+  The current five metrics in throughput and instability groups, the finding that speed and
+  stability are not a trade-off, batch size, and the pitfalls of using the metrics as targets. Use
+  for: the metrics by their current names.
+- [DORA: A history of DORA's software delivery metrics](https://dora.dev/insights/dora-metrics-history/)
+  From the four keys to failed deployment recovery time (2023) and deployment rework rate (2024).
+  Use for: why the names changed, and what "MTTR" now means.
+- [DORA Quick Check](https://dora.dev/quickcheck/)
+  A baseline for the metrics with no tooling. Use for: starting the improvement loop.
+
 ## Wisdom (Communities)
 
 - [r/cscareerquestions interview experiences](https://reddit.com/r/cscareerquestions)

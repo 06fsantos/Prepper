@@ -31,8 +31,9 @@ These are the properties the literature consistently names — the first two car
 the other two are the properties that typically follow:
 
 - **Independent deploy** (defining). You can ship this service without coordinating a release train
-  with any other. This is the prize — the thing the whole style exists to buy. If shipping service A
-  forces a simultaneous deploy of service B, they are one service wearing two hats.
+  with any other, which needs its own [[the-deployment-pipeline|path to production]]. This is the
+  prize — the thing the whole style exists to buy. If shipping service A forces a simultaneous deploy
+  of service B, they are one service wearing two hats.
 - **Its own data store** (defining). The service owns its data and nobody reaches around the service to
   read or write it directly. This is the property most often faked, and the one this Lesson makes
   concrete below.

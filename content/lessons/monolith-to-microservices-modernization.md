@@ -77,7 +77,7 @@ Two properties make it safe:
 
 The router is also where you **measure** — it sees both paths, so it can compare the new service's
 latency and error rate against the old code path before you trust it with all the traffic, and can
-send it a fraction of requests first. The migration ends when the router forwards nothing to the
+send it [[blue-green-canary-and-rolling-deployments|a fraction of requests first]]. The migration ends when the router forwards nothing to the
 monolith and the facade is deleted along with it — or, deliberately, when what remains in the
 monolith is not worth moving.
 
@@ -139,9 +139,9 @@ tidiness:
   capabilities not yet moved; the migration does not freeze the business.
 - **Measure the move.** Modernization has to be *demonstrated*, not asserted. Watch the new
   service's latency, error rate, and the business metric the capability drives, through the router,
-  and compare against the old path before and after cutover. "We modernized it" with no numbers is
-  a down-level answer; "error rate on checkout fell and we can now deploy it independently" is the
-  senior one.
+  and compare it against the old path running alongside it, not the same path before and after
+  cutover. "We modernized it" with no numbers is a down-level answer; "error rate on checkout fell
+  and we can now [[the-deployment-pipeline|deploy it independently]]" is the senior one.
 
 The through-line is that the architecture change is in service of a business outcome, and the
 migration is judged on outcomes delivered along the way — not on reaching a target diagram.

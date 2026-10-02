@@ -157,7 +157,7 @@ application code and out of every language's libraries into one uniform layer:
   the infrastructure, so it is consistent across services written by different teams in different
   languages.
 - **Traffic shifting.** Because the sidecars route every call, the mesh can send a small percentage of
-  traffic to a new version — a canary — and roll forward or back by changing a rule, without touching
+  traffic to a new version — [[blue-green-canary-and-rolling-deployments|a canary]] — and roll forward or back by changing a rule, without touching
   the services.
 
 And now the honest part, because a mesh is where microservices architectures commonly over-build.
@@ -195,7 +195,7 @@ because "what do you now run that a monolith didn't?" is a question a good inter
   and the golden signals]] per service and distributed tracing to follow one request end to end. In a
   monolith this was one log file and one stack trace.
 - **Deployment machinery** — independent deployability is only real if each service has its own
-  pipeline, and something has to schedule, place, and restart all of them (the container-orchestration
+  [[the-deployment-pipeline|pipeline]], and something has to schedule, place, and restart all of them (the container-orchestration
   layer). That machinery is the price of the "deploy on its own" prize.
 
 None of this is the point of the system; all of it is the cost of having split it. That is why the
