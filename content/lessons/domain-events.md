@@ -87,9 +87,9 @@ distinguishes a **partial reversal**, booking only the difference, from a **full
 reverses the whole entry and then records the correct one; the full form is the one an auditor can
 read without arithmetic ([Young, "Whoops, I did it
 again"](https://leanpub.com/read/esversioning/leanpub-auto-whoops-i-did-it-again)). Reversal is
-only possible if the event says what *changed*: Fowler's example is "'add $10 to Martin's account'
-as opposed to 'set Martin's account to $110'. In the former case I can reverse by just subtracting
-$10, but in the latter case I don't have enough information" ([Fowler, Event
+only possible if the event says what *changed*: Fowler's example is "'add \$10 to Martin's account'
+as opposed to 'set Martin's account to \$110'. In the former case I can reverse by just subtracting
+\$10, but in the latter case I don't have enough information" ([Fowler, Event
 Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html)). And a correction is itself a **new
 business fact** that other subscribers see: a `PaymentRefunded` sends a refund email, it does not
 silently undo the charge. Across services the same idea is a saga's **compensating transaction**,
@@ -106,8 +106,8 @@ out loud.
 > — over a partial one that books only the difference, because an auditor can read a full
 > reversal without reconstructing the arithmetic.
 >
-> That only works if events are **deltas** ("add $10") rather than overwrites ("set balance to
-> $110"): a delta reverses cleanly, an overwrite has lost the information you need to undo it.
+> That only works if events are **deltas** ("add \$10") rather than overwrites ("set balance to
+> \$110"): a delta reverses cleanly, an overwrite has lost the information you need to undo it.
 > And the correction is a **visible new fact**, not a silent undo — other subscribers see it and
 > react, so a refund sends a refund email. In a saga that's a compensating transaction, and it
 > gives no isolation: another flow may already have acted on the state you're compensating.

@@ -631,6 +631,51 @@ sources behind "how do you ship this?" and "do you do CI/CD?".
 - [DORA Quick Check](https://dora.dev/quickcheck/)
   A baseline for the metrics with no tooling. Use for: starting the improvement loop.
 
+### Event-driven architecture
+
+What a senior event-driven round asks once the broker has been chosen: ordering and invariants,
+loss, duplicates and replay, schema evolution, tracing, and coupling between domains. Adopted
+from the research note on that question. _DDIA_ ch. 11 could not be read as text, so Kleppmann
+appears here through his own paper and blog.
+
+- [Kleppmann, Beresford & Svingen: Online Event Processing (ACM Queue, 2019)](https://martin.kleppmann.com/papers/olep-acm-queue.pdf)
+  The primary source for "enforce the invariant where writes are serialised": the
+  single-threaded payment executor, deterministic recovery, and the point that exactly-once
+  frameworks "still exhibit at-least-once processing when interacting with external storage". Its
+  "Disadvantages" section (no upper bound on processing time, no read isolation) is the case
+  against EDA. Use for: Q1, Q2, Q3 and Q4. The text was extracted from the PDF by hand, so cite it
+  without page numbers.
+- [Martin Kleppmann: Stream processing, Event sourcing, Reactive, CEP… and making sense of it all (2015)](https://martin.kleppmann.com/2015/01/29/stream-processing-event-sourcing-reactive-cep.html)
+  "The database you read from is just a cached view of the event log." Use for: the
+  source-of-truth vs derived-state split that makes replay possible.
+- [Martin Fowler: What do you mean by "Event-Driven"?](https://martinfowler.com/articles/201701-event-driven.html)
+  Separates event notification, event-carried state transfer, event sourcing and CQRS. Names
+  the passive-aggressive command, and warns that a choreographed flow is "not explicit in any
+  program text". Use for: event vs command, and the runtime-vs-schema coupling trade.
+- [Confluent: Schema evolution and compatibility](https://docs.confluent.io/platform/current/schema-registry/fundamentals/schema-evolution.html)
+  First-party definitions of `BACKWARD`, `FORWARD`, `FULL` and their `_TRANSITIVE` variants, which
+  changes each one allows field by field, and the upgrade order for each. Use for: "who deploys
+  first?", quoted.
+- [Greg Young: _Versioning in an Event Sourced System_ (Leanpub, free reader)](https://leanpub.com/read/esversioning/leanpub-auto-why-cant-i-update-an-event)
+  The primary source for why events are never edited, "if it is not convertible it is a new
+  event", upcasting, weak schema, full vs partial reversal, and internal vs external event models.
+  Use for: Q6, Q9 and Q10. It was read through a summarising fetcher, so check the wording against
+  the chapter before quoting it.
+- [Chris Richardson: Transactional outbox](https://microservices.io/patterns/data/transactional-outbox.html),
+  [Idempotent consumer](https://microservices.io/patterns/communication-style/idempotent-consumer.html)
+  and [Saga](https://microservices.io/patterns/data/saga.html) (microservices.io)
+  What the outbox guarantees and admits (the relay may publish twice), the `PROCESSED_MESSAGES`
+  dedup table committed with the effect, and choreography vs orchestration presented as peers.
+  Use for: Q5 and Q7, and the consumer half of Q2.
+- [CloudEvents specification](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md)
+  "Producers MUST ensure that `source` + `id` is unique for each distinct event", an event as
+  "a statement of fact", and `dataschema`. Use for: the dedup key as a spec requirement.
+- [OpenTelemetry: Semantic conventions for messaging spans](https://opentelemetry.io/docs/specs/semconv/messaging/messaging-spans/)
+  and [messaging attributes](https://opentelemetry.io/docs/specs/semconv/registry/attributes/messaging/)
+  A creation context per message, consumers that link rather than parent, and
+  `messaging.message.conversation_id` as the correlation id. Still **Development** status. Use
+  for: Q8, and say the status out loud.
+
 ## Wisdom (Communities)
 
 - [r/cscareerquestions interview experiences](https://reddit.com/r/cscareerquestions)
@@ -656,6 +701,10 @@ sources behind "how do you ship this?" and "do you do CI/CD?".
   parallel hedged attempts do not fit it, and neither Microsoft Learn nor Polly documents which
   way `AddStandardHedgingHandler()` propagates `traceparent`. Unresolved by the workspace that
   raised it. The honest answer in a Lesson is that this has to be verified empirically.
+- **Trace context over Kafka.** W3C Trace Context is defined only for HTTP. A Kafka binding is an
+  open issue labelled `revisit-later`
+  ([w3c/trace-context#504](https://github.com/w3c/trace-context/issues/504)), so `traceparent` in
+  a Kafka header is OpenTelemetry practice that no standard backs.
 - **.NET practitioner communities.** None adopted. `r/dotnet` and `r/ExperiencedDevs` are the
   obvious candidates for real-world failure postmortems, and neither has been judged yet.
 - **The thread pool's sizing algorithm is undocumented.** Microsoft Learn's `ThreadPool` API
