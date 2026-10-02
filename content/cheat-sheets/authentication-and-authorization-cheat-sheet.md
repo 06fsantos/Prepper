@@ -25,6 +25,9 @@ in it). Trust it by validating:
   (keys rotate — that's why it's a lookup). **Pin the algorithm**; reject `alg: none`.
 - **Claims:** `iss`, **`aud`** (this API is the audience), `exp`, plus required **scope/role**.
   A valid signature is *not* authorization.
+- **Object-level authorization:** a valid token with the right scope still doesn't mean *this*
+  user may touch *this* record. Check ownership whenever an ID comes from the client. BOLA is
+  #1 in the OWASP API Top 10. See [[application-security]].
 
 **Three tokens:** access (short-lived bearer, for the resource server) · ID (OIDC, proves login
 to the *client*, not for APIs) · refresh (long-lived, revocable at the authz server, buys new

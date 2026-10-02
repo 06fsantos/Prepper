@@ -442,6 +442,39 @@ microservices design round.
   and the on-behalf-of flow for propagating a user's identity down a call chain. Use for: what a
   senior narrates when the whiteboard says "Azure".
 
+### Application security and payment integrations
+
+What a "how would you secure this request?" answer draws on beyond the token model.
+
+- [OWASP API Security Top 10 (2023)](https://api-security.owasp.org/editions/2023/en/0x11-t10/)
+  Primary for API-specific vulnerabilities, each entry with attack scenarios and prevention.
+  [API1: Broken Object Level Authorization](https://api-security.owasp.org/editions/2023/en/0xa1-broken-object-level-authorization/)
+  is the "authenticated is not allowed on this record" check. Use for: naming and ranking API
+  risks.
+- [OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/): specifically
+  [CSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
+  (synchronizer vs signed double-submit, SameSite as defence in depth only),
+  [SSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html),
+  [Logging](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html) (what never
+  to log) and
+  [Secrets Management](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html).
+  Use for: the defence OWASP names as primary, quoted, rather than a remembered one.
+- [Microsoft — Prevent CSRF attacks in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery)
+  First-party for when antiforgery applies (cookie credentials, not header tokens) and
+  `[AutoValidateAntiforgeryToken]`. Use for: the .NET-concrete half of CSRF.
+- [Stripe — webhooks](https://docs.stripe.com/webhooks) and
+  [idempotent requests](https://docs.stripe.com/api/idempotent_requests)
+  The clearest provider documentation of HMAC signature verification over the raw body,
+  timestamp replay tolerance, duplicate and out-of-order events, and what an idempotency key
+  replays. Use for: the outbound-call and callback half of a payment flow. (`docs.stripe.com/security/guide`
+  could not be fetched from here; the PCI facts come from the guide below.)
+- [Stripe — PCI compliance guide](https://stripe.com/guides/pci-compliance) and
+  [SCA guide](https://stripe.com/guides/strong-customer-authentication)
+  Secondary but precise: hosted fields → SAQ A vs raw card data → SAQ D; SCA's two-of-three
+  elements, 3-D Secure 2 and the exemptions. The [FCA's SCA page](https://www.fca.org.uk/firms/strong-customer-authentication)
+  is the UK regulator's own statement, but it is thinner. Use for: the compliance vocabulary in a
+  fintech interview.
+
 ### Applied AI in insurance / reinsurance
 
 Where AI actually fits a document-and-judgment domain, and the governance a $bn-payout system
