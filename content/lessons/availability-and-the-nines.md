@@ -38,7 +38,7 @@ worth carrying:
 
 Two things fall out of it immediately. First, **five nines is a budget of seconds**, which is
 less than a single process restart or a routine deploy — so "five nines" is a claim about
-automated failover and zero-downtime releases, not about writing more careful code. Second,
+automated failover and [[blue-green-canary-and-rolling-deployments|zero-downtime releases]], not about writing more careful code. Second,
 each nine costs roughly an order of magnitude more effort and money than the last, which is why
 the target is a *requirement to negotiate*, not a virtue to maximize: a "who's viewing this"
 counter and a payments ledger do not get the same number, and picking the right one is the

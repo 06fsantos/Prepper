@@ -65,7 +65,7 @@ missing-Ownership, poor-Earn-Trust signal the round is built to catch. It is a d
 attribution: name what the team did in one clause, then spend the rest of the answer on the
 decisions *you* made, the ambiguity *you* resolved, and the people *you* carried. "We migrated the
 service" tells the interviewer nothing they can score; "the team owned the migration; I made the
-call to run the old and new paths in parallel behind a flag so we could roll back in seconds, and
+call to run the old and new paths in parallel [[feature-flags-and-separating-deploy-from-release|behind a flag]] so we could roll back in seconds, and
 I paired with two engineers who had never done a cutover" tells them precisely what you own.
 
 ```quiz 01M1YJ4M3RGYTD6PPKTH88GT5C

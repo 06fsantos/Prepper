@@ -249,7 +249,7 @@ treatment]].
   / hard-mTLS scale.
 - **The ops tax:** you now run discovery, an edge tier, maybe a mesh, **aggregated logging + distributed
   tracing + [[metrics-logs-and-the-golden-signals|golden-signal metrics]]** (one log/stack-trace became
-  N), and **per-service pipelines + orchestration**. A modular monolith pays none of it.
+  N), and **per-service [[the-deployment-pipeline|pipelines]] + orchestration**. A modular monolith pays none of it.
 
 **Modernizing a monolith: a risk-management problem — strangle, don't rewrite.** The "go
 microservices" prompt is really a *migration* prompt: change the shape while the business keeps

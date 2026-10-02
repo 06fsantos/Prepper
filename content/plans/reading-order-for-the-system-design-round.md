@@ -57,6 +57,8 @@ and then uptime, relieve reads at the store and then at the edge, split the data
 split. Steps 14–17 are the **building blocks**, the components a prompt asks you to place and defend; read
 them as a cluster and return to any one when a prompt reaches for it. Steps 18–19 are the two applied moves
 that close a design out: how fresh data leaves the system, and how you prove it is healthy.
+The operational follow-ups after that — "how do you ship it?", "what if the deploy is bad?" — have
+their own path: [[reading-order-for-continuous-delivery]].
 
 ## The scan-grid companion
 
