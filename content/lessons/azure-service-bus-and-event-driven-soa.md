@@ -4,6 +4,7 @@ title: Azure Service Bus and event-driven SOA
 topic:
   - system-design
   - distributed-systems
+  - event-driven-architecture
 prerequisites:
   - message-queues
   - transactions-and-acid
@@ -182,6 +183,50 @@ An interviewer asks what breaks. What is the sharpest answer?
     writes — the in-memory event is gone. The fix is durability via the outbox, not just retries.
 ```
 
+The other half of the answer is **what the outbox does not solve**, and saying it is what keeps
+the pattern from sounding like magic. Richardson's statement of it is exact about the guarantee —
+"messages are guaranteed to be sent if and only if the database transaction commits" — and just as
+exact about its limits ([Richardson, Transactional
+outbox](https://microservices.io/patterns/data/transactional-outbox.html)):
+
+- **It turns a lost event into a duplicate one.** "The Message relay might publish a message more
+  than once" — it can crash after publishing and before marking the row processed — so "a message
+  consumer must be idempotent, perhaps by tracking the IDs of the messages that it has already
+  processed." The log-tailing relay lists "tricky to avoid duplicate publishing" among its own
+  drawbacks ([Transaction log
+  tailing](https://microservices.io/patterns/data/transaction-log-tailing.html)). The outbox is
+  never deployed alone; it is always half of a pair with a deduplicating consumer, which
+  [[loss-duplicates-and-replay-safe-consumers]] builds.
+- **It orders per aggregate, not globally.** Debezium's outbox router uses the row's `aggregateid`
+  as the message key, which it calls "important for maintaining correct order in Kafka partitions"
+  ([Debezium outbox event
+  router](https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html))
+  — so events for one order arrive in order, and events across two orders do not. Holding a
+  business rule that spans entities is [[out-of-order-events-and-business-invariants]].
+- **It says nothing about downstream success.** It guarantees the event *leaves*; whether the
+  consumer's own state change then commits is the consumer's problem, and a step that fails there is
+  a saga's compensation, not something the outbox can roll back.
+- **It is a convention someone can forget.** Richardson lists, as a drawback, that developers "may
+  forget to publish messages after database updates" — the outbox only covers the writes that go
+  through it.
+
+```quiz 01M3YMZY7T2M1B8PW7BY0AR3PS recall
+An interviewer says: "You've added a transactional outbox. So events are exactly-once now, right?"
+What does the outbox solve, and what does it not?
+
+> It solves **one thing: the dual write.** The event is written to an outbox table in the same
+> database transaction as the state change, so it is published if and only if that transaction
+> commits, and a relay retries until the broker acknowledges. A lost event is no longer possible.
+>
+> It doesn't make anything exactly-once. The relay can crash after publishing and before marking the
+> row done, so it **publishes twice**: the outbox turns "lost event" into "duplicate event," which is
+> why it always ships with an **idempotent consumer** that dedups on the message id. Ordering holds
+> **per aggregate key** only, because the relay keys by aggregate id into a partition. And it says
+> **nothing about downstream success**: it guarantees the event leaves, not that the consumer's
+> change commits; a failure there is handled by the saga's compensation. The oversimplification to
+> avoid is "the outbox gives exactly-once." It closes the dual-write gap and nothing else.
+```
+
 ## Command versus event, and coordinating a workflow with a saga
 
 Two more distinctions separate a fluent answer from a hand-wave. The first is **message intent**.
@@ -193,6 +238,41 @@ broadcast fact — *this happened* — and the publisher "has no expectation abo
 handled." Prefer **events for decoupling** (a Service Bus topic, fan-out, add a subscriber without
 touching the publisher) and reserve **commands** for when you genuinely need one service to make
 another act.
+
+That distinction is what "event-driven versus message-driven" is asking about, and the primary
+sources draw it the same way. CloudEvents defines the occurrence an event reports as "the capture of
+a statement of fact" ([CloudEvents
+spec](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md)); Hohpe and Woolf's Command
+Message is used "to reliably invoke a procedure in another application" ([EIP, Command
+Message](https://www.enterpriseintegrationpatterns.com/patterns/messaging/CommandMessage.html)). Both
+travel as messages on the same bus — the difference is **intent**, not transport. The smell to name
+is the one Fowler calls the **passive-aggressive command**: "an event is used as a
+passive-aggressive command. This happens when the source system expects the recipient to carry out
+an action, and ought to use a command message to show that intention, but styles the message as an
+event instead" ([Fowler, What do you mean by
+"Event-Driven"?](https://martinfowler.com/articles/201701-event-driven.html)). The tell is a
+publisher that would be *broken* if a particular subscriber stopped listening — a
+`PaymentRequiredForOrder` that only works because Payment always answers it. That event is a
+command with the addressee hidden, and a growing set of them is an orchestrator nobody wrote down.
+The fix is to say the intention out loud: send the command, or give the flow an owner.
+
+```quiz 01M3YMZY7VHSEJ9XZJ5R9EWSDS recall
+"What's the difference between event-driven and message-driven?" Answer it, and name the smell an
+interviewer is listening for you to spot.
+
+> Both put messages on a bus; the difference is **intent**. An **event** states a fact — *this
+> happened* — and the publisher has no expectation about who reacts or how; a **command** asks a
+> specific recipient to *do this*, and the sender cares whether it was done. Use events for facts
+> other domains may react to, and commands where one service needs another to act.
+>
+> The smell is Fowler's **passive-aggressive command**: a message styled as an event when the
+> publisher really expects one recipient to carry out an action. If the publisher breaks when that
+> subscriber stops listening, it was a command all along — make it one. And when a flow has
+> accumulated enough of those that nobody can draw it, **orchestration** is the honest answer: an
+> orchestrator that sends commands and owns the sequence is a legitimate design choice, not a
+> failure of event-driven purity. The oversimplification is treating "drift into orchestration" as
+> the anti-pattern; the anti-pattern is the orchestrator nobody wrote down.
+```
 
 The second is the workflow question: **how do you keep data consistent across services when there
 is no distributed transaction?** [[transactions-and-acid|ACID]] holds inside one service's
@@ -215,7 +295,16 @@ release the stock). The two ways to coordinate one are a genuine fork:
 
 The senior instinct: choreography for a short, stable chain of reactions; orchestration once the
 workflow has enough steps or branches that *nobody can say what the current state is* without a
-component whose job is to know.
+component whose job is to know. Say plainly that moving to orchestration is a **legitimate choice,
+not a failure**: Richardson presents the two as peers — choreography where "each local transaction
+publishes domain events that trigger local transactions in other services," orchestration where "an
+orchestrator (object) tells the participants what local transactions to execute" — and the drawback
+he lists against choreography is the cyclic dependency between services, not anything against
+orchestration ([Richardson, Saga](https://microservices.io/patterns/data/saga.html)). Fowler's warning
+about choreographed flows is that "it can be hard to see such a flow as it's not explicit in any
+program text" ([Fowler](https://martinfowler.com/articles/201701-event-driven.html)); an
+orchestrator is that flow made explicit. Following one of those flows across services, once it
+exists, is [[tracing-a-flow-through-a-message-broker]].
 
 ```quiz 01M37YKV2F2CSW69660G7QV25R recall
 An interviewer says: "Placing an order touches Payment, Inventory, and Shipping, each with its own
@@ -239,7 +328,7 @@ coordinate it?" Give the answer you would say out loud.
 > and the retryable steps after the point of no return will see redeliveries.
 ```
 
-## The trade against synchronous REST
+## The trade against synchronous REST, and when not to make it
 
 Everything above is the cost side of a single decision: **replace a synchronous REST call with a
 message.** Say what it buys and what it charges, because the interviewer is listening for the
@@ -263,6 +352,52 @@ duplicate** problems this Lesson spent its length on — none of which a plain R
 resilience and decoupling bought with consistency and operational complexity; a senior answer names
 both sides and says which the workload can afford.
 
+None of that bill is specific to Azure, and it generalises into the question an interviewer asks to
+see whether you can refuse a pattern: **when should you not use event-driven architecture, even at
+scale?** Start by taking "scale" off the table as a reason on its own — a partitioned database or a
+horizontally scaled synchronous service scales too. Then refuse it in three places:
+
+- **The caller needs a decision in its own response.** Authorising a card, booking the last seat:
+  the user is waiting for *yes or no*, and Kleppmann, Beresford and Svingen's own "Disadvantages"
+  section of the event-log approach is that "there is no upper bound on the time until an event is
+  processed" ([Online Event Processing, ACM
+  Queue](https://martin.kleppmann.com/papers/olep-acm-queue.pdf)). A synchronous call with a timeout
+  is the honest shape.
+- **A read across entities must be consistent.** Two stores updated by two different consumers can
+  disagree when a client reads both, and the same paper says the approach "does not provide
+  isolation for read requests that are sent directly to data stores." The precise way to say it is
+  that this is an **isolation** anomaly — the one a read-committed database shows — so name the
+  isolation level you would need, and if the answer is more than the log gives you, keep those
+  writes together.
+- **Simple CRUD with one consumer.** The broker, the outbox, the idempotent consumer and the
+  invisible flow are all cost with nothing to decouple. Fowler's caution about event notification
+  is that the flow is "not explicit in any program text," so "you're losing sight of that
+  larger-scale flow" ([Fowler](https://martinfowler.com/articles/201701-event-driven.html)); and
+  of the heavier patterns EDA drags in, "for most systems CQRS adds risky complexity" ([Fowler,
+  CQRS](https://martinfowler.com/bliki/CQRS.html)).
+
+```quiz 01M3YMZY7VNBSGRNSTYPRJM2CG recall
+"We need to scale, so we're going event-driven." When would you push back — when should you *not*
+use event-driven architecture, even at scale?
+
+> First, **scale isn't a reason on its own**: a partitioned database or a horizontally scaled
+> synchronous service scales too. EDA buys decoupling and failure isolation, and it charges
+> eventual consistency, a broker to run, duplicates to absorb, and a flow nobody can read in one
+> place. So I'd refuse it where that bill buys nothing:
+>
+> - when a **user-facing request needs a decision in its own response** — a payment authorisation,
+>   a seat booking — because there is no upper bound on when an event gets processed;
+> - when a **read across entities has to be consistent**, because two stores fed by two consumers
+>   can disagree when read together — and that's an **isolation** problem, the same anomaly a
+>   read-committed database has, so I'd name the isolation level I need rather than just say
+>   "strong consistency";
+> - for **simple CRUD with one consumer**, where there's nothing to decouple and the broker, the
+>   outbox and the idempotent handler are all overhead.
+>
+> The oversimplification is stopping at "when you need strong consistency." The sharper point is
+> which isolation guarantee the read needs, and whether the caller is waiting for an answer.
+```
+
 ## What to take away
 
 Message-based SOA on Azure is [[message-queues|the same queue decisions]] plus a concrete
@@ -278,6 +413,10 @@ Coordinate cross-service work as a **saga** of local transactions with **compens
 choosing **choreography** (events, no controller, simple) or **orchestration** (a central
 orchestrator, complex, a SPOF). And every one of these is the cost of trading a synchronous REST call
 for a message: decoupling and failure isolation, paid for in eventual consistency and a broker to run.
+The outbox turns a lost event into a duplicate, so it never ships without a deduplicating consumer;
+an event the publisher depends on someone obeying is a passive-aggressive command; and "scale" alone
+is no reason to go event-driven when the caller needs an answer now or a cross-entity read must be
+consistent.
 
 Worth reading in full: Microsoft's [Compare messaging
 services](https://learn.microsoft.com/en-us/azure/service-bus-messaging/compare-messaging-services)

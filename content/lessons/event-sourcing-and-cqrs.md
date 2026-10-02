@@ -4,6 +4,7 @@ title: Event sourcing and CQRS
 topic:
   - system-design
   - distributed-systems
+  - event-driven-architecture
 prerequisites:
   - transactions-and-acid
   - consistency-models
@@ -149,7 +150,8 @@ but it means every query shape you need is a view you must design and maintain i
 event data" — you correct a mistake by appending a **compensating event** (a `ReservationCanceled`
 that reverses a prior `SeatsReserved`), never by editing history. And when the event *schema*
 changes over years, old events still have to deserialize — handled with tolerant
-deserialization, a version tag, or **upcasters** that transform old shapes to new on read.
+deserialization, a version tag, or **upcasters** that transform old shapes to new on read —
+which compatibility mode to enforce, and who deploys first, is [[evolving-event-schemas]].
 Finally, replay is dangerous around **side effects**: Fowler's warning is that "if these events
 cause update messages to be sent to external systems, then things will go wrong because those
 external systems don't know the difference between real processing and replays"
@@ -157,7 +159,9 @@ external systems don't know the difference between real processing and replays"
 event handlers is **at-least-once**, so every consumer "must be
 [[idempotency-and-safe-retries|idempotent]] so processing a duplicate event doesn't change the
 outcome" — the same discipline a [[message-queues|queue]] consumer needs, for the same reason:
-a redelivery must be a no-op, or a replay charges the card twice.
+a redelivery must be a no-op, or a replay charges the card twice. Rebuilding a projection from
+millions of old events without re-firing those side effects is
+[[loss-duplicates-and-replay-safe-consumers]].
 
 ```quiz 01M37Z4WHQPZMQ0F2CH8H2F0BC
 A team event-sources their orders and asks the interviewer's favourite question: "How do you

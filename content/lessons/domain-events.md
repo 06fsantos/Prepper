@@ -3,6 +3,7 @@ id: 01M3AF96KGM4V5EHA6GAFBX088
 title: Domain events and what an aggregate publishes
 topic:
   - tactical-design
+  - event-driven-architecture
 prerequisites:
   - aggregates
 ---
@@ -76,6 +77,42 @@ A domain event is named in the {{past}} tense in the ubiquitous language, and it
 {{timestamp}} for when it occurred and the identity of the entities involved.
 ```
 
+Immutable does not mean uncorrectable, and the difference is worth being able to say. A mistake
+is fixed the way an accountant fixes one — by **appending** a correcting event, never by editing
+the original. Greg Young's argument is that a single permitted edit makes the store "definitely
+maybe immutable. Also known as mutable," and that "the moment you allow a single edit of an
+event, maintaining a proper audit log becomes impossible" ([Young, *Versioning in an Event Sourced
+System*](https://leanpub.com/read/esversioning/leanpub-auto-why-cant-i-update-an-event)). He
+distinguishes a **partial reversal**, booking only the difference, from a **full reversal**, which
+reverses the whole entry and then records the correct one; the full form is the one an auditor can
+read without arithmetic ([Young, "Whoops, I did it
+again"](https://leanpub.com/read/esversioning/leanpub-auto-whoops-i-did-it-again)). Reversal is
+only possible if the event says what *changed*: Fowler's example is "'add $10 to Martin's account'
+as opposed to 'set Martin's account to $110'. In the former case I can reverse by just subtracting
+$10, but in the latter case I don't have enough information" ([Fowler, Event
+Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html)). And a correction is itself a **new
+business fact** that other subscribers see: a `PaymentRefunded` sends a refund email, it does not
+silently undo the charge. Across services the same idea is a saga's **compensating transaction**,
+which [[azure-service-bus-and-event-driven-soa]] covers. How an event's *shape*, rather than its
+facts, changes over time is [[evolving-event-schemas]].
+
+```quiz 01M3YMZY7V3R2291DM12T8V89V recall
+"Events are immutable. So what do you do when one of them is wrong?" Give the answer you would say
+out loud.
+
+> I never edit it. Once one edit is allowed the store is mutable, and the audit trail — which is
+> the sequence *including* the mistake and its fix — is gone. I **append a correcting event**. I'd
+> prefer a **full reversal** — reverse the original entry completely, then record the correct one
+> — over a partial one that books only the difference, because an auditor can read a full
+> reversal without reconstructing the arithmetic.
+>
+> That only works if events are **deltas** ("add $10") rather than overwrites ("set balance to
+> $110"): a delta reverses cleanly, an overwrite has lost the information you need to undo it.
+> And the correction is a **visible new fact**, not a silent undo — other subscribers see it and
+> react, so a refund sends a refund email. In a saga that's a compensating transaction, and it
+> gives no isolation: another flow may already have acted on the state you're compensating.
+```
+
 ## It integrates bounded contexts — but that is the strategic view
 
 An event published inside one aggregate does not have to be consumed inside the same model. The
@@ -87,7 +124,9 @@ without coupling**, and on a [[context-mapping|context map]] it is one of the wa
 context feeds a downstream one. But that integration story is the **strategic** view of the same
 object, and it is taught over there, not here — this lesson teaches what a domain event *is* and
 that an aggregate publishes it; [[context-mapping]] teaches what it *does* between contexts. The
-event is defined once, tactically, and reused strategically.
+event is defined once, tactically, and reused strategically. What changes once an event leaves its
+context — it becomes a public contract another team depends on, and is usually better translated
+than leaked — is [[events-as-public-contracts]].
 
 ## What it is not: event sourcing, and the transport
 

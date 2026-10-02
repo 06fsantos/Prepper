@@ -4,6 +4,7 @@ title: Message queues
 topic:
   - system-design
   - distributed-systems
+  - event-driven-architecture
 ---
 
 A message queue is asynchronous middleware that lets a producer hand off work without waiting
@@ -117,7 +118,9 @@ public async Task HandleAsync(OrderPlaced msg, CancellationToken ct)
 
 The dedup store and the side effect ideally commit together (or you record-then-ack carefully),
 because the gap between "did the work" and "remembered doing it" is where a duplicate slips
-through — which is the same reason "exactly once" is effectively-once and not magic.
+through — which is the same reason "exactly once" is effectively-once and not magic. Why loss,
+duplication and replay are three separate problems, each with its own mechanism, is
+[[loss-duplicates-and-replay-safe-consumers]].
 
 ```quiz 01M22X5XHGV6DS59D5ASSAVM3C
 An interviewer says: "I'll just turn on exactly-once delivery so my consumer never sees a
@@ -153,7 +156,9 @@ usually by hashing a partition key. A **global** total order across everything m
 partition**, which means **no consumer parallelism**, because a partition is consumed by one
 member of a consumer group at a time. So global ordering and throughput are directly opposed,
 and the senior move is to need ordering only *per key* and partition by that key — keeping order
-where it matters and parallelism everywhere else.
+where it matters and parallelism everywhere else. What to do when an invariant spans entities, or
+when events for one key still arrive out of order, is
+[[out-of-order-events-and-business-invariants]].
 
 ```quiz 01M22X5XHGTJVW7QQ8F5THFX0W cloze
 A log keeps events in order only {{within a partition}}, not across a topic, so to process all
