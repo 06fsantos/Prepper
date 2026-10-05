@@ -8,14 +8,14 @@ Prepper is a **Quartz v5 clone with the vault inside it** ([ADR 0002](docs/adr/0
 
 Content is a tree of typed Markdown notes under `content/`. A note's **type is its directory** — nothing is inferred from a slug or a frontmatter flag:
 
-| Type | What it is |
-| --- | --- |
-| **Lesson** | Teaches one tightly-scoped thing; carries prerequisites and may hold quiz blocks. |
-| **Term** | The canonical note for one topic; thin prose above a generated index of everything about it. |
-| **Cheat sheet** | One topic condensed to the 20% worth remembering. One per topic that has Lessons. |
-| **Reference** | A looked-up note, the published distillation of a Research investigation. |
-| **Problem** | A curated interview problem (coding, system-design, or behavioural) with sealed solution. |
-| **Plan** | A reading order over notes that already exist — one path through the prerequisite graph. |
+| Type            | What it is                                                                                   |
+| --------------- | -------------------------------------------------------------------------------------------- |
+| **Lesson**      | Teaches one tightly-scoped thing; carries prerequisites and may hold quiz blocks.            |
+| **Term**        | The canonical note for one topic; thin prose above a generated index of everything about it. |
+| **Cheat sheet** | One topic condensed to the 20% worth remembering. One per topic that has Lessons.            |
+| **Reference**   | A looked-up note, the published distillation of a Research investigation.                    |
+| **Problem**     | A curated interview problem (coding, system-design, or behavioural) with sealed solution.    |
+| **Plan**        | A reading order over notes that already exist — one path through the prerequisite graph.     |
 
 Everything else — **Research**, **Records**, the **Mission** — is _Workshop_: present in Obsidian, filtered out of the build, never a page. The reader only ever sees the _Library_ (the six types above). See [`CONTEXT.md`](CONTEXT.md) for the full vocabulary.
 
@@ -30,14 +30,14 @@ Everything else — **Research**, **Records**, the **Mission** — is _Workshop_
 
 ## Commands
 
-| Command | What it does |
-| --- | --- |
-| `npm run build` | Emit the site from `content/` into `public/`. |
-| `npm run serve` | Build and serve with live reload. |
-| `npm test` | Upstream's suite plus ours. |
+| Command            | What it does                                                                 |
+| ------------------ | ---------------------------------------------------------------------------- |
+| `npm run build`    | Emit the site from `content/` into `public/`.                                |
+| `npm run serve`    | Build and serve with live reload.                                            |
+| `npm test`         | Upstream's suite plus ours.                                                  |
 | `npm run validate` | Run the vault through the build and report every violation. **The CI gate.** |
-| `npm run ulid` | Mint a ULID (record identity is generated, never typed). |
-| `npx tsc --noEmit` | Typecheck. |
+| `npm run ulid`     | Mint a ULID (record identity is generated, never typed).                     |
+| `npx tsc --noEmit` | Typecheck.                                                                   |
 
 ## Where things are
 

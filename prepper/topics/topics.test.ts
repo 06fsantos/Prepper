@@ -323,10 +323,12 @@ describe("the topic index", () => {
     // cannot drift from what the row points at. The umbrella, its two children, and the lone
     // "Éviction policies" topic that has a Plan under it -- but not "System design", which holds
     // nothing.
-    assert.deepEqual(
-      folds.map((fold) => String(fold.properties.dataFold)).sort(),
-      ["terms/complexity", "terms/data-structures", "terms/eviction", "terms/hash-maps"],
-    )
+    assert.deepEqual(folds.map((fold) => String(fold.properties.dataFold)).sort(), [
+      "terms/complexity",
+      "terms/data-structures",
+      "terms/eviction",
+      "terms/hash-maps",
+    ])
   })
 
   test("a topic with nothing under it has no disclosure to work", () => {
@@ -525,10 +527,7 @@ describe("the topic index gets its density", () => {
     const term = site.page("terms/hash-maps")
     const card = topicNode(home, "Hash maps")
 
-    assert.deepEqual(
-      groups(home, card),
-      groups(term, term.require(".prepper-topic-index")),
-    )
+    assert.deepEqual(groups(home, card), groups(term, term.require(".prepper-topic-index")))
     assert.deepEqual(hrefs(home, card), [
       "./terms/hash-maps",
       "./plans/where-to-start-on-hash-maps",

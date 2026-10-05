@@ -26,7 +26,7 @@ re-research. Trust their citations. Do not re-fetch.
 
 **Coverage is the target, not length.** A re-authored Lesson covers what its source lesson
 covered; how long that makes it is the source's business, not a quota. Earlier notes in the vault
-are calibration for *voice* — the register, the quiz style, how a section opens — and never for
+are calibration for _voice_ — the register, the quiz style, how a section opens — and never for
 word count. Agents given "look at the existing Lessons" and nothing else will each invent a
 different length budget, and the run comes out uneven for no reason anyone can name afterwards.
 
@@ -44,13 +44,13 @@ place a wrong claim does the most damage.
 
 ## What crosses over
 
-| In the workspace          | Where it goes                                                        |
-| ------------------------- | -------------------------------------------------------------------- |
-| `lessons/*.html`          | Lessons, References, and Problems in `content/` — see the map below   |
-| `RESOURCES.md` sources    | This repo's root `RESOURCES.md`, including its unresolved gaps        |
-| `learning-records/`       | **Read, never imported.** Distilled into one new `content/records/` note |
-| `MISSION.md`, `NOTES.md`  | Stay put. They are that workspace's, not the vault's                  |
-| Sibling research notes    | Stay put. Their sources go to `RESOURCES.md`                          |
+| In the workspace         | Where it goes                                                            |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `lessons/*.html`         | Lessons, References, and Problems in `content/` — see the map below      |
+| `RESOURCES.md` sources   | This repo's root `RESOURCES.md`, including its unresolved gaps           |
+| `learning-records/`      | **Read, never imported.** Distilled into one new `content/records/` note |
+| `MISSION.md`, `NOTES.md` | Stay put. They are that workspace's, not the vault's                     |
+| Sibling research notes   | Stay put. Their sources go to `RESOURCES.md`                             |
 
 **Nothing is written back into the workspace.** It is not this repo's to edit, and the record of
 what has been incorporated lives in `content/records/` — which `/author` already reads on every
@@ -62,7 +62,7 @@ Settle **every filename** before a word is written, and put the map in `.scratch
 alongside the decisions behind it.
 
 Filenames are link identity. A Lesson forward-links into the authoring queue — `[[a-note-nobody-
-has-written]]` is a warning, and the warning *is* the queue — but only if the name it guesses is
+has-written]]` is a warning, and the warning _is_ the queue — but only if the name it guesses is
 the name the note eventually takes. Discovering names as you go means every forward link is a
 coin flip, and renaming later means rewriting every link that pointed at the old one.
 
@@ -93,7 +93,7 @@ Pick the level where each topic is **a subject someone would sit down and study*
 that and the topic index becomes a taxonomy — a card per pattern, a cheat sheet per pattern, none
 of them worth reading alone. Coarser and one card hides ten notes.
 
-A Term is *the canonical note for one topic*, not a dictionary definition, and `CONTEXT.md`
+A Term is _the canonical note for one topic_, not a dictionary definition, and `CONTEXT.md`
 already provides for a body that is an **area overview** rather than a sentence. Broad topics are
 in the model. There is no hierarchy and none is being added: if several workspaces in a row strain
 flat topics, that is when an ADR earns itself, not before.
@@ -122,7 +122,7 @@ Each agent owns **one topic**: every Lesson filed under it, and that topic's che
 `/author`'s contract, mints its own ULIDs, and runs `npm run validate` before reporting.
 
 The sheet is written **once, after the topic's last Lesson**. `author/SKILL.md` makes rewriting
-the sheet a habit of authoring *every* Lesson after a topic's first, and that habit is suspended
+the sheet a habit of authoring _every_ Lesson after a topic's first, and that habit is suspended
 for the duration of an incorporation run: a sheet rewritten five times against five partial
 topics is not the sheet derived from the finished one. Say so in the agent's prompt, because
 nothing else will — `npm run validate` warns about a missing sheet only well above one Lesson per
@@ -237,19 +237,19 @@ eight night-before sheets for one subject.
 
 **Map (~19 notes):**
 
-| Source                          | Becomes                                                        |
-| ------------------------------- | -------------------------------------------------------------- |
-| 0001 lifetime refresher         | Lesson, `httpclient` — **phase 1**, root of the graph           |
-| 0002 retry vs circuit breaker   | Lesson, `http-resilience` (+ 0010's sharded deps, `Retry-After`) |
-| 0003 timeouts                   | Lesson, `httpclient` **and** `http-resilience`                  |
-| 0004 hedging                    | Lesson, `http-resilience`                                       |
-| 0005 bulkheads                  | Lesson, `http-resilience` (+ 0010's per-dependency section)     |
-| 0006 idempotency                | Lesson, `http-resilience`                                       |
-| 0007 tracing                    | **Two** Lessons, `distributed-tracing`                          |
-| 0008 composing patterns         | Lesson, `http-resilience`                                       |
-| 0009 payment-polling scenario   | Problem, `kind: system-design`, via `/import`                   |
-| 0010 advanced considerations    | **Dissolved**; its synthesis table becomes a Reference          |
-| defaults scattered in 0002/3/8  | Reference, carrying `Polly v8.7.0` and the date verified        |
+| Source                         | Becomes                                                          |
+| ------------------------------ | ---------------------------------------------------------------- |
+| 0001 lifetime refresher        | Lesson, `httpclient` — **phase 1**, root of the graph            |
+| 0002 retry vs circuit breaker  | Lesson, `http-resilience` (+ 0010's sharded deps, `Retry-After`) |
+| 0003 timeouts                  | Lesson, `httpclient` **and** `http-resilience`                   |
+| 0004 hedging                   | Lesson, `http-resilience`                                        |
+| 0005 bulkheads                 | Lesson, `http-resilience` (+ 0010's per-dependency section)      |
+| 0006 idempotency               | Lesson, `http-resilience`                                        |
+| 0007 tracing                   | **Two** Lessons, `distributed-tracing`                           |
+| 0008 composing patterns        | Lesson, `http-resilience`                                        |
+| 0009 payment-polling scenario  | Problem, `kind: system-design`, via `/import`                    |
+| 0010 advanced considerations   | **Dissolved**; its synthesis table becomes a Reference           |
+| defaults scattered in 0002/3/8 | Reference, carrying `Polly v8.7.0` and the date verified         |
 
 Plus three Terms, three cheat sheets, one Record, and eleven sources into `RESOURCES.md` with
 the unresolved hedging/trace-context gap under **Gaps**.

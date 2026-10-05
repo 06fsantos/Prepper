@@ -21,3 +21,8 @@ docs/adr
 # byte-for-byte apart from the marked alterations, so that re-vendoring is a diff. Prettier
 # would reflow the minified script into thousands of lines and the diff with it.
 prepper/search/vendor
+
+# The scanner's .NET build output: `dotnet build` writes bin/ and obj/ beside each project, and
+# none of it is committed.
+scanner/**/bin
+scanner/**/obj

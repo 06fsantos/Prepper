@@ -132,7 +132,11 @@ describe("answering a quiz block", { timeout: 120_000 }, () => {
       const screen = await openPage("quiz-fence-types", "lessons/hash-map-lookup-cost", {
         random: () => 0,
       })
-      const written = ["Constant time, no scan", "Constant time, one scan", "Linear time, full scan"]
+      const written = [
+        "Constant time, no scan",
+        "Constant time, one scan",
+        "Linear time, full scan",
+      ]
 
       const order = optionTexts(screen)
       assert.deepEqual(order, [

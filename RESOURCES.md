@@ -89,7 +89,7 @@ primary the workspace's lessons were written against.
 - [.NET API reference: Microsoft.Extensions.Http.Resilience namespace](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.http.resilience)
   The member list, and the arbiter when the prose docs and a secondary source disagree about
   what an API offers. Use for: settling whether a lever exists at all — it is what established
-  that `DisableForUnsafeHttpMethods()` is a *retry* extension with no hedging counterpart.
+  that `DisableForUnsafeHttpMethods()` is a _retry_ extension with no hedging counterpart.
 
 ### C# concurrency and allocation in .NET
 
@@ -99,7 +99,7 @@ primary its lessons were written against.
 - [How Async/Await Really Works in C# — Stephen Toub](https://devblogs.microsoft.com/dotnet/how-async-await-really-works/)
   Primary source for the compiler-generated state machine, why a suspension is the moment of
   allocation, and the `AsyncStateMachineBox` that makes it one allocation on modern .NET. Use
-  for: anything about *why* `async`/`await` allocates what it allocates. Its benchmark numbers
+  for: anything about _why_ `async`/`await` allocates what it allocates. Its benchmark numbers
   are measurements of its own benchmark — attribute them, never assert them as current.
 - [ConfigureAwait FAQ — Stephen Toub](https://devblogs.microsoft.com/dotnet/configureawait-faq/)
   Primary source for what a suspension captures, what `ConfigureAwait(false)` does and does not
@@ -147,10 +147,10 @@ Learn unless noted.
   Compiler-generated value equality, `ToString`, and `with`. Use for: how a record's equality
   differs from a class's and from a plain struct's reflective `ValueType.Equals`. With
   [`ref struct`](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/ref-struct)
-  for the one *enforced* stack-confinement rule, and [method parameters](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/method-parameters)
+  for the one _enforced_ stack-confinement rule, and [method parameters](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/method-parameters)
   for `in`/`ref`/`out`.
 - [Eric Lippert: The Truth About Value Types](https://learn.microsoft.com/en-us/archive/blogs/ericlippert/the-truth-about-value-types) and [The Stack Is An Implementation Detail](https://learn.microsoft.com/en-us/archive/blogs/ericlippert/the-stack-is-an-implementation-detail-part-one)
-  The correction to "structs live on the stack": the spec guarantees value *semantics*, not a
+  The correction to "structs live on the stack": the spec guarantees value _semantics_, not a
   storage location. Use for: retiring the myth precisely rather than repeating it — `ref struct`
   is the sole place stack-confinement is a real guarantee.
 - [Large Object Heap — Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap)
@@ -203,7 +203,7 @@ Learn unless noted.
 
 ### Interview levels and process
 
-The sources the senior-interview path is written against — what a level *is* as a scope claim,
+The sources the senior-interview path is written against — what a level _is_ as a scope claim,
 and what each round grades. See the research note
 `content/research/what-do-senior-software-engineer-interviews-test.md` for how each claim is
 chased to its owner.
@@ -214,7 +214,7 @@ chased to its owner.
   defending "senior means X" as scope rather than title.
 - [progression.fyi](https://progression.fyi/about/)
   A collection of real companies' public progression frameworks / career ladders. Use for:
-  seeing how much the *wording* of a level varies over a scope claim that does not, and why the
+  seeing how much the _wording_ of a level varies over a scope claim that does not, and why the
   framework travels where the title does not.
 
 ### Distributed-systems fundamentals
@@ -224,13 +224,12 @@ candidate is expected to reason from, not merely name.
 
 - [Gilbert & Lynch, "Brewer's Conjecture and the Feasibility of Consistent, Available,
   Partition-Tolerant Web Services" (MIT)](https://groups.csail.mit.edu/tds/papers/Gilbert/Brewer2.pdf)
-  The primary source that turned Brewer's CAP *conjecture* into a *theorem*. Precise
+  The primary source that turned Brewer's CAP _conjecture_ into a _theorem_. Precise
   definitions of atomic consistency (linearizability), availability, and partition tolerance,
   and the impossibility proof for the asynchronous model plus the weaker partially-synchronous
   result. Use for: defending what CAP actually claims rather than the "pick two" folklore.
-- [Abadi, "Consistency Tradeoffs in Modern Distributed Database System Design" (IEEE Computer,
-  2012)](https://ieeexplore.ieee.org/document/6127847/)
-  Introduces PACELC: CAP covers only the partition case; *else* (no partition) a system still
+- [Abadi, "Consistency Tradeoffs in Modern Distributed Database System Design" (IEEE Computer, 2012)](https://ieeexplore.ieee.org/document/6127847/)
+  Introduces PACELC: CAP covers only the partition case; _else_ (no partition) a system still
   trades latency against consistency, and the two branches are set independently (PA/EL, PC/EC,
   and the blends). Use for: the more complete senior framing, and classifying real datastores.
 - [Vogels, "Eventually Consistent" (allthingsdistributed.com, 2007)](https://www.allthingsdistributed.com/2007/12/eventually_consistent.html)
@@ -239,8 +238,7 @@ candidate is expected to reason from, not merely name.
   causal, session), and the N/W/R quorum formula where `W + R > N` guarantees strong consistency.
   Written by the engineer who ran Amazon's storage. Use for: framing eventual consistency as a
   principled trade-off rather than degraded strong consistency, and for the quorum arithmetic.
-- [Ongaro & Ousterhout, "In Search of an Understandable Consensus Algorithm" (USENIX ATC
-  2014)](https://raft.github.io/raft.pdf)
+- [Ongaro & Ousterhout, "In Search of an Understandable Consensus Algorithm" (USENIX ATC 2014)](https://raft.github.io/raft.pdf)
   The Raft paper. Consensus decomposed into leader election, log replication, and safety;
   explicitly equivalent to Paxos in fault-tolerance and performance but designed to be
   understandable. Majority voting (`2f + 1` tolerates `f`), terms as a logical clock, the commit
@@ -282,12 +280,12 @@ the distributed-systems theory above.
 
 - [Dean & Norvig, "Numbers Everyone Should Know" (brenocon mirror)](https://brenocon.com/dean_perf.html)
   **Secondary** mirror of Jeff Dean's latency slides: L1 ≈ 0.5 ns, main memory ≈ 100 ns, disk
-  seek ≈ 10 ms, cross-continent round trip ≈ 150 ms. Use for: the *shape* of the latency ladder
+  seek ≈ 10 ms, cross-continent round trip ≈ 150 ms. Use for: the _shape_ of the latency ladder
   — memory ≪ network ≪ disk seek. The absolutes are dated (NVMe has collapsed the memory-to-disk
   gap), so carry the ratios and the method, never the nanoseconds; the ~150 ms round trip is the
   one durable rung, bounded by the speed of light rather than hardware.
 - [Google, "Site Reliability Engineering" — Embracing Risk](https://sre.google/sre-book/embracing-risk/) and its [availability table](https://sre.google/sre-book/availability-table/)
-  First-party for the *nines*: the availability-to-downtime table (99.9% ≈ 8.8 h/year, 99.99% ≈
+  First-party for the _nines_: the availability-to-downtime table (99.9% ≈ 8.8 h/year, 99.99% ≈
   53 min, 99.999% ≈ 5 min) and the error-budget framing that turns an availability target into a
   number a team spends against. Use for: the downtime budget behind an availability figure, and
   for treating a target as a negotiated requirement rather than a maximized virtue. Pair with the
@@ -300,7 +298,7 @@ the distributed-systems theory above.
   you cannot measure everything, and why a symptom-based page earns the interruption.
 - [Google, "Site Reliability Engineering" — Service Level Objectives](https://sre.google/sre-book/service-level-objectives/)
   First-party for the **SLI / SLO / SLA** ladder: indicator (the measure) → objective (the target
-  on it) → agreement (an SLO with a *consequence*; no consequence means it is only an SLO). Use
+  on it) → agreement (an SLO with a _consequence_; no consequence means it is only an SLO). Use
   for: the internal-SLO-tighter-than-SLA rule, why the target is never 100%, and the error-budget
   framing of the gap to perfect.
 - [AWS, "What is caching?"](https://aws.amazon.com/caching/)
@@ -308,15 +306,14 @@ the distributed-systems theory above.
   reads, IOPS density, hot-spot relief) and the common placements (database, CDN/edge, session,
   API-response). Use for: the vocabulary a round expects you to select from, and for framing a TTL
   as the freshness-versus-speed knob rather than a default.
-- [DeCandia et al., "Dynamo: Amazon's Highly Available Key-value Store" (SOSP
-  2007)](https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf)
+- [DeCandia et al., "Dynamo: Amazon's Highly Available Key-value Store" (SOSP 2007)](https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf)
   The primary source for partitioning + replication in an always-available store: consistent
   hashing on a ring (with virtual nodes) for placement, a preference list of `N` replicas,
   object versioning (vector clocks) with application-level merge for reconciliation, and the
   `W + R > N` quorum dial. The blueprint under Cassandra, Riak, and DynamoDB. Use for: the
   concrete AP design the CAP/consistency theory turns into, and the section-4 architecture walk.
 
-The five components a design round expects you to *select and justify* — load balancing, rate
+The five components a design round expects you to _select and justify_ — load balancing, rate
 limiting, message queues, CDNs, API design — are each pinned to a first-party implementation
 below rather than to interview-prep folklore. See the research note
 `content/research/which-building-blocks-does-a-system-design-round-expect-you-to-select.md`.
@@ -355,10 +352,10 @@ below rather than to interview-prep folklore. See the research note
 - [AWS CloudFront — introduction](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html) and [invalidation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html)
   Primary for CDN mechanics: edge locations, the **pull** miss-then-fetch model, the default 24-hour
   TTL, and AWS's own recommendation of **versioned filenames over invalidation**. The push/pull
-  *taxonomy* itself is general-industry framing (**secondary**); the mechanism is first-party. Use
+  _taxonomy_ itself is general-industry framing (**secondary**); the mechanism is first-party. Use
   for: the freshness/TTL trade-off and why invalidation is the hard part.
 - [Fielding dissertation, Ch. 5 (REST)](https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm), [gRPC introduction](https://grpc.io/docs/what-is-grpc/introduction/), [GraphQL introduction](https://graphql.org/learn/introduction/)
-  Each is primary **for its own definition only** — the three-way *fit* comparison (ubiquity vs
+  Each is primary **for its own definition only** — the three-way _fit_ comparison (ubiquity vs
   efficiency vs client-shaped fetches) has no canonical primary and is **secondary** as a
   head-to-head. Use for: defining each style precisely before comparing them.
 - [Google AIP-158 (pagination)](https://google.aip.dev/158) and [Stripe API — pagination](https://docs.stripe.com/api/pagination) / [idempotent requests](https://docs.stripe.com/api/idempotent_requests)
@@ -424,7 +421,7 @@ microservices design round.
   for the `code_verifier`/`code_challenge` binding that hardens the authorization-code flow.
 - [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html)
   First-party for the **authentication** layer OAuth lacks: the **ID token** and what it means
-  to prove *who* logged in on top of OAuth. Use for: the OAuth-vs-OIDC distinction and why an
+  to prove _who_ logged in on top of OAuth. Use for: the OAuth-vs-OIDC distinction and why an
   access token is not an identity statement.
 - [RFC 7519 — JSON Web Token (JWT)](https://datatracker.ietf.org/doc/html/rfc7519)
   First-party for the token itself: `header.payload.signature`, the registered claims
@@ -480,7 +477,7 @@ What a "how would you secure this request?" answer draws on beyond the token mod
 Where AI actually fits a document-and-judgment domain, and the governance a $bn-payout system
 forces. Lead with the reinsurance-specific papers; treat vendor blogs as directional.
 
-- [*Prudential Reliability of LLMs in Reinsurance* — arXiv 2511.08082](https://arxiv.org/html/2511.08082v1)
+- [_Prudential Reliability of LLMs in Reinsurance_ — arXiv 2511.08082](https://arxiv.org/html/2511.08082v1)
   The single best source: a reinsurance-specific benchmark (RAIRAB) with the numbers that turn
   hand-waving into engineering — zero-shot ~0.63 grounding / 21.4% hallucination vs RAG + logging +
   human-in-the-loop at 0.91 / 12.8% — plus the "governance not scale" thesis and the SR 11-7 /
@@ -514,7 +511,7 @@ actuarial depth — distilled into [[reinsurance-domain-primer]].
   like ("limit xs retention").
 - [ACORD — Global Reinsurance & Large Commercial Data Standards](https://www.acord.org/standards-architecture/acord-data-standards/Global_Reinsurance_Data_Standards)
   The message standard the placement lifecycle actually runs on (Placing / Accounting / Claims),
-  plus the [Ruschlikon ePlacing guide](https://www.acord.org/docs/default-source/ruschlikon-documents-newsletters/ruschlikon-member-resources/best-practice-guide-(eplacing).pdf).
+  plus the [Ruschlikon ePlacing guide](<https://www.acord.org/docs/default-source/ruschlikon-documents-newsletters/ruschlikon-member-resources/best-practice-guide-(eplacing).pdf>).
   Use for: why a system here is largely moving structured messages through stages.
 - [Moody's RMS — Catastrophe Risk Modeling](https://www.rms.com/catastrophe-modeling) and
   [CAS — Homer & Li, "Notes on Using Property Catastrophe Model Results"](https://www.casact.org/sites/default/files/2021-02/2017_most-practical-paper_homer-li.pdf)

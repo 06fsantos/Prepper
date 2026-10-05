@@ -14,14 +14,14 @@ with the rules ladder, and persists everything to SQLite — the sole source of 
 One .NET solution (`Scanner.sln`), a project per bounded context, assemblies and namespaces
 all `Scanner.<Project>`:
 
-| Project           | Role                                                                      |
-| ----------------- | ------------------------------------------------------------------------- |
-| `SharedKernel`    | The one shared vocabulary: the canonical `Technology` tag + alias map (seeded from `TechnologyCatalog`), and the `Seniority`/`Remoteness` scales the contexts compare on. |
-| `JobScanning`     | `Company` (+ typed `Source`), `Role`, `ScrapeRun`, and the ACL seam: `IRoleSource` + the shared `RoleNormalizer`. |
-| `CandidateProfile`| `CandidateProfile` (+ `Preferences`). The CV as data.                     |
-| `Matching`        | `RulesMatcher` + `RoleView`/`ProfileView`. Ranks a role against a profile, referencing both **by id only** (primitives only — no Shared Kernel). |
-| `Infrastructure`  | EF Core + SQLite `ScannerDbContext` + migrations; the concrete ACL adapters (Greenhouse/Workday/Html) behind one shared politeness handler; the YAML loaders and the technology seeder. |
-| `Cli`             | The `scan` entry point on the Generic Host; the `ScanRunner` orchestrator. |
+| Project            | Role                                                                                                                                                                                    |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SharedKernel`     | The one shared vocabulary: the canonical `Technology` tag + alias map (seeded from `TechnologyCatalog`), and the `Seniority`/`Remoteness` scales the contexts compare on.               |
+| `JobScanning`      | `Company` (+ typed `Source`), `Role`, `ScrapeRun`, and the ACL seam: `IRoleSource` + the shared `RoleNormalizer`.                                                                       |
+| `CandidateProfile` | `CandidateProfile` (+ `Preferences`). The CV as data.                                                                                                                                   |
+| `Matching`         | `RulesMatcher` + `RoleView`/`ProfileView`. Ranks a role against a profile, referencing both **by id only** (primitives only — no Shared Kernel).                                        |
+| `Infrastructure`   | EF Core + SQLite `ScannerDbContext` + migrations; the concrete ACL adapters (Greenhouse/Workday/Html) behind one shared politeness handler; the YAML loaders and the technology seeder. |
+| `Cli`              | The `scan` entry point on the Generic Host; the `ScanRunner` orchestrator.                                                                                                              |
 
 ## The reference graph is the seal
 
@@ -73,11 +73,11 @@ dotnet ef migrations add <Name> -p src/Infrastructure -s src/Cli -o Migrations
 
 `.NET 8`. Environment variables:
 
-| Var                | Default          | What                                                            |
-| ------------------ | ---------------- | --------------------------------------------------------------- |
-| `SCANNER_DB`       | `scanner.db`     | The SQLite file (the sole source of truth).                     |
-| `SCANNER_COMPANIES`| `companies.yaml` | The committed curated roster.                                   |
-| `SCANNER_PROFILE`  | *(required)*     | The gitignored candidate profile, kept outside `scanner/`.      |
+| Var                 | Default          | What                                                       |
+| ------------------- | ---------------- | ---------------------------------------------------------- |
+| `SCANNER_DB`        | `scanner.db`     | The SQLite file (the sole source of truth).                |
+| `SCANNER_COMPANIES` | `companies.yaml` | The committed curated roster.                              |
+| `SCANNER_PROFILE`   | _(required)_     | The gitignored candidate profile, kept outside `scanner/`. |
 
 ## The scan pass
 

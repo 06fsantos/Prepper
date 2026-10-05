@@ -342,11 +342,11 @@ who collapsed the rail never sees it flash.
 They share the data path and the markup below each heading -- one `topicIndex()`, one `groups()`
 -- and **diverge only in the wrapper**, because the rail and a landing are not the same job:
 
-| View       | Rendered by  | Where                   | Shape                                       |
-| ---------- | ------------ | ----------------------- | ------------------------------------------- |
-| `sidebar`  | `TopicTree`  | the rail, every page    | nested folds, each opening to its notes     |
-| entry page | `TopicCards` | `prepper/home`'s body   | a card per topic, note types as columns     |
-| term-index | `TermIndex`  | a Term's `.page-footer` | the one card for the page's own topic       |
+| View       | Rendered by  | Where                   | Shape                                   |
+| ---------- | ------------ | ----------------------- | --------------------------------------- |
+| `sidebar`  | `TopicTree`  | the rail, every page    | nested folds, each opening to its notes |
+| entry page | `TopicCards` | `prepper/home`'s body   | a card per topic, note types as columns |
+| term-index | `TermIndex`  | a Term's `.page-footer` | the one card for the page's own topic   |
 
 The **Plans band** above the cards is not a fourth view of this index: it is a flat list keyed
 by type rather than by topic, the way the rail's Cheat sheets list is. See "Plans" below.
