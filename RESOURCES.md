@@ -673,6 +673,39 @@ appears here through his own paper and blog.
   `messaging.message.conversation_id` as the correlation id. Still **Development** status. Use
   for: Q8, and say the status out loud.
 
+### Observability
+
+- [.NET: Compile-time logging source generation](https://learn.microsoft.com/en-us/dotnet/core/extensions/logger-message-generator)
+  and [Logging in C#](https://learn.microsoft.com/en-us/dotnet/core/extensions/logging)
+  Primary for `[LoggerMessage]` (its constraints, name-matched placeholders, dynamic level), message
+  templates versus interpolation (CA2254), the level table, scopes, and redaction through
+  `Microsoft.Extensions.Compliance.Redaction`. Use for: what .NET logging code actually looks like.
+- [`ActivityTrackingOptions`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.activitytrackingoptions)
+  and the [OTel .NET logs-correlation doc](https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/docs/logs/correlation/README.md)
+  How trace ids reach a log record: through logging scopes (the host's default is
+  `SpanId | TraceId | ParentId`, set in `dotnet/runtime`'s `HostingHostBuilderExtensions`), or
+  stamped from `Activity.Current` by the OTel provider. Use for: the logs-to-traces join in .NET.
+- [Google SRE workbook: Monitoring](https://sre.google/workbook/monitoring/)
+  Structured over plain-text logs, logs for root cause and metrics for alerting, and the delay before
+  logs are visible. Use for: why you alert on metrics and read logs after.
+- [Stripe: Canonical log lines](https://stripe.com/blog/canonical-log-lines)
+  One wide line per request, and why it is cheap to query. Use for: the wide-event answer to log
+  volume. It is a practitioner post, not a standard.
+- [OpenTelemetry specification overview](https://opentelemetry.io/docs/specs/otel/overview/)
+  and [library guidelines](https://opentelemetry.io/docs/specs/otel/library-guidelines/)
+  Primary for the API/SDK split, signals, resource and baggage, and the rule that libraries depend
+  on the API only and get a no-op without an SDK. Use for: what OpenTelemetry *is*, in its own words.
+- [OpenTelemetry Collector docs](https://opentelemetry.io/docs/collector/), with the
+  [architecture](https://opentelemetry.io/docs/collector/architecture/) page and the
+  [agent](https://opentelemetry.io/docs/collector/deploy/agent/) and
+  [gateway](https://opentelemetry.io/docs/collector/deploy/gateway/) deployment pages
+  Receivers, processors, exporters and pipelines, plus the two deployment shapes with their own
+  pros and cons lists. Use for: where backend choice, redaction and sampling live.
+- [Microsoft Learn: Use OpenTelemetry with OTLP and the Aspire Dashboard](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example)
+  and the [OTel .NET OTLP exporter README](https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/OpenTelemetry.Exporter.OpenTelemetryProtocol/README.md)
+  Wiring all three signals in ASP.NET Core; `UseOtlpExporter`, its constraints and its environment
+  variables. Use for: what the SDK setup actually looks like in .NET.
+
 ## Wisdom (Communities)
 
 - [r/cscareerquestions interview experiences](https://reddit.com/r/cscareerquestions)
