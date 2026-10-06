@@ -688,6 +688,10 @@ appears here through his own paper and blog.
 - [Google SRE workbook: Monitoring](https://sre.google/workbook/monitoring/)
   Structured over plain-text logs, logs for root cause and metrics for alerting, and the delay before
   logs are visible. Use for: why you alert on metrics and read logs after.
+- [Google SRE workbook: Alerting on SLOs](https://sre.google/workbook/alerting-on-slos/)
+  Burn rate, the four scores (precision, recall, detection time, reset time), and the multiwindow,
+  multi-burn-rate table (14.4 over 1 h/5 min, 6 over 6 h/30 min, 1 over 3 d/6 h). Use for: what to page
+  on once an SLO exists.
 - [Stripe: Canonical log lines](https://stripe.com/blog/canonical-log-lines)
   One wide line per request, and why it is cheap to query. Use for: the wide-event answer to log
   volume. It is a practitioner post, not a standard.
@@ -705,6 +709,59 @@ appears here through his own paper and blog.
   and the [OTel .NET OTLP exporter README](https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/OpenTelemetry.Exporter.OpenTelemetryProtocol/README.md)
   Wiring all three signals in ASP.NET Core; `UseOtlpExporter`, its constraints and its environment
   variables. Use for: what the SDK setup actually looks like in .NET.
+- [OpenTelemetry metrics API](https://opentelemetry.io/docs/specs/otel/metrics/api/),
+  [SDK](https://opentelemetry.io/docs/specs/otel/metrics/sdk/) and
+  [data model](https://opentelemetry.io/docs/specs/otel/metrics/data-model/)
+  Primary for the instrument kinds and which are additive, the 2000-series default cardinality limit
+  and the `otel.metric.overflow` series, and cumulative versus delta temporality with its memory
+  cost. Use for: what an instrument promises and what the SDK does with it.
+- [Microsoft Learn: Creating Metrics](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics-instrumentation)
+  and the [OTel .NET metrics README](https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/docs/metrics/README.md)
+  Every `Meter` instrument in C#, `IMeterFactory`, the tag-combination numbers (under 1000, histograms
+  10-100 times lower), and overflow on by default since 1.10.0. Use for: instruments and cardinality in
+  .NET code.
+- [Prometheus: naming](https://prometheus.io/docs/practices/naming/),
+  [metric types](https://prometheus.io/docs/concepts/metric_types/) and
+  [when to use the Pushgateway](https://prometheus.io/docs/practices/pushing/)
+  The one-series-per-label-combination caution, the four client types including Summary, and the
+  costs of pushing. Use for: the Prometheus data model as a concept, not as a product to operate.
+- [Prometheus: histograms and summaries](https://prometheus.io/docs/practices/histograms/)
+  Where a quantile is computed, why averaging summaries' quantiles is "statistically nonsensical",
+  error in φ versus error in the observed value, and the 443 ms-versus-320 ms bucket example. Use for:
+  why percentiles don't aggregate, and how to choose buckets.
+- [OTel .NET: customizing the metrics SDK](https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/docs/metrics/customizing-the-sdk/README.md)
+  Views, `ExplicitBucketHistogramConfiguration`, `Base2ExponentialBucketHistogramConfiguration` and
+  their defaults, and that a View wins over `InstrumentAdvice`. Its Exemplars section: off by
+  default (`AlwaysOff`) unlike the spec, `SetExemplarFilter` since 1.9.0, and dropped tags kept on
+  exemplars. Use for: histogram aggregation and exemplars in .NET.
+- [OpenTelemetry: Sampling](https://opentelemetry.io/docs/concepts/sampling/), the
+  [SDK spec's built-in samplers](https://opentelemetry.io/docs/specs/otel/trace/sdk/#built-in-samplers)
+  and [probability sampling](https://opentelemetry.io/docs/specs/otel/trace/tracestate-probability-sampling/)
+  When to sample and when not to, head versus tail, the default `ParentBased(root=AlwaysOn)`, and
+  adjusted count. Use for: what a sampling decision is and what it costs.
+- [Tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/tailsamplingprocessor/README.md)
+  and [load-balancing exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/loadbalancingexporter/README.md)
+  Policies, the one-instance-per-trace rule, the two-tier shape, `decision_wait` / `num_traces` and
+  dropping early. Use for: what running tail sampling actually involves.
+- [OTel .NET: customizing the tracing SDK](https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/docs/trace/customizing-the-sdk/README.md)
+  `SetSampler`, `OTEL_TRACES_SAMPLER`, and the troubleshooting entry on spans dropped under an
+  unsampled parent. Pair with Microsoft's
+  [distributed tracing concepts](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/distributed-tracing-concepts)
+  for the under-100 ns cost of an unsampled `Activity`. Use for: sampling in .NET code.
+- [.NET: Log sampling](https://learn.microsoft.com/en-us/dotnet/core/extensions/logging/log-sampling)
+  The per-level policy table (sample Information, never Error), rule selection, the trace-based sampler,
+  and the one-sampler-at-a-time limit. The `dotnet/extensions` source (`TraceBasedSampler`,
+  `LogSamplingRuleSelector`) settles what the page leaves loose. Use for: thinning logs in .NET.
+- [Filter processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor/README.md)
+  and [probabilistic sampler processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/probabilisticsamplerprocessor/README.md)
+  Dropping telemetry by OTTL condition (alpha; syntax documented from v0.146.0), the orphaned-telemetry
+  warning, and log sampling by trace id with priority only through an attribute. Use for: cost policy
+  in the Collector.
+- [Prometheus: recording rules](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/)
+  and the [Thanos compactor](https://thanos.io/tip/components/compact.md/)
+  A recording rule writes new series. Downsampling "doesn't save you any space" and exists to speed up
+  long-range queries. Use for: why rollups cut cost only when raw retention is cut. Thanos stands in here
+  for the concept, not as a product to operate.
 
 ## Wisdom (Communities)
 

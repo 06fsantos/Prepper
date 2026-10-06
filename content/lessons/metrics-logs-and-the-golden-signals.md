@@ -120,21 +120,32 @@ the claim is that if you can measure only four things, measure these:
 The subtlety in latency is the one to instrument deliberately, because most naive metrics blend
 the two outcomes. In .NET you would keep them apart with a tag on a
 [`Histogram`](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics-instrumentation),
-so "p99 latency" can be sliced by outcome rather than averaged across it:
+so "p99 latency" can be sliced by outcome rather than averaged across it. Duration is recorded in
+**seconds, as a `double`**, which is what Microsoft recommends and what the OTel semantic convention
+`http.server.request.duration` uses. The bucket boundaries go with it, because the SDK's defaults are
+millisecond-shaped and would put every sub-five-second request in one bucket (the trap
+[[why-percentiles-dont-aggregate]] takes apart):
 
 ```csharp
 using System.Diagnostics.Metrics;
 
 var meter = new Meter("Checkout");
-Histogram<double> latency = meter.CreateHistogram<double>("request.duration", unit: "ms");
+Histogram<double> latency = meter.CreateHistogram<double>(
+    "http.server.request.duration",
+    unit: "s",
+    advice: new InstrumentAdvice<double>
+    {
+        // the semantic conventions' advised boundaries for HTTP durations, in seconds
+        HistogramBucketBoundaries = [0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10]
+    });
 Counter<long> requests = meter.CreateCounter<long>("request.count");
 
 // on each request, record the elapsed time tagged with the outcome
-void Record(double elapsedMs, bool ok)
+void Record(double elapsedSeconds, bool ok)
 {
     var outcome = new KeyValuePair<string, object?>("outcome", ok ? "success" : "error");
-    latency.Record(elapsedMs, outcome);   // slow errors no longer hide in the average
-    requests.Add(1, outcome);             // traffic and errors fall out of the same tag
+    latency.Record(elapsedSeconds, outcome);   // slow errors no longer hide in the average
+    requests.Add(1, outcome);                 // traffic and errors fall out of the same tag
 }
 ```
 

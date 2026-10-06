@@ -21,6 +21,14 @@ topic: distributed-tracing
   no exception, no warning, a hole in the trace found mid-incident. Instance: Application Insights registered **after** the
   resilience handler drops the telemetry on `Microsoft.ApplicationInsights` ≤ 2.22.0 (recorded
   2026-08-27; check your version). Wire instrumentation first.
+- **Sampling decides which traces exist.** Head sampling decides at the root from the trace id,
+  and parent-based children follow the `01` flag, so a trace is kept whole or not at all. It is cheap
+  and blind to errors: at 5%, 95% of failures have no trace. Tail sampling keeps errors and slow
+  traces, but every span of a trace must reach **one** Collector (route by trace id first), which
+  buffers them in memory. The SDK default, `ParentBased(root=AlwaysOn)`, keeps everything. An
+  unsampled root still has a trace id, so logs point at traces that don't exist. **SLIs come from
+  metrics**, never from counting kept traces. At a public edge, re-decide rather than trust a
+  caller's flag.
 - **Hedging is the open case.** Neither Microsoft nor Polly documents whether concurrent
   attempts come out as siblings under the calling span or nested under the first. Do not guess —
   send one hedged call with tracing on and read the span tree.
@@ -35,4 +43,5 @@ The header can say *who called whom*. It cannot say *these two calls are the sam
 raced* — that is a modelling gap, not a violation of the standard.
 
 Full treatment: [[trace-context-across-retries]], [[tracing-hedged-attempts]] for what is still
-unresolved, and [[tracing-a-flow-through-a-message-broker]] for event-driven flows.
+unresolved, [[tracing-a-flow-through-a-message-broker]] for event-driven flows, and
+[[sampling-traces-head-tail-and-what-you-lose]] for what sampling keeps and drops.
