@@ -4,6 +4,7 @@ title: Metrics, logs, and the golden signals
 topic:
   - system-design
   - distributed-tracing
+  - observability
 ---
 
 Once a design round has a system on the whiteboard, the next question is the one that separates

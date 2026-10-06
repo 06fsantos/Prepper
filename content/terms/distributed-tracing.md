@@ -3,6 +3,7 @@ id: 01M1924ABTGAHMTWHH7J32TMYR
 title: Distributed tracing
 topic:
   - http-and-resilience
+  - observability
 ---
 
 Correlating one logical request across every service and every attempt it produced. A trace id
