@@ -88,7 +88,7 @@ Parallel attempts are the case this reasoning does not cover, because two reques
 once are genuinely a fork and the linear-hierarchy assumption stops holding — that is
 [[tracing-hedged-attempts]], and it is an open question rather than a settled one.
 
-## Correlation you get for free, and the two ways to lose it
+## Correlation you get for free, and how to lose it
 
 You do not thread a correlation id through your code by hand. Application Insights, registered
 in an ASP.NET Core app, extracts `traceparent` from the inbound request (minting a trace id if
@@ -96,12 +96,16 @@ there was none), assigns the current request a span, and injects `traceparent` i
 `HttpClient` calls with that span as the parent id. Logs, exceptions and dependency records
 then correlate under one operation id in the portal.
 
-The condition is that the outbound call goes through a client the container knows about — an
-[[httpclient-connection-lifetime|`IHttpClientFactory`-registered client]], typed or named,
-rather than a standalone `new HttpClient()` that no instrumentation ever saw. That is one more
-argument for the factory on top of the pooling ones.
+None of this depends on how the client was built. The outbound span and the `traceparent`
+header both come from `SocketsHttpHandler`, the handler at the bottom of every `HttpClient` —
+factory-made or `new HttpClient()` alike: it
+[reports the HTTP client request activity](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/distributed-tracing-builtin-activities),
+and its
+[`ActivityHeadersPropagator`](https://learn.microsoft.com/en-us/dotnet/api/system.net.http.socketshttphandler.activityheaderspropagator)
+injects the header unless someone sets it to `null`. The case for
+[[httpclient-connection-lifetime|`IHttpClientFactory`]] is pooling, not tracing.
 
-The second condition is **registration order**, and it is the pitfall worth carrying into an
+The condition that does bite is **registration order**, and it is the pitfall worth carrying into an
 interview because the failure is silent:
 
 ```csharp

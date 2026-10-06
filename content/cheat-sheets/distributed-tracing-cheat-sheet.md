@@ -12,17 +12,18 @@ topic: distributed-tracing
   - **trace-id** is constant across the whole chain, however many services and attempts.
   - **parent-id** is the caller's span id, which is what makes the callee's spans your children.
   - **flags**: `01` means sampled.
-- Application Insights renders this as `operation_Id` (the trace) and `operation_ParentId` (the
-  span). Grouping by `operation_Id` finds every attempt.
-- **Two ways to silently lose correlation**, both registration-order bugs:
-  - Application Insights registered **after** the resilience handler — telemetry disappears
-    entirely on `Microsoft.ApplicationInsights` ≤ 2.22.0.
-  - `Grpc.Net.ClientFactory` ≤ 2.63.0 throws when a resilience handler is added; fixed in
-    2.64.0.
-  Check your own package versions; both are version-bounded (recorded 2026-08-27).
+- In OTel terms a **span** carries a trace id, its own span id and its parent's span id; the
+  root span has no parent. Every backend shows the same three ids under its own names
+  (Application Insights: `operation_Id` for the trace, `operation_ParentId` for the parent).
+  **Group by trace id** to find every attempt.
+- **Registration order can lose correlation silently**: wire the tracing instrumentation in
+  after the HTTP pipeline it should observe and the outbound spans can simply stop arriving —
+  no exception, no warning, a hole in the trace found mid-incident. Instance: Application Insights registered **after** the
+  resilience handler drops the telemetry on `Microsoft.ApplicationInsights` ≤ 2.22.0 (recorded
+  2026-08-27; check your version). Wire instrumentation first.
 - **Hedging is the open case.** Neither Microsoft nor Polly documents whether concurrent
   attempts come out as siblings under the calling span or nested under the first. Do not guess —
-  send one hedged call with telemetry on and read the dependency timeline.
+  send one hedged call with tracing on and read the span tree.
 - **Through a broker, the context rides on the message and consumers link, not parent.** A
   producer attaches a creation context to each message's headers; the consumer's Process span
   **links** to it, because a batch has many producers and a span has one parent. Carry a
