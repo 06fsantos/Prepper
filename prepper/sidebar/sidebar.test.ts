@@ -214,6 +214,18 @@ describe("the hideable left rail", () => {
     assert.ok(Number(declaration(open, "z-index")) < 1000, "the drawer paints over the bar")
   })
 
+  test("above 800px the rail scrolls on its own, so nothing in it is below reach", () => {
+    // The column is sticky and as tall as the window under the bar, so the page scrolling
+    // never brings its foot into view: a topic tree that arrives open pushed the Cheat sheets
+    // list past the bottom of the screen with no way down to it. The drawer has its own bound;
+    // this is the column's.
+    const overflows = active(rules(css), 1280)
+      .filter((rule) => !conditional(rule) && subjects(rule).includes(".sidebar.left"))
+      .map((rule) => declaration(rule, "overflow-y"))
+      .filter((value) => value !== undefined)
+    assert.equal(overflows.at(-1), "auto", `the rail's overflow resolves to ${overflows.at(-1)}`)
+  })
+
   for (const width of widths) {
     test(`at ${width}px, nothing the collapse switches on can reach the article`, () => {
       // The proof of non-movement. Every rule that applies at this width and is conditioned on

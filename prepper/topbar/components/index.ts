@@ -235,10 +235,15 @@ body {
 .page > #quartz-body .sidebar.left {
   padding-top: 2rem;
 }
+/* A sticky box with a bounded height and no overflow hides whatever is below the fold: the
+   page scrolling never brings it into view. So the rail scrolls on its own, and a wheel that
+   reaches its end stays in it rather than carrying on into the article. */
 @media all and (min-width: 800px) {
   .page > #quartz-body .sidebar.left {
     top: var(--prepper-topbar-height);
     height: calc(100vh - var(--prepper-topbar-height));
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
 /* The graph control: the plugin's own button, with the panel it was drawn in the corner of
